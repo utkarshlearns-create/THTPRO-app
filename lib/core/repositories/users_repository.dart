@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
+import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
 import 'package:tht_app/core/repositories/repository.dart';
 
@@ -16,11 +17,14 @@ class UsersRepository extends Repository {
   Future<TutorStats> tutorStats() async =>
       TutorStats.fromJson(await getMap('/api/users/dashboard/stats/'));
 
-  /// The teacher's own editable profile.
-  Future<Map<String, dynamic>> tutorProfile() => getMap('/api/users/profile/');
+  /// The teacher's own profile.
+  Future<TutorProfile> tutorProfile() async =>
+      TutorProfile.fromJson(await getMap('/api/users/profile/'));
 
-  Future<Map<String, dynamic>> updateTutorProfile(Map<String, dynamic> changes) =>
-      patchMap('/api/users/profile/', body: changes);
+  /// Patches only the fields that changed, so a partial edit never blanks a
+  /// field the app doesn't model.
+  Future<TutorProfile> updateTutorProfile(Map<String, dynamic> changes) async =>
+      TutorProfile.fromJson(await patchMap('/api/users/profile/', body: changes));
 
   /// Where the teacher stands in KYC — drives the verification banner.
   Future<KycStatus> kycStatus() async =>

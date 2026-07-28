@@ -747,7 +747,7 @@ class _QuickActions extends StatelessWidget {
               child: _ActionTile(
                 icon: Icons.work_outline_rounded,
                 label: 'Find jobs',
-                route: '/find-jobs',
+                route: '/tutor-jobs',
                 tone: Tone.accent,
               ),
             ),
@@ -765,7 +765,7 @@ class _QuickActions extends StatelessWidget {
               child: _ActionTile(
                 icon: Icons.person_outline_rounded,
                 label: 'Profile',
-                route: '/tutor-dashboard',
+                route: '/tutor-profile',
                 tone: Tone.neutral,
               ),
             ),

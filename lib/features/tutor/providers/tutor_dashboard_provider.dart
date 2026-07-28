@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/tuition.dart';
+import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
@@ -17,6 +18,11 @@ final tutorStatsProvider = FutureProvider.autoDispose<TutorStats>(
 /// Today's teaching, with per-tuition attendance state.
 final todayScheduleProvider = FutureProvider.autoDispose<TodaySchedule>(
   (ref) => ref.watch(jobsRepositoryProvider).todaySchedule(),
+);
+
+/// The teacher's own profile record.
+final tutorProfileProvider = FutureProvider.autoDispose<TutorProfile>(
+  (ref) => ref.watch(usersRepositoryProvider).tutorProfile(),
 );
 
 /// Verification state, for the header pill and the KYC prompt.

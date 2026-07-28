@@ -15,7 +15,7 @@ import 'package:tht_app/features/parent/screens/parent_dashboard_screen.dart';
 import 'package:tht_app/features/parent/screens/my_jobs_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_shell.dart';
 import 'package:tht_app/features/tutor/screens/tutor_home_screen.dart';
-import 'package:tht_app/features/tutor/screens/tutor_dashboard_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_profile_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_kyc_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_applications_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_schedule_screen.dart';
@@ -228,9 +228,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/tutor-dashboard',
+            path: '/tutor-profile',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorDashboardScreen(),
+              child: TutorProfileScreen(),
+            ),
+          ),
+          // The teacher-side jobs feed. The public /find-jobs route renders the
+          // same screen for anyone browsing before they sign in; this one lives
+          // inside the shell so the bottom bar stays put.
+          GoRoute(
+            path: '/tutor-jobs',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: FindJobsScreen(),
             ),
           ),
           GoRoute(
