@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
@@ -24,6 +25,45 @@ class UsersRepository extends Repository {
   /// Where the teacher stands in KYC — drives the verification banner.
   Future<KycStatus> kycStatus() async =>
       KycStatus.fromJson(await getMap('/api/users/kyc/status/'));
+
+  /// Submits KYC documents for review.
+  ///
+  /// [documents] maps a backend field name (`aadhaar_front`,
+  /// `highest_qualification_certificate`, …) to a local file path. The API
+  /// accepts images only — PDFs are rejected server-side — and requires both
+  /// sides of the Aadhaar on a first submission.
+  Future<KycStatus> submitKyc(Map<String, String> documents) => guard(() async {
+        final form = FormData();
+        for (final entry in documents.entries) {
+          form.files.add(
+            MapEntry(entry.key, await MultipartFile.fromFile(entry.value)),
+          );
+        }
+        final res = await dio.post('/api/users/kyc/upload/', data: form);
+        final data = res.data;
+        return KycStatus.fromJson(
+          data is Map ? data.cast<String, dynamic>() : const {},
+        );
+      });
+
+  /// Adds or replaces one supplementary certificate without resubmitting the
+  /// whole KYC record, so a verified teacher can fill a gap without going back
+  /// into review.
+  Future<void> uploadKycDocument({
+    required String field,
+    required String filePath,
+  }) =>
+      guard(() async {
+        final form = FormData();
+        form.files.add(MapEntry(field, await MultipartFile.fromFile(filePath)));
+        await dio.patch('/api/users/kyc/document/', data: form);
+      });
+
+  /// Records acceptance of the Terms & Conditions, which KYC submission
+  /// requires before it will accept any documents.
+  Future<void> acceptTerms() async {
+    await patchMap('/api/users/profile/', body: {'terms_accepted': true});
+  }
 
   /// Leads this teacher has already spent credits to see.
   Future<List<Map<String, dynamic>>> unlockedLeads() =>
