@@ -66,46 +66,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Wire the force-logout callback from the Dio interceptor
     ApiClient.onForceLogout = logout;
 
-    // Check if we have a valid stored session
-    final access = await TokenStorage.getAccessToken();
-    if (access != null && access.isNotEmpty) {
-      try {
-        if (!JwtDecoder.isExpired(access)) {
-          final payload = JwtDecoder.decode(access);
-          final role = UserRole.fromString(payload['role'] as String?);
-          final preLeaderRole = payload['pre_leader_role'] as String?;
-          if (preLeaderRole != null) {
-            await TokenStorage.savePreLeaderRole(preLeaderRole);
+    try {
+      // Check if we have a valid stored session
+      final access = await TokenStorage.getAccessToken();
+      if (access != null && access.isNotEmpty) {
+        try {
+          if (!JwtDecoder.isExpired(access)) {
+            final payload = JwtDecoder.decode(access);
+            final role = UserRole.fromString(payload['role'] as String?);
+            final preLeaderRole = payload['pre_leader_role'] as String?;
+            if (preLeaderRole != null) {
+              await TokenStorage.savePreLeaderRole(preLeaderRole);
+            }
+            state = AuthState(
+              isAuthenticated: true,
+              role: role,
+              preLeaderRole: preLeaderRole,
+              isLoading: false,
+            );
+            return;
           }
-          state = AuthState(
-            isAuthenticated: true,
-            role: role,
-            preLeaderRole: preLeaderRole,
-            isLoading: false,
-          );
-          return;
+          // Access expired — try refresh
+          final refresh = await TokenStorage.getRefreshToken();
+          if (refresh != null && !JwtDecoder.isExpired(refresh)) {
+            // Let the interceptor handle it on the next API call
+            final storedRole = await TokenStorage.getRole();
+            final storedPreLeader = await TokenStorage.getPreLeaderRole();
+            state = AuthState(
+              isAuthenticated: true,
+              role: UserRole.fromString(storedRole),
+              preLeaderRole: storedPreLeader,
+              isLoading: false,
+            );
+            return;
+          }
+        } catch (e) {
+          debugPrint('Auth init error: $e');
         }
-        // Access expired — try refresh
-        final refresh = await TokenStorage.getRefreshToken();
-        if (refresh != null && !JwtDecoder.isExpired(refresh)) {
-          // Let the interceptor handle it on the next API call
-          final storedRole = await TokenStorage.getRole();
-          final storedPreLeader = await TokenStorage.getPreLeaderRole();
-          state = AuthState(
-            isAuthenticated: true,
-            role: UserRole.fromString(storedRole),
-            preLeaderRole: storedPreLeader,
-            isLoading: false,
-          );
-          return;
-        }
-      } catch (e) {
-        debugPrint('Auth init error: $e');
       }
-    }
 
-    // No valid session
-    state = const AuthState(isAuthenticated: false, isLoading: false);
+      // No valid session
+      state = const AuthState(isAuthenticated: false, isLoading: false);
+    } catch (e) {
+      // Safety net: if anything throws (e.g. SharedPreferences init on web),
+      // always land on the login screen rather than staying on splash forever.
+      debugPrint('Auth init fatal error: $e');
+      state = const AuthState(isAuthenticated: false, isLoading: false);
+    }
   }
 
   /// Called after a successful login — saves tokens and updates state.
