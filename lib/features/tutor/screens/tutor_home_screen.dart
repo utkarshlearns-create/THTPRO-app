@@ -330,9 +330,12 @@ class _CreditsBody extends StatelessWidget {
           ? 'Expires in ${Fmt.plural(days, 'day')} — renew to avoid a gap.'
           : 'Valid for another ${Fmt.plural(days, 'day')}.';
     }
+    // Unlocking a lead costs nothing up front — the balance is a gate, and a
+    // credit is only deducted if the teacher never visits the family. Saying
+    // "spend a credit to unlock" would misdescribe the deal they're agreeing to.
     return w.hasCredits
-        ? 'Spend a credit to see the parent behind a lead.'
-        : 'Add credits to start unlocking leads.';
+        ? "Unlocking a lead is free. A credit is only deducted if you don't visit."
+        : 'Add credits to start unlocking leads — you need at least one.';
   }
 }
 

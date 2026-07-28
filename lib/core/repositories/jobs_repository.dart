@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/models/job.dart';
+import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/tuition.dart';
+import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/repositories/repository.dart';
 
 /// Jobs, applications, attendance and notifications — all of `/api/jobs/`.
@@ -69,13 +72,22 @@ class JobsRepository extends Repository {
   // ── Teacher ───────────────────────────────────────────────────────────────
 
   /// Open requirements a teacher can apply to.
-  Future<Map<String, dynamic>> searchJobs({
+  Future<Paginated<Job>> searchJobs({
     Map<String, dynamic>? filters,
     int page = 1,
     CancelToken? cancelToken,
   }) =>
-      getMap('/api/jobs/search/',
-          query: {...?filters, 'page': page}, cancelToken: cancelToken);
+      guard(() async {
+        final res = await dio.get(
+          '/api/jobs/search/',
+          queryParameters: {...?filters, 'page': page},
+          cancelToken: cancelToken,
+        );
+        return Paginated.fromJson(res.data, Job.fromJson, page: page);
+      });
+
+  /// One requirement in full.
+  Future<Job> job(int jobId) async => Job.fromJson(await getMap('/api/jobs/$jobId/'));
 
   Future<List<Map<String, dynamic>>> tutorApplications() =>
       getList('/api/jobs/tutor/applications/');
@@ -119,9 +131,17 @@ class JobsRepository extends Repository {
           {Map<String, dynamic>? body}) =>
       postMap('/api/jobs/$jobId/apply/', body: body);
 
-  /// Spends credits to reveal the parent's contact behind a lead.
-  Future<Map<String, dynamic>> unlockJobContact(int jobId) =>
-      postMap('/api/users/jobs/$jobId/unlock-contact/');
+  /// Whether this teacher already holds the parent's contact for [jobId], and
+  /// whether they are allowed to take it.
+  Future<UnlockStatus> unlockStatus(int jobId) async =>
+      UnlockStatus.fromJson(await getMap('/api/users/jobs/$jobId/unlock-contact/'));
+
+  /// Reveals the parent's contact behind a lead.
+  ///
+  /// Free, but not free of consequence: it also registers the teacher as an
+  /// applicant, and a credit is deducted later if they never visit the family.
+  Future<UnlockStatus> unlockJobContact(int jobId) async =>
+      UnlockStatus.fromJson(await postMap('/api/users/jobs/$jobId/unlock-contact/'));
 
   /// Marks a demo as taken.
   Future<Map<String, dynamic>> completeDemo(int applicationId) =>
