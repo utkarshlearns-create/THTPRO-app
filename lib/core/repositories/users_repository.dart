@@ -6,7 +6,9 @@ import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
+import 'package:tht_app/core/models/tutor_score.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
+import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/repositories/repository.dart';
 
 /// Everything under `/api/users/` that a parent, teacher or institute needs.
@@ -28,6 +30,20 @@ class UsersRepository extends Repository {
   /// field the app doesn't model.
   Future<TutorProfile> updateTutorProfile(Map<String, dynamic> changes) async =>
       TutorProfile.fromJson(await patchMap('/api/users/profile/', body: changes));
+
+  /// The teacher's platform score and rank badge.
+  ///
+  /// Returns null rather than throwing when the teacher has no score row yet —
+  /// the endpoint 404s for a profile that has never been scored, and that is a
+  /// normal state for a new teacher, not an error worth a red banner.
+  Future<TutorScore?> myScore() async {
+    try {
+      return TutorScore.fromJson(await getMap('/api/ranking/me/'));
+    } on ApiFailure catch (e) {
+      if (e.isNotFound) return null;
+      rethrow;
+    }
+  }
 
   /// Where the teacher stands in KYC — drives the verification banner.
   Future<KycStatus> kycStatus() async =>

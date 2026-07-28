@@ -32,6 +32,22 @@ class ApiConfig {
   /// True when pointed at the live backend rather than a local one.
   static bool get isProduction => baseUrl == 'https://thtpro.onrender.com';
 
+  /// Makes an image or file URL loadable from the app.
+  ///
+  /// Django hands back whatever its storage backend produces: Cloudinary gives
+  /// an absolute URL, but local media storage gives a relative `/media/...`
+  /// path. The website can serve that as-is because it proxies `/media` through
+  /// its own origin; the app has no origin to resolve it against, so a relative
+  /// path silently renders nothing. Anything not already absolute is resolved
+  /// against the API host here.
+  static String? absoluteUrl(String? url) {
+    final raw = url?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    if (raw.startsWith('//')) return 'https:$raw';
+    return '$baseUrl${raw.startsWith('/') ? '' : '/'}$raw';
+  }
+
   /// Default page size matching DRF's PAGE_SIZE = 20.
   static const int pageSize = 20;
 

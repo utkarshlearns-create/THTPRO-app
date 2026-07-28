@@ -8,6 +8,7 @@ import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
+import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
@@ -122,22 +123,11 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryOrangeLight,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  Fmt.initials(name),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryOrangeDark,
-                  ),
-                ),
+              THTAvatar(
+                name: name,
+                imageUrl: tutor?.imageUrl,
+                size: 46,
+                verified: a.tutorApproved,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

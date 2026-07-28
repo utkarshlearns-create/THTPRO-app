@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/pill.dart';
+import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
@@ -37,7 +37,11 @@ class TutorCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Avatar(tutor: tutor),
+              THTAvatar(
+                name: tutor.name,
+                imageUrl: tutor.imageUrl,
+                size: 52,
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -173,49 +177,6 @@ class TutorCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.tutor});
-
-  final PublicTutor tutor;
-
-  @override
-  Widget build(BuildContext context) {
-    const size = 52.0;
-    final url = tutor.imageUrl;
-
-    Widget fallback() => Container(
-          width: size,
-          height: size,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: AppColors.primaryOrangeLight,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            Fmt.initials(tutor.name),
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryOrangeDark,
-            ),
-          ),
-        );
-
-    if (url == null || url.isEmpty) return fallback();
-
-    return ClipOval(
-      child: CachedNetworkImage(
-        imageUrl: url,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        placeholder: (_, __) => fallback(),
-        errorWidget: (_, __, ___) => fallback(),
       ),
     );
   }

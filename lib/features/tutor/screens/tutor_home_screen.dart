@@ -11,6 +11,7 @@ import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/stat_tile.dart';
+import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -73,8 +74,14 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(currentUserProvider).valueOrNull;
+    final profile = ref.watch(tutorProfileProvider).valueOrNull;
     final kyc = ref.watch(kycStatusProvider).valueOrNull;
+    final score = ref.watch(tutorScoreProvider).valueOrNull;
     final unread = ref.watch(unreadNotificationsProvider).valueOrNull ?? 0;
+
+    final name = profile?.fullName.trim().isNotEmpty == true
+        ? profile!.fullName
+        : (user?.displayName ?? '');
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +91,7 @@ class _Header extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _greeting(),
+                '${_greeting()} 👋',
                 style: TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w500,
@@ -93,7 +100,7 @@ class _Header extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                Fmt.titleCase(user?.displayName ?? ''),
+                Fmt.titleCase(name),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -104,28 +111,65 @@ class _Header extends ConsumerWidget {
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
                 ),
               ),
-              if (kyc != null) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Pill(
-                  kyc.shortLabel,
-                  tone: kyc.isVerified
-                      ? Tone.success
-                      : kyc.isRejected
-                          ? Tone.critical
-                          : Tone.warning,
-                  icon: kyc.isVerified
-                      ? Icons.verified_rounded
-                      : Icons.shield_outlined,
-                  dense: true,
-                ),
-              ],
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: 6,
+                children: [
+                  // The badge is the teacher's real standing from
+                  // /api/ranking/me/. A new teacher shows nothing here rather
+                  // than an invented level.
+                  if (score != null && score.isRated)
+                    Pill(
+                      score.badgeLabel,
+                      tone: _badgeTone(score.badge),
+                      icon: Icons.workspace_premium_rounded,
+                      dense: true,
+                    ),
+                  if (kyc != null)
+                    Pill(
+                      kyc.shortLabel,
+                      tone: kyc.isVerified
+                          ? Tone.info
+                          : kyc.isRejected
+                              ? Tone.critical
+                              : Tone.warning,
+                      icon: kyc.isVerified
+                          ? Icons.verified_rounded
+                          : Icons.shield_outlined,
+                      dense: true,
+                    ),
+                ],
+              ),
             ],
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         _NotificationBell(unread: unread),
+        const SizedBox(width: AppSpacing.sm),
+        THTAvatar(
+          name: name,
+          imageUrl: profile?.imageUrl,
+          size: 44,
+          verified: kyc?.isVerified ?? false,
+          onTap: () => context.go('/tutor-profile'),
+        ),
       ],
     );
+  }
+
+  Tone _badgeTone(String badge) {
+    switch (badge.toUpperCase()) {
+      case 'ELITE':
+      case 'PRO':
+        return Tone.success;
+      case 'RISING':
+        return Tone.accent;
+      case 'NEEDS_IMPROVEMENT':
+        return Tone.warning;
+      default:
+        return Tone.neutral;
+    }
   }
 
   String _greeting() {
@@ -420,6 +464,8 @@ class _TodaySection extends ConsumerWidget {
       children: [
         SectionHeader(
           "Today's teaching",
+          icon: Icons.calendar_today_rounded,
+          iconTone: Tone.info,
           subtitle: unmarked > 0
               ? '$unmarked still to mark'
               : schedule.valueOrNull?.allMarked == true
@@ -469,6 +515,10 @@ class _TuitionCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final students = tuition.allStudents;
 
+    final brightness = Theme.of(context).brightness;
+    // Unmarked sessions are the ones needing action, so they carry the accent.
+    final slotTone = tuition.markedToday ? Tone.neutral : Tone.accent;
+
     return THTCard(
       onTap: () => context.go('/tutor-schedule'),
       child: Column(
@@ -477,6 +527,47 @@ class _TuitionCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // The time block from the mockup, reading the class rather than
+              // a clock time — the API gives no per-session start time, and
+              // inventing "10:00 AM" would be a lie a teacher acts on.
+              Container(
+                width: 58,
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.md,
+                  horizontal: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: slotTone.background(brightness),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      tuition.markedToday
+                          ? Icons.check_rounded
+                          : Icons.schedule_rounded,
+                      size: 17,
+                      color: slotTone.foreground(brightness),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tuition.classGrade.isEmpty
+                          ? 'Class'
+                          : tuition.classGrade.replaceAll('Class ', ''),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        color: slotTone.foreground(brightness),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,7 +658,11 @@ class _NumbersSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Your numbers'),
+        const SectionHeader(
+          'Your numbers',
+          icon: Icons.insights_rounded,
+          iconTone: Tone.accent,
+        ),
         const SizedBox(height: AppSpacing.md),
         AsyncView<TutorStats>(
           value: stats,
@@ -643,6 +738,8 @@ class _EarningsSection extends ConsumerWidget {
       children: [
         SectionHeader(
           'Earnings',
+          icon: Icons.payments_rounded,
+          iconTone: Tone.success,
           subtitle: stats.pendingPayment > 0
               ? '${Fmt.rupees(stats.pendingPayment)} due to you at month end'
               : 'Your share of every completed tuition',
@@ -739,7 +836,11 @@ class _QuickActions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Shortcuts'),
+        const SectionHeader(
+          'Shortcuts',
+          icon: Icons.bolt_rounded,
+          iconTone: Tone.warning,
+        ),
         const SizedBox(height: AppSpacing.md),
         const Row(
           children: [

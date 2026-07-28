@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -122,7 +122,12 @@ class _Header extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Avatar(tutor: tutor, size: 72),
+        THTAvatar(
+          name: tutor.name,
+          imageUrl: tutor.imageUrl,
+          size: 72,
+          verified: tutor.isKycVerified,
+        ),
         const SizedBox(width: AppSpacing.base),
         Expanded(
           child: Column(
@@ -175,48 +180,6 @@ class _Header extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.tutor, this.size = 52});
-
-  final PublicTutor tutor;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget fallback() => Container(
-          width: size,
-          height: size,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: AppColors.primaryOrangeLight,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            Fmt.initials(tutor.name),
-            style: TextStyle(
-              fontSize: size * 0.34,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryOrangeDark,
-            ),
-          ),
-        );
-
-    final url = tutor.imageUrl;
-    if (url == null || url.isEmpty) return fallback();
-
-    return ClipOval(
-      child: CachedNetworkImage(
-        imageUrl: url,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        placeholder: (_, __) => fallback(),
-        errorWidget: (_, __, ___) => fallback(),
-      ),
     );
   }
 }

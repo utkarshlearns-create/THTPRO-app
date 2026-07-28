@@ -10,6 +10,7 @@ import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
+import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
@@ -132,22 +133,10 @@ class _Identity extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.primaryOrangeLight,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              Fmt.initials(name),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primaryOrangeDark,
-              ),
-            ),
+          THTAvatar(
+            name: name,
+            imageUrl: profile.imageUrl,
+            size: 60,
           ),
           const SizedBox(width: AppSpacing.base),
           Expanded(

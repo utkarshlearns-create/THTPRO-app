@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
+import 'package:tht_app/core/models/tutor_score.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
@@ -23,6 +24,12 @@ final todayScheduleProvider = FutureProvider.autoDispose<TodaySchedule>(
 /// The teacher's own profile record.
 final tutorProfileProvider = FutureProvider.autoDispose<TutorProfile>(
   (ref) => ref.watch(usersRepositoryProvider).tutorProfile(),
+);
+
+/// The teacher's platform score and rank badge. Null until they have been
+/// scored — a new teacher has no rating rather than a bad one.
+final tutorScoreProvider = FutureProvider.autoDispose<TutorScore?>(
+  (ref) => ref.watch(usersRepositoryProvider).myScore(),
 );
 
 /// Verification state, for the header pill and the KYC prompt.

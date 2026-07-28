@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/ui/tone.dart';
 
 /// The title above a block of content, with an optional action on the right.
 ///
@@ -13,10 +14,19 @@ class SectionHeader extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.trailing,
+    this.icon,
+    this.iconTone = Tone.info,
   });
 
   final String title;
   final String? subtitle;
+
+  /// Optional tinted icon chip to the left of the title. Use it where a screen
+  /// has several sections that need telling apart at a glance; a page with one
+  /// section reads better without.
+  final IconData? icon;
+
+  final Tone iconTone;
 
   /// Text of the trailing text button, e.g. "See all".
   final String? actionLabel;
@@ -33,6 +43,21 @@ class SectionHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (icon != null) ...[
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: iconTone.background(Theme.of(context).brightness),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: iconTone.foreground(Theme.of(context).brightness),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
