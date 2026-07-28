@@ -7,6 +7,7 @@ import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/features/auth/screens/login_screen.dart';
 import 'package:tht_app/features/auth/screens/signup_screen.dart';
 import 'package:tht_app/features/auth/screens/forgot_password_screen.dart';
+import 'package:tht_app/features/auth/screens/continue_on_web_screen.dart';
 import 'package:tht_app/features/home/screens/home_screen.dart';
 import 'package:tht_app/features/parent/screens/parent_shell.dart';
 import 'package:tht_app/features/parent/screens/parent_home_screen.dart';
@@ -16,6 +17,8 @@ import 'package:tht_app/features/tutor/screens/tutor_shell.dart';
 import 'package:tht_app/features/tutor/screens/tutor_home_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_dashboard_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_kyc_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_applications_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_schedule_screen.dart';
 import 'package:tht_app/features/explore/screens/explore_screen.dart';
 import 'package:tht_app/features/explore/screens/tutor_detail_screen.dart';
 import 'package:tht_app/features/jobs/screens/find_jobs_screen.dart';
@@ -109,6 +112,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
+      // Signed in with a role the app doesn't serve (counsellor, team leader,
+      // superadmin). Their credentials are valid, so this is not a failed
+      // login — park them on an explanation with a link to the website.
+      if (authState.isUnsupportedRole) {
+        return path == '/continue-on-web' ? null : '/continue-on-web';
+      }
+      if (!authState.isUnsupportedRole && path == '/continue-on-web') {
+        return _homeForRole(authState.role);
+      }
+
       // Logged in + on login/signup → redirect to role home
       if (isLoggedIn && (path == '/login' || path == '/signup' || path == '/')) {
         return _homeForRole(authState.role);
@@ -139,6 +152,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/forgot-password',
         builder: (_, __) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/continue-on-web',
+        builder: (_, __) => const ContinueOnWebScreen(),
       ),
       GoRoute(
         path: '/explore',
@@ -220,6 +237,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/tutor-kyc',
             pageBuilder: (_, __) => const NoTransitionPage(
               child: TutorKYCScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-applications',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorApplicationsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-schedule',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorScheduleScreen(),
             ),
           ),
           GoRoute(
@@ -454,24 +483,24 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Returns the home path for a given role — mirrors the web's ProtectedRoute redirect logic.
+/// Where a signed-in user lands, by role.
+///
+/// The app serves parents, teachers and institutes. Every other role — the
+/// staff side of the marketplace — is handed back to the website.
 String _homeForRole(UserRole? role) {
   switch (role) {
     case UserRole.parent:
       return '/parent-home';
     case UserRole.teacher:
       return '/tutor-home';
+    case UserRole.institution:
+      return '/inst-dashboard';
     case UserRole.counsellor:
     case UserRole.tutorAdmin:
-      return '/admin-dashboard'; // Phase 2
     case UserRole.teamLeader:
-      return '/tl-home'; // Phase 2
     case UserRole.superadmin:
-      return '/sa-dashboard'; // Phase 3
-    case UserRole.institution:
-      return '/inst-dashboard'; // Phase 3
     case UserRole.student:
-      return '/prep-dashboard'; // Prep module
+      return '/continue-on-web';
     case null:
       return '/login';
   }

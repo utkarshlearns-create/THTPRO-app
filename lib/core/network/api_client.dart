@@ -126,16 +126,13 @@ class ApiClient {
       final retryResponse = await _dio.fetch(retryOptions);
       return handler.resolve(retryResponse);
     } on DioException {
-      // Refresh failed — try without auth (for public endpoints)
-      try {
-        final publicOptions = err.requestOptions;
-        publicOptions.headers.remove('Authorization');
-        final publicResponse = await _refreshDio.fetch(publicOptions);
-        return handler.resolve(publicResponse);
-      } catch (_) {
-        await _forceLogout();
-        return handler.next(err);
-      }
+      // The refresh token is dead, so the session is over. Retrying the request
+      // without auth was tempting but wrong: on any endpoint with a public
+      // fallback it turns "you have been signed out" into "you have no data",
+      // and the user sits looking at an empty dashboard that should have asked
+      // them to sign in.
+      await _forceLogout();
+      return handler.next(err);
     }
   }
 

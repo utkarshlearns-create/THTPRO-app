@@ -1,32 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:tht_app/core/auth/user_role.dart';
+import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/network/token_storage.dart';
+import 'package:tht_app/core/repositories/users_repository.dart';
 
-/// User roles — mirrors the Django/Next.js role strings stored in the JWT.
-enum UserRole {
-  parent('PARENT'),
-  teacher('TEACHER'),
-  counsellor('COUNSELLOR'),
-  tutorAdmin('TUTOR_ADMIN'),
-  teamLeader('TEAM_LEADER'),
-  superadmin('SUPERADMIN'),
-  institution('INSTITUTION'),
-  student('STUDENT');
-
-  const UserRole(this.value);
-  final String value;
-
-  static UserRole? fromString(String? s) {
-    if (s == null) return null;
-    final upper = s.toUpperCase();
-    return UserRole.values.cast<UserRole?>().firstWhere(
-          (r) => r!.value == upper,
-          orElse: () => null,
-        );
-  }
-}
+export 'package:tht_app/core/auth/user_role.dart';
 
 /// Minimal auth state — what the router needs to decide where to send the user.
 class AuthState {
@@ -64,6 +45,11 @@ class AuthState {
     }
     return role;
   }
+
+  /// Signed in, but with a role the app doesn't serve. The credentials are
+  /// valid — they just belong on the website.
+  bool get isUnsupportedRole =>
+      isAuthenticated && role != null && !role!.isSupportedInApp;
 }
 
 /// Global auth notifier — manages login/logout state and exposes it to GoRouter.
@@ -73,8 +59,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _init() async {
-    // Artificial delay to ensure the beautiful splash screen animation plays (2 seconds)
-    await Future.delayed(const Duration(milliseconds: 2000));
+    // No artificial delay here: the native splash already covers the launch,
+    // and holding a signed-in user on a second splash for two seconds is time
+    // taken from them, not polish.
 
     // Wire the force-logout callback from the Dio interceptor
     ApiClient.onForceLogout = logout;
@@ -176,4 +163,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
 /// Riverpod provider for the global auth state.
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();
+});
+
+/// The signed-in user's full account record.
+///
+/// The JWT carries only id and role, which is enough to route on but not enough
+/// to greet someone by name or show their city. This fetches the rest once and
+/// every screen reads it from here rather than re-requesting.
+final currentUserProvider = FutureProvider<AppUser?>((ref) async {
+  final auth = ref.watch(authProvider);
+  if (!auth.isAuthenticated) return null;
+
+  final user = await ref.watch(usersRepositoryProvider).me();
+
+  // Keep the cached name in sync so the next cold start can greet them before
+  // the network comes back.
+  final name = user.firstName.trim();
+  if (name.isNotEmpty) await TokenStorage.saveName(name);
+
+  return user;
 });

@@ -1,4 +1,4 @@
-import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:tht_app/core/auth/user_role.dart';
 import 'package:tht_app/core/utils/json_x.dart';
 
 /// The signed-in user, as returned by `GET /api/users/me/`.

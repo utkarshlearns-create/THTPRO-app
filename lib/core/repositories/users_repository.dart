@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/app_user.dart';
+import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
 import 'package:tht_app/core/repositories/repository.dart';
 
@@ -21,7 +22,8 @@ class UsersRepository extends Repository {
       patchMap('/api/users/profile/', body: changes);
 
   /// Where the teacher stands in KYC — drives the verification banner.
-  Future<Map<String, dynamic>> kycStatus() => getMap('/api/users/kyc/status/');
+  Future<KycStatus> kycStatus() async =>
+      KycStatus.fromJson(await getMap('/api/users/kyc/status/'));
 
   /// Leads this teacher has already spent credits to see.
   Future<List<Map<String, dynamic>>> unlockedLeads() =>
