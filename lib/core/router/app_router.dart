@@ -55,9 +55,9 @@ import 'package:tht_app/features/superadmin/screens/superadmin_settings_screen.d
 
 import 'package:tht_app/features/institution/screens/institution_shell.dart';
 import 'package:tht_app/features/institution/screens/institution_dashboard_screen.dart';
-import 'package:tht_app/features/institution/screens/institution_staff_screen.dart';
-import 'package:tht_app/features/institution/screens/institution_students_screen.dart';
-import 'package:tht_app/features/institution/screens/institution_classes_screen.dart';
+import 'package:tht_app/features/institution/screens/institution_jobs_screen.dart';
+import 'package:tht_app/features/institution/screens/institution_teachers_screen.dart';
+import 'package:tht_app/features/institution/screens/institution_profile_screen.dart';
 
 import 'package:tht_app/features/prep/screens/prep_shell.dart';
 import 'package:tht_app/features/prep/screens/prep_dashboard_screen.dart';
@@ -430,21 +430,35 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/inst-staff',
+            path: '/inst-jobs',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: InstitutionStaffScreen(),
+              child: InstitutionJobsScreen(),
             ),
           ),
           GoRoute(
-            path: '/inst-students',
+            path: '/inst-teachers',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: InstitutionStudentsScreen(),
+              child: InstitutionTeachersScreen(),
             ),
           ),
           GoRoute(
-            path: '/inst-classes',
+            path: '/inst-notifications',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: InstitutionClassesScreen(),
+              child: NotificationsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/inst-profile',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: InstitutionProfileScreen(),
+            ),
+          ),
+          // An institute reviews applicants on the same screen a parent does —
+          // both own the job and see the same applicant list.
+          GoRoute(
+            path: '/my-jobs/:id',
+            builder: (_, state) => MyJobDetailScreen(
+              jobId: int.parse(state.pathParameters['id']!),
             ),
           ),
         ],

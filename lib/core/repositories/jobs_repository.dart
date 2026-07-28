@@ -182,9 +182,18 @@ class JobsRepository extends Repository {
 
   // ── Institute ─────────────────────────────────────────────────────────────
 
-  /// Requirements posted by the institute.
-  Future<List<Map<String, dynamic>>> institutionJobs() =>
-      getList('/api/jobs/institution/jobs/');
+  /// Requirements posted by the institute, newest first.
+  Future<List<Job>> institutionJobs() async {
+    final rows = await getList('/api/jobs/institution/jobs/');
+    return rows.map(Job.fromJson).toList()
+      ..sort((a, b) {
+        final at = a.postedAt, bt = b.postedAt;
+        if (at == null && bt == null) return b.id.compareTo(a.id);
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return bt.compareTo(at);
+      });
+  }
 
   Future<Map<String, dynamic>> createInstitutionJob(Map<String, dynamic> job) =>
       postMap('/api/jobs/institution/jobs/', body: job);

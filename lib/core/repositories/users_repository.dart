@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/app_user.dart';
+import 'package:tht_app/core/models/institution_profile.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/public_tutor.dart';
@@ -120,16 +121,25 @@ class UsersRepository extends Repository {
           .toList();
 
   /// The institute's own profile record.
-  Future<Map<String, dynamic>> institutionProfile() =>
-      getMap('/api/users/institution/profile/');
+  Future<InstitutionProfile> institutionProfile() async =>
+      InstitutionProfile.fromJson(
+          await getMap('/api/users/institution/profile/'));
 
-  Future<Map<String, dynamic>> updateInstitutionProfile(
-          Map<String, dynamic> changes) =>
-      patchMap('/api/users/institution/profile/', body: changes);
+  Future<InstitutionProfile> updateInstitutionProfile(
+          Map<String, dynamic> changes) async =>
+      InstitutionProfile.fromJson(
+          await patchMap('/api/users/institution/profile/', body: changes));
 
-  /// Teachers attached to this institute.
-  Future<List<Map<String, dynamic>>> institutionTutors() =>
-      getList('/api/users/institution/tutors/');
+  /// Active teachers an institute can browse and hire from. Despite the URL,
+  /// this is a directory of everyone available — not staff already attached to
+  /// the institute, which the API has no concept of outside THT Prep.
+  Future<List<PublicTutor>> institutionTutors({String? query}) async =>
+      (await getList(
+        '/api/users/institution/tutors/',
+        query: query == null || query.trim().isEmpty ? null : {'q': query.trim()},
+      ))
+          .map(PublicTutor.fromJson)
+          .toList();
 }
 
 final usersRepositoryProvider =

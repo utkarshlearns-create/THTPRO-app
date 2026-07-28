@@ -1,108 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tht_app/core/auth/auth_provider.dart';
 
-/// Navigation shell for Institution role.
-class InstitutionShell extends ConsumerWidget {
+/// Bottom navigation for institute accounts.
+///
+/// Was a drawer with Dashboard / Staff / Students / Classes. Students and
+/// Classes had no API behind them outside THT Prep, and "Staff" was really the
+/// platform-wide teacher directory rather than staff the institute employs.
+/// The tabs now match what an institute can actually do here: see their
+/// vacancies, post one, find teachers, and keep their profile straight.
+class InstitutionShell extends StatelessWidget {
   const InstitutionShell({super.key, required this.child});
+
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    int selectedIndex() {
+      if (location.startsWith('/inst-jobs') ||
+          location.startsWith('/my-jobs')) {
+        return 1;
+      }
+      if (location.startsWith('/inst-teachers')) return 2;
+      if (location.startsWith('/inst-notifications')) return 3;
+      if (location.startsWith('/inst-profile')) return 4;
+      return 0; // /inst-dashboard
+    }
+
+    void onTap(int index) {
+      switch (index) {
+        case 0:
+          context.go('/inst-dashboard');
+        case 1:
+          context.go('/inst-jobs');
+        case 2:
+          context.go('/inst-teachers');
+        case 3:
+          context.go('/inst-notifications');
+        case 4:
+          context.go('/inst-profile');
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Institution Portal'),
-      ),
-      drawer: Drawer(
-        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-        child: Column(
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkCard : AppColors.slate50,
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark ? AppColors.darkBorder : AppColors.slate200,
-                  ),
-                ),
-              ),
-              child: const Center(
-                child: Text(
-                  'Institution',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryOrange,
-                  ),
-                ),
-              ),
+      body: child,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.slate200,
             ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.dashboard_outlined),
-                    title: const Text('Dashboard'),
-                    selected: location == '/inst-dashboard',
-                    selectedColor: AppColors.primaryOrange,
-                    onTap: () {
-                      context.pop();
-                      context.go('/inst-dashboard');
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.badge_outlined),
-                    title: const Text('Staff & Teachers'),
-                    selected: location == '/inst-staff',
-                    selectedColor: AppColors.primaryOrange,
-                    onTap: () {
-                      context.pop();
-                      context.go('/inst-staff');
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.school_outlined),
-                    title: const Text('Students'),
-                    selected: location == '/inst-students',
-                    selectedColor: AppColors.primaryOrange,
-                    onTap: () {
-                      context.pop();
-                      context.go('/inst-students');
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.class_outlined),
-                    title: const Text('Classes / Batches'),
-                    selected: location == '/inst-classes',
-                    selectedColor: AppColors.primaryOrange,
-                    onTap: () {
-                      context.pop();
-                      context.go('/inst-classes');
-                    },
-                  ),
-                ],
-              ),
+          ),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: selectedIndex(),
+          onTap: onTap,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
             ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: AppColors.error),
-              title: const Text('Sign Out', style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                context.pop();
-                ref.read(authProvider.notifier).logout();
-              },
+            BottomNavigationBarItem(
+              icon: Icon(Icons.work_outline),
+              activeIcon: Icon(Icons.work),
+              label: 'Vacancies',
             ),
-            const SizedBox(height: 16),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_search_outlined),
+              activeIcon: Icon(Icons.person_search),
+              label: 'Teachers',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications_outlined),
+              activeIcon: Icon(Icons.notifications),
+              label: 'Alerts',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.apartment_outlined),
+              activeIcon: Icon(Icons.apartment),
+              label: 'Profile',
+            ),
           ],
         ),
       ),
-      body: child,
     );
   }
 }
