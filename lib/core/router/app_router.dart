@@ -29,58 +29,26 @@ import 'package:tht_app/features/wallet/screens/packages_screen.dart';
 import 'package:tht_app/features/notifications/screens/notifications_screen.dart';
 import 'package:tht_app/features/shared/screens/splash_screen.dart';
 
-import 'package:tht_app/features/admin/screens/admin_shell.dart';
-import 'package:tht_app/features/admin/screens/admin_dashboard_screen.dart';
-import 'package:tht_app/features/admin/screens/counsellor_pipeline_screen.dart';
-import 'package:tht_app/features/admin/screens/admin_institute_screen.dart';
-import 'package:tht_app/features/admin/screens/admin_kyc_screen.dart';
-
-import 'package:tht_app/features/team_leader/screens/team_leader_shell.dart';
-import 'package:tht_app/features/team_leader/screens/team_leader_home_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_members_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_member_detail_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_pipeline_screen.dart';
-import 'package:tht_app/features/team_leader/screens/my_pipeline_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_performance_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_targets_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_warnings_screen.dart';
-import 'package:tht_app/features/team_leader/screens/action_logs_screen.dart';
-import 'package:tht_app/features/team_leader/screens/team_reports_screen.dart';
-
-import 'package:tht_app/features/superadmin/screens/superadmin_shell.dart';
-import 'package:tht_app/features/superadmin/screens/superadmin_dashboard_screen.dart';
-import 'package:tht_app/features/superadmin/screens/superadmin_users_screen.dart';
-import 'package:tht_app/features/superadmin/screens/superadmin_finance_screen.dart';
-import 'package:tht_app/features/superadmin/screens/superadmin_settings_screen.dart';
-
 import 'package:tht_app/features/institution/screens/institution_shell.dart';
 import 'package:tht_app/features/institution/screens/institution_dashboard_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_jobs_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_teachers_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_profile_screen.dart';
 
-import 'package:tht_app/features/prep/screens/prep_shell.dart';
-import 'package:tht_app/features/prep/screens/prep_dashboard_screen.dart';
-import 'package:tht_app/features/prep/screens/prep_subjects_screen.dart';
-import 'package:tht_app/features/prep/screens/prep_subject_detail_screen.dart';
-import 'package:tht_app/features/prep/screens/prep_material_screen.dart';
-import 'package:tht_app/features/prep/screens/prep_quiz_screen.dart';
-import 'package:tht_app/features/prep/screens/prep_progress_screen.dart';
-
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _parentShellKey = GlobalKey<NavigatorState>();
 final _tutorShellKey = GlobalKey<NavigatorState>();
-final _adminShellKey = GlobalKey<NavigatorState>();
-final _teamLeaderShellKey = GlobalKey<NavigatorState>();
-final _superadminShellKey = GlobalKey<NavigatorState>();
 final _institutionShellKey = GlobalKey<NavigatorState>();
-final _prepShellKey = GlobalKey<NavigatorState>();
 
-/// GoRouter configuration — mirrors the Next.js App Router structure.
+/// Routing for the three audiences this app serves.
 ///
-/// Auth redirect logic matches `ProtectedRoute.jsx`:
-/// - Unauthenticated → /login
-/// - Wrong role → role-appropriate home
+/// Parents, teachers and institutes each get a shell with their own bottom
+/// navigation. Staff roles are not routed here at all — they are redirected to
+/// an explanation and a link to the website, which is where their tools live.
+///
+/// Redirect order matters: unauthenticated users are bounced to /login first,
+/// then an unsupported role is parked, and only then does a signed-in user on a
+/// public entry point get sent to their home.
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
@@ -286,139 +254,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ── Admin shell (side drawer) ──
-      ShellRoute(
-        navigatorKey: _adminShellKey,
-        builder: (_, __, child) => AdminShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/admin-dashboard',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: AdminDashboardScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/admin-pipeline',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: CounsellorPipelineScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/admin-kyc',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: AdminKYCScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/admin-institute',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: AdminInstituteScreen(),
-            ),
-          ),
-        ],
-      ),
-
-      // ── Team Leader shell (side drawer) ──
-      ShellRoute(
-        navigatorKey: _teamLeaderShellKey,
-        builder: (_, __, child) => TeamLeaderShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/tl-home',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamLeaderHomeScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-members',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamMembersScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-members/:id',
-            builder: (_, state) => TeamMemberDetailScreen(
-              memberId: int.parse(state.pathParameters['id']!),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-pipeline',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamPipelineScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-my-pipeline',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: MyPipelineScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-performance',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamPerformanceScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-targets',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamTargetsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-warnings',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamWarningsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-logs',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: ActionLogsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tl-reports',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TeamReportsScreen(),
-            ),
-          ),
-        ],
-      ),
-
-      // ── Superadmin shell (side drawer) ──
-      ShellRoute(
-        navigatorKey: _superadminShellKey,
-        builder: (_, __, child) => SuperadminShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/sa-dashboard',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: SuperadminDashboardScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/sa-users',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: SuperadminUsersScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/sa-finance',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: SuperadminFinanceScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/sa-settings',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: SuperadminSettingsScreen(),
-            ),
-          ),
-        ],
-      ),
-
-      // ── Institution shell (side drawer) ──
+      // ── Institution shell (bottom navigation) ──
       ShellRoute(
         navigatorKey: _institutionShellKey,
         builder: (_, __, child) => InstitutionShell(child: child),
@@ -459,50 +295,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/my-jobs/:id',
             builder: (_, state) => MyJobDetailScreen(
               jobId: int.parse(state.pathParameters['id']!),
-            ),
-          ),
-        ],
-      ),
-
-      // ── THT Prep shell (bottom navigation) ──
-      ShellRoute(
-        navigatorKey: _prepShellKey,
-        builder: (_, __, child) => PrepShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/prep-dashboard',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: PrepDashboardScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/prep-subjects',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: PrepSubjectsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/prep-subjects/:id',
-            builder: (_, state) => PrepSubjectDetailScreen(
-              subjectId: int.parse(state.pathParameters['id']!),
-            ),
-          ),
-          GoRoute(
-            path: '/prep-material/:id',
-            builder: (_, state) => PrepMaterialScreen(
-              materialId: int.parse(state.pathParameters['id']!),
-            ),
-          ),
-          GoRoute(
-            path: '/prep-quiz/:id',
-            builder: (_, state) => PrepQuizScreen(
-              quizId: int.parse(state.pathParameters['id']!),
-            ),
-          ),
-          GoRoute(
-            path: '/prep-progress',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: PrepProgressScreen(),
             ),
           ),
         ],
