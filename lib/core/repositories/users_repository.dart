@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
+import 'package:tht_app/core/models/paginated.dart';
+import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
 import 'package:tht_app/core/repositories/repository.dart';
@@ -74,27 +76,48 @@ class UsersRepository extends Repository {
       getList('/api/users/dashboard/unlocked-leads/');
 
   /// Teacher contacts this parent has already unlocked.
-  Future<List<Map<String, dynamic>>> unlockedContacts() =>
-      getList('/api/users/dashboard/unlocked-contacts/');
+  Future<List<PublicTutor>> unlockedContacts() async =>
+      (await getList('/api/users/dashboard/unlocked-contacts/'))
+          .map(PublicTutor.fromJson)
+          .toList();
 
-  /// Spends credits to reveal a teacher's phone and WhatsApp number.
+  /// Spends a credit to reveal a teacher's phone and WhatsApp number.
   Future<Map<String, dynamic>> unlockTutorContact(int tutorId) =>
       postMap('/api/users/tutor/$tutorId/unlock/');
 
-  Future<List<Map<String, dynamic>>> favouriteTutors() =>
-      getList('/api/users/dashboard/favourite-tutors/');
+  Future<List<PublicTutor>> favouriteTutors() async =>
+      (await getList('/api/users/dashboard/favourite-tutors/'))
+          .map(PublicTutor.fromJson)
+          .toList();
 
   /// Adds or removes a teacher from the parent's saved list.
   Future<Map<String, dynamic>> toggleFavourite(int tutorId) =>
       postMap('/api/users/tutors/$tutorId/favourite/');
 
   /// A teacher's full public profile.
-  Future<Map<String, dynamic>> tutorDetail(int tutorId) =>
-      getMap('/api/users/tutors/$tutorId/');
+  Future<PublicTutor> tutorDetail(int tutorId) async =>
+      PublicTutor.fromJson(await getMap('/api/users/tutors/$tutorId/'));
+
+  /// Searches active teachers. Public — works before sign-in too.
+  Future<Paginated<PublicTutor>> searchTutors({
+    Map<String, dynamic>? filters,
+    int page = 1,
+    CancelToken? cancelToken,
+  }) =>
+      guard(() async {
+        final res = await dio.get(
+          '/api/users/tutors/search/',
+          queryParameters: {...?filters, 'page': page},
+          cancelToken: cancelToken,
+        );
+        return Paginated.fromJson(res.data, PublicTutor.fromJson, page: page);
+      });
 
   /// The curated teachers shown on the home screen.
-  Future<List<Map<String, dynamic>>> featuredTutors() =>
-      getList('/api/users/tutors/featured/');
+  Future<List<PublicTutor>> featuredTutors() async =>
+      (await getList('/api/users/tutors/featured/'))
+          .map(PublicTutor.fromJson)
+          .toList();
 
   /// The institute's own profile record.
   Future<Map<String, dynamic>> institutionProfile() =>

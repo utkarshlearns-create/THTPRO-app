@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/models/app_notification.dart';
 import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/models/paginated.dart';
+import 'package:tht_app/core/models/parent_stats.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/repositories/repository.dart';
@@ -16,15 +18,22 @@ class JobsRepository extends Repository {
 
   // ── Parent ────────────────────────────────────────────────────────────────
 
-  /// The parent's own posted requirements.
-  Future<List<Map<String, dynamic>>> myJobs() => getList('/api/jobs/my-jobs/');
+  /// The parent's own posted requirements, newest first.
+  Future<List<Job>> myJobs() async {
+    final rows = await getList('/api/jobs/my-jobs/');
+    return rows.map(Job.fromJson).toList()
+      ..sort((a, b) {
+        final at = a.postedAt, bt = b.postedAt;
+        if (at == null && bt == null) return b.id.compareTo(a.id);
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return bt.compareTo(at);
+      });
+  }
 
-  Future<Map<String, dynamic>> jobDetail(int jobId) =>
-      getMap('/api/jobs/$jobId/');
-
-  /// Counts for the parent dashboard.
-  Future<Map<String, dynamic>> parentStats() =>
-      getMap('/api/jobs/stats/parent/');
+  /// The parent dashboard: counts, activity feed and recommendations.
+  Future<ParentStats> parentStats() async =>
+      ParentStats.fromJson(await getMap('/api/jobs/stats/parent/'));
 
   /// Reference data the post-a-requirement form needs: subjects, boards,
   /// classes, locations.
@@ -33,9 +42,11 @@ class JobsRepository extends Repository {
   Future<Map<String, dynamic>> createJob(Map<String, dynamic> job) =>
       postMap('/api/jobs/create/', body: job);
 
-  /// Teachers who have applied to one of the parent's jobs.
-  Future<List<Map<String, dynamic>>> applicants(int jobId) =>
-      getList('/api/jobs/$jobId/applicants/');
+  /// Teachers who have put themselves forward for one of the parent's jobs.
+  Future<List<Application>> applicants(int jobId) async =>
+      (await getList('/api/jobs/$jobId/applicants/'))
+          .map(Application.fromJson)
+          .toList();
 
   /// Accepts or declines a teacher on the parent's job.
   Future<Map<String, dynamic>> applicationAction(
@@ -184,8 +195,10 @@ class JobsRepository extends Repository {
 
   // ── Notifications ─────────────────────────────────────────────────────────
 
-  Future<List<Map<String, dynamic>>> notifications() =>
-      getList('/api/jobs/notifications/');
+  Future<List<AppNotification>> notifications() async =>
+      (await getList('/api/jobs/notifications/'))
+          .map(AppNotification.fromJson)
+          .toList();
 
   /// Drives the badge on the bell icon.
   Future<int> unreadNotificationCount() async {

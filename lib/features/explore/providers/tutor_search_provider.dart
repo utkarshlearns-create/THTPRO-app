@@ -1,167 +1,200 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tht_app/core/network/api_client.dart';
+import 'package:tht_app/core/models/public_tutor.dart';
+import 'package:tht_app/core/repositories/users_repository.dart';
+import 'package:tht_app/core/utils/api_error.dart';
 
-class TutorSearchState {
-  const TutorSearchState({
+/// How a parent narrows the teacher list.
+class TutorFilters {
+  const TutorFilters({
     this.query = '',
-    this.subject = '',
-    this.classGrade = '',
-    this.stateName = 'Uttar Pradesh',
-    this.city = 'Lucknow',
-    this.locality = '',
-    this.mode = '',
-    this.currentPage = 1,
-    this.totalPages = 1,
-    this.isLoading = false,
-    this.tutors = const [],
-    this.error,
+    this.subject,
+    this.classGrade,
+    this.city,
+    this.locality,
+    this.mode,
+    this.verifiedOnly = false,
   });
 
   final String query;
-  final String subject;
-  final String classGrade;
-  final String stateName;
-  final String city;
-  final String locality;
-  final String mode;
+  final String? subject;
+  final String? classGrade;
+  final String? city;
+  final String? locality;
+  final String? mode;
 
-  final int currentPage;
-  final int totalPages;
-  final bool isLoading;
-  final List<dynamic> tutors;
-  final String? error;
+  /// Only teachers whose ID has been checked by the THT team.
+  final bool verifiedOnly;
 
-  TutorSearchState copyWith({
+  int get activeCount =>
+      [subject, classGrade, city, locality, mode]
+          .where((f) => f != null && f.isNotEmpty)
+          .length +
+      (verifiedOnly ? 1 : 0);
+
+  bool get isEmpty => activeCount == 0 && query.trim().isEmpty;
+
+  TutorFilters copyWith({
     String? query,
-    String? subject,
-    String? classGrade,
-    String? stateName,
-    String? city,
-    String? locality,
-    String? mode,
-    int? currentPage,
-    int? totalPages,
-    bool? isLoading,
-    List<dynamic>? tutors,
-    String? error,
-  }) {
-    return TutorSearchState(
-      query: query ?? this.query,
-      subject: subject ?? this.subject,
-      classGrade: classGrade ?? this.classGrade,
-      stateName: stateName ?? this.stateName,
-      city: city ?? this.city,
-      locality: locality ?? this.locality,
-      mode: mode ?? this.mode,
-      currentPage: currentPage ?? this.currentPage,
-      totalPages: totalPages ?? this.totalPages,
-      isLoading: isLoading ?? this.isLoading,
-      tutors: tutors ?? this.tutors,
-      error: error,
-    );
-  }
+    String? Function()? subject,
+    String? Function()? classGrade,
+    String? Function()? city,
+    String? Function()? locality,
+    String? Function()? mode,
+    bool? verifiedOnly,
+  }) =>
+      TutorFilters(
+        query: query ?? this.query,
+        subject: subject == null ? this.subject : subject(),
+        classGrade: classGrade == null ? this.classGrade : classGrade(),
+        city: city == null ? this.city : city(),
+        locality: locality == null ? this.locality : locality(),
+        mode: mode == null ? this.mode : mode(),
+        verifiedOnly: verifiedOnly ?? this.verifiedOnly,
+      );
+
+  Map<String, dynamic> toQuery() => {
+        if (query.trim().isNotEmpty) 'q': query.trim(),
+        if (subject != null && subject!.isNotEmpty) 'subject': subject,
+        if (classGrade != null && classGrade!.isNotEmpty) 'class': classGrade,
+        if (city != null && city!.isNotEmpty) 'city': city,
+        if (locality != null && locality!.isNotEmpty) 'locality': locality,
+        if (mode != null && mode!.isNotEmpty) 'mode': mode,
+      };
 }
 
-class TutorSearchNotifier extends StateNotifier<TutorSearchState> {
-  TutorSearchNotifier() : super(const TutorSearchState()) {
-    _fetchTutors(isLoadMore: false);
+class TutorFeedState {
+  const TutorFeedState({
+    this.tutors = const [],
+    this.filters = const TutorFilters(),
+    this.isLoading = true,
+    this.isLoadingMore = false,
+    this.hasMore = false,
+    this.totalCount = 0,
+    this.failure,
+  });
+
+  final List<PublicTutor> tutors;
+  final TutorFilters filters;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final int totalCount;
+  final ApiFailure? failure;
+
+  /// After the client-side filter the API has no parameter for.
+  List<PublicTutor> get visible => filters.verifiedOnly
+      ? tutors.where((t) => t.isKycVerified).toList()
+      : tutors;
+
+  TutorFeedState copyWith({
+    List<PublicTutor>? tutors,
+    TutorFilters? filters,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    int? totalCount,
+    ApiFailure? failure,
+    bool clearFailure = false,
+  }) =>
+      TutorFeedState(
+        tutors: tutors ?? this.tutors,
+        filters: filters ?? this.filters,
+        isLoading: isLoading ?? this.isLoading,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        hasMore: hasMore ?? this.hasMore,
+        totalCount: totalCount ?? this.totalCount,
+        failure: clearFailure ? null : (failure ?? this.failure),
+      );
+}
+
+class TutorFeedNotifier extends StateNotifier<TutorFeedState> {
+  TutorFeedNotifier(this._repo) : super(const TutorFeedState()) {
+    _load(page: 1);
   }
+
+  final UsersRepository _repo;
 
   Timer? _debounce;
   CancelToken? _cancelToken;
+  int _page = 1;
 
-  void updateFilters({
-    String? query,
-    String? subject,
-    String? classGrade,
-    String? stateName,
-    String? city,
-    String? locality,
-    String? mode,
-  }) {
-    state = state.copyWith(
-      query: query,
-      subject: subject,
-      classGrade: classGrade,
-      stateName: stateName,
-      city: city,
-      locality: locality,
-      mode: mode,
-      currentPage: 1, // Reset to first page on filter change
-    );
-
-    // Debounce the API call
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchTutors(isLoadMore: false);
-    });
+  void search(String query) {
+    state = state.copyWith(filters: state.filters.copyWith(query: query));
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () => _load(page: 1));
   }
+
+  void applyFilters(TutorFilters filters) {
+    state = state.copyWith(filters: filters);
+    _load(page: 1);
+  }
+
+  void clearFilters() {
+    state = state.copyWith(filters: TutorFilters(query: state.filters.query));
+    _load(page: 1);
+  }
+
+  Future<void> refresh() => _load(page: 1);
 
   void loadMore() {
-    if (state.isLoading || state.currentPage >= state.totalPages) return;
-    
-    state = state.copyWith(currentPage: state.currentPage + 1);
-    _fetchTutors(isLoadMore: true);
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    _load(page: _page + 1);
   }
 
-  void refresh() {
-    state = state.copyWith(currentPage: 1);
-    _fetchTutors(isLoadMore: false);
+  /// Replaces one teacher in place after a favourite toggle or an unlock, so the
+  /// list reflects the change without refetching the whole page.
+  void replace(PublicTutor updated) {
+    state = state.copyWith(
+      tutors: [
+        for (final t in state.tutors) if (t.id == updated.id) updated else t,
+      ],
+    );
   }
 
-  Future<void> _fetchTutors({required bool isLoadMore}) async {
-    _cancelToken?.cancel('Cancelled by new request');
+  Future<void> _load({required int page}) async {
+    _cancelToken?.cancel('superseded');
     _cancelToken = CancelToken();
+    final token = _cancelToken;
 
-    state = state.copyWith(isLoading: true, error: null);
+    final appending = page > 1;
+    state = state.copyWith(
+      isLoading: !appending,
+      isLoadingMore: appending,
+      clearFailure: true,
+    );
 
     try {
-      final queryParams = <String, dynamic>{};
-      if (state.query.isNotEmpty) queryParams['q'] = state.query;
-      if (state.subject.isNotEmpty) queryParams['subject'] = state.subject;
-      if (state.classGrade.isNotEmpty) queryParams['class'] = state.classGrade;
-      if (state.stateName.isNotEmpty) queryParams['state'] = state.stateName;
-      if (state.city.isNotEmpty) queryParams['city'] = state.city;
-      if (state.locality.isNotEmpty) queryParams['locality'] = state.locality;
-      if (state.mode.isNotEmpty) queryParams['mode'] = state.mode;
-      queryParams['page'] = state.currentPage;
-
-      final response = await ApiClient.instance.get(
-        '/api/users/tutors/search/',
-        queryParameters: queryParams,
-        cancelToken: _cancelToken,
+      final result = await _repo.searchTutors(
+        filters: state.filters.toQuery(),
+        page: page,
+        cancelToken: token,
       );
+      if (!mounted || token!.isCancelled) return;
 
-      final data = response.data;
-      List<dynamic> newTutors = [];
-      int totalPages = 1;
-
-      if (data is Map && data.containsKey('results')) {
-        newTutors = data['results'] as List<dynamic>;
-        totalPages = ((data['count'] ?? 0) / 20).ceil();
-        if (totalPages == 0) totalPages = 1;
-      } else if (data is List) {
-        newTutors = data;
-      }
-
+      _page = page;
+      final combined =
+          appending ? [...state.tutors, ...result.items] : result.items;
       state = state.copyWith(
-        tutors: isLoadMore ? [...state.tutors, ...newTutors] : newTutors,
-        totalPages: totalPages,
+        tutors: combined,
+        totalCount: result.totalCount,
+        hasMore: result.hasNext ||
+            (result.totalCount > 0 && combined.length < result.totalCount),
         isLoading: false,
-      );
-    } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) return; // Ignore cancelled requests
-      
-      state = state.copyWith(
-        isLoading: false,
-        error: e.message ?? 'Failed to fetch tutors',
+        isLoadingMore: false,
       );
     } catch (e) {
+      if (!mounted) return;
+      final failure = ApiFailure.from(e);
+      // A cancelled request was replaced by a newer one; its error belongs to a
+      // query the user has already moved past.
+      if (failure.message == 'Request cancelled.') return;
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        isLoadingMore: false,
+        failure: failure,
       );
     }
   }
@@ -174,6 +207,17 @@ class TutorSearchNotifier extends StateNotifier<TutorSearchState> {
   }
 }
 
-final tutorSearchProvider = StateNotifierProvider.autoDispose<TutorSearchNotifier, TutorSearchState>((ref) {
-  return TutorSearchNotifier();
-});
+final tutorFeedProvider =
+    StateNotifierProvider.autoDispose<TutorFeedNotifier, TutorFeedState>(
+  (ref) => TutorFeedNotifier(ref.watch(usersRepositoryProvider)),
+);
+
+/// One teacher's full profile, for the detail screen.
+final tutorProvider = FutureProvider.autoDispose.family<PublicTutor, int>(
+  (ref, tutorId) => ref.watch(usersRepositoryProvider).tutorDetail(tutorId),
+);
+
+/// Curated teachers for the parent home screen.
+final featuredTutorsProvider = FutureProvider.autoDispose<List<PublicTutor>>(
+  (ref) => ref.watch(usersRepositoryProvider).featuredTutors(),
+);

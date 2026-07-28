@@ -1,3 +1,4 @@
+import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/utils/json_x.dart';
 
 /// A teacher's application to a requirement, and everything that happened to it.
@@ -34,6 +35,10 @@ class Application {
     this.restrictionReason = '',
     this.hasUnlockedContact = false,
     this.createdAt,
+    this.tutorName = '',
+    this.tutorPhone,
+    this.tutor,
+    this.tutorApproved = false,
   });
 
   final int id;
@@ -91,6 +96,21 @@ class Application {
   final bool hasUnlockedContact;
   final DateTime? createdAt;
 
+  // ── The applicant, as the parent reviewing this sees them ──
+
+  final String tutorName;
+
+  /// Null until the parent has earned this contact — the teacher is hired for
+  /// the job, or the parent unlocked them through Find Teachers.
+  final String? tutorPhone;
+
+  /// The applicant's full public profile, present on the parent-facing
+  /// applicants endpoint.
+  final PublicTutor? tutor;
+
+  /// KYC verified *and* profile approved by the tutor admin.
+  final bool tutorApproved;
+
   bool get isHired => status.toUpperCase() == 'HIRED';
   bool get isAwaiting => status.toUpperCase() == 'APPLIED';
   bool get isShortlisted => status.toUpperCase() == 'SHORTLISTED';
@@ -137,7 +157,13 @@ class Application {
 
   factory Application.fromJson(Map<String, dynamic> json) {
     final details = asMapOrNull(json, 'job_details');
+    final tutorDetails = asMapOrNull(json, 'tutor_details');
+    final approval = asMapOrNull(json, 'tutor_approval');
     return Application(
+      tutorName: asString(json, 'tutor_name'),
+      tutorPhone: asStringOrNull(json, 'tutor_phone'),
+      tutor: tutorDetails == null ? null : PublicTutor.fromJson(tutorDetails),
+      tutorApproved: approval == null ? false : asBool(approval, 'approved'),
       id: asInt(json, 'id'),
       jobId: details != null ? asInt(details, 'id') : asInt(json, 'job'),
       job: details == null ? null : JobSummary.fromJson(details),

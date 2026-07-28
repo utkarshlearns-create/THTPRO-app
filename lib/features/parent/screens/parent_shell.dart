@@ -12,8 +12,10 @@ class ParentShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
 
+    // Finding a teacher is the parent's main job, so Explore gets a tab. The old
+    // "Dashboard" tab duplicated Home once Home took on the stats.
     int getSelectedIndex() {
-      if (location.startsWith('/parent-dashboard')) return 1;
+      if (location.startsWith('/find-teachers')) return 1;
       if (location.startsWith('/my-jobs')) return 2;
       if (location.startsWith('/wallet')) return 3;
       if (location.startsWith('/notifications')) return 4;
@@ -26,7 +28,7 @@ class ParentShell extends StatelessWidget {
           context.go('/parent-home');
           break;
         case 1:
-          context.go('/parent-dashboard');
+          context.go('/find-teachers');
           break;
         case 2:
           context.go('/my-jobs');
@@ -62,14 +64,14 @@ class ParentShell extends StatelessWidget {
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
+              icon: Icon(Icons.person_search_outlined),
+              activeIcon: Icon(Icons.person_search),
+              label: 'Teachers',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.work_outline),
               activeIcon: Icon(Icons.work),
-              label: 'My Jobs',
+              label: 'Requirements',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_outlined),

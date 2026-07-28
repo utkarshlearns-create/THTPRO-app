@@ -1,138 +1,221 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
-import 'package:tht_app/core/network/api_config.dart';
+import 'package:tht_app/core/ui/pill.dart';
+import 'package:tht_app/core/ui/tht_card.dart';
+import 'package:tht_app/core/ui/tone.dart';
+import 'package:tht_app/core/utils/formatters.dart';
 
+/// One teacher in a parent's list.
+///
+/// A parent scanning this is deciding who to spend a credit on, so it leads with
+/// the name and what they teach, then the things that actually differentiate:
+/// verification, experience, and whether real parents have rated them.
 class TutorCard extends StatelessWidget {
-  final Map<String, dynamic> tutor;
+  const TutorCard({
+    super.key,
+    required this.tutor,
+    this.onTap,
+    this.onToggleFavourite,
+  });
 
-  const TutorCard({super.key, required this.tutor});
+  final PublicTutor tutor;
+  final VoidCallback? onTap;
+  final VoidCallback? onToggleFavourite;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
 
-    final String name = tutor['first_name'] ?? 'Unknown Tutor';
-    final String experience = tutor['experience_years']?.toString() ?? '0';
-    final List<dynamic> subjects = tutor['subjects_taught'] ?? [];
-    final List<dynamic> locations = tutor['teaching_locations'] ?? [];
-    final String mode = tutor['teaching_mode'] ?? 'BOTH';
-    final double rating = (tutor['rating'] as num?)?.toDouble() ?? 5.0;
-
-    String avatarUrl = '';
-    if (tutor['profile_picture'] != null && tutor['profile_picture'].toString().isNotEmpty) {
-      avatarUrl = tutor['profile_picture'];
-      if (!avatarUrl.startsWith('http')) {
-        avatarUrl = '${ApiConfig.baseUrl}$avatarUrl';
-      }
-    }
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: isDark ? AppColors.darkCard : Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.slate200,
-                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl.isEmpty
-                      ? const Icon(Icons.person, size: 30, color: AppColors.slate500)
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.work_outline, size: 14, color: AppColors.slate500),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$experience Years Exp.',
-                            style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+    return THTCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Avatar(tutor: tutor),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            tutor.name.trim().isEmpty
+                                ? 'Teacher'
+                                : Fmt.titleCase(tutor.name),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? AppColors.slate50
+                                  : AppColors.slate900,
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.star, size: 14, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating.toStringAsFixed(1),
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        if (tutor.isKycVerified) ...[
+                          const SizedBox(width: 5),
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 15,
+                            color: Tone.info.foreground(
+                              Theme.of(context).brightness,
+                            ),
                           ),
                         ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      tutor.subjects.isEmpty
+                          ? 'Subjects not listed'
+                          : Fmt.list(tutor.subjects),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12.5, color: muted),
+                    ),
+                    if (tutor.credentialLine.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        tutor.credentialLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: muted),
                       ),
                     ],
+                  ],
+                ),
+              ),
+              if (onToggleFavourite != null)
+                IconButton(
+                  onPressed: onToggleFavourite,
+                  visualDensity: VisualDensity.compact,
+                  tooltip: tutor.isFavourite
+                      ? 'Remove from saved'
+                      : 'Save this teacher',
+                  icon: Icon(
+                    tutor.isFavourite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    size: 20,
+                    color: tutor.isFavourite ? AppColors.rose : muted,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (subjects.isNotEmpty) ...[
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: subjects.take(4).map((s) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryOrange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryOrange.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      s.toString(),
-                      style: const TextStyle(
-                        color: AppColors.primaryOrangeDark,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
             ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              // Only a real rating is shown. A default star value would tell a
+              // parent something the platform does not actually know.
+              if (tutor.hasRatings)
+                Pill(
+                  '${tutor.avgRating!.toStringAsFixed(1)} '
+                  '(${Fmt.plural(tutor.ratingCount, 'review')})',
+                  tone: Tone.success,
+                  icon: Icons.star_rounded,
+                  dense: true,
+                )
+              else
+                const Pill('No reviews yet', dense: true),
+              if (tutor.isUnlocked)
+                const Pill(
+                  'Contact unlocked',
+                  tone: Tone.success,
+                  icon: Icons.lock_open_rounded,
+                  dense: true,
+                ),
+              if (tutor.isBed) const Pill('B.Ed', tone: Tone.info, dense: true),
+              if (tutor.isTet) const Pill('TET', tone: Tone.info, dense: true),
+              if (tutor.expectedFee != null && tutor.expectedFee! > 0)
+                Pill(
+                  '${Fmt.rupees(tutor.expectedFee)} / month',
+                  icon: Icons.payments_outlined,
+                  dense: true,
+                ),
+            ],
+          ),
+          if (tutor.teachingMode.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                const Icon(Icons.location_on_outlined, size: 16, color: AppColors.slate500),
+                Icon(Icons.cast_for_education_outlined, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    locations.isNotEmpty ? locations.join(', ') : 'Location not specified',
-                    style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                    tutor.modeLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12.5, color: muted),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.computer_outlined, size: 16, color: AppColors.slate500),
-                const SizedBox(width: 4),
-                Text(
-                  mode == 'HOME' ? 'Home Tuition' : (mode == 'ONLINE' ? 'Online Tuition' : 'Home & Online'),
-                  style: const TextStyle(fontSize: 13, color: AppColors.slate500),
-                ),
+                if (tutor.ongoingTuitions > 0)
+                  Text(
+                    '${tutor.ongoingTuitions} running',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: muted,
+                    ),
+                  ),
               ],
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.tutor});
+
+  final PublicTutor tutor;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 52.0;
+    final url = tutor.imageUrl;
+
+    Widget fallback() => Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryOrangeLight,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            Fmt.initials(tutor.name),
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryOrangeDark,
+            ),
+          ),
+        );
+
+    if (url == null || url.isEmpty) return fallback();
+
+    return ClipOval(
+      child: CachedNetworkImage(
+        imageUrl: url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => fallback(),
+        errorWidget: (_, __, ___) => fallback(),
       ),
     );
   }

@@ -11,7 +11,8 @@ import 'package:tht_app/features/auth/screens/continue_on_web_screen.dart';
 import 'package:tht_app/features/home/screens/home_screen.dart';
 import 'package:tht_app/features/parent/screens/parent_shell.dart';
 import 'package:tht_app/features/parent/screens/parent_home_screen.dart';
-import 'package:tht_app/features/parent/screens/parent_dashboard_screen.dart';
+import 'package:tht_app/features/parent/screens/my_job_detail_screen.dart';
+import 'package:tht_app/features/parent/screens/job_wizard_screen.dart';
 import 'package:tht_app/features/parent/screens/my_jobs_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_shell.dart';
 import 'package:tht_app/features/tutor/screens/tutor_home_screen.dart';
@@ -189,10 +190,20 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: ParentHomeScreen(),
             ),
           ),
+          // Find-a-teacher inside the parent shell, so the bottom bar stays
+          // put. It needs its own path: the public /explore route is declared
+          // at the top level for anonymous browsing, and two routes with the
+          // same path would silently resolve to whichever was declared first.
           GoRoute(
-            path: '/parent-dashboard',
+            path: '/find-teachers',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: ParentDashboardScreen(),
+              child: ExploreScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/my-jobs/:id',
+            builder: (_, state) => MyJobDetailScreen(
+              jobId: int.parse(state.pathParameters['id']!),
             ),
           ),
           GoRoute(
@@ -487,6 +498,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/packages',
         builder: (_, __) => const PackagesScreen(),
+      ),
+      // Full-screen on purpose: posting a requirement is a multi-step form, and
+      // a bottom bar offering four ways to leave it half-finished is a way to
+      // lose the answers already given.
+      GoRoute(
+        path: '/post-requirement',
+        builder: (_, __) => const JobWizardScreen(),
       ),
     ],
   );
