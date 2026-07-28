@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/tuition.dart';
@@ -89,12 +90,23 @@ class JobsRepository extends Repository {
   /// One requirement in full.
   Future<Job> job(int jobId) async => Job.fromJson(await getMap('/api/jobs/$jobId/'));
 
-  Future<List<Map<String, dynamic>>> tutorApplications() =>
-      getList('/api/jobs/tutor/applications/');
+  /// Every application this teacher has made, newest first.
+  Future<List<Application>> tutorApplications() async {
+    final rows = await getList('/api/jobs/tutor/applications/');
+    final apps = rows.map(Application.fromJson).toList()
+      ..sort((a, b) {
+        final at = a.createdAt, bt = b.createdAt;
+        if (at == null && bt == null) return b.id.compareTo(a.id);
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return bt.compareTo(at);
+      });
+    return apps;
+  }
 
   /// Demos the teacher has been booked for.
-  Future<List<Map<String, dynamic>>> tutorDemos() =>
-      getList('/api/jobs/tutor/demos/');
+  Future<List<Application>> tutorDemos() async =>
+      (await getList('/api/jobs/tutor/demos/')).map(Application.fromJson).toList();
 
   /// Today's teaching, with attendance state per tuition.
   Future<TodaySchedule> todaySchedule() async =>

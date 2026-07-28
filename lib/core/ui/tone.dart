@@ -72,6 +72,7 @@ Tone toneForStatus(String? status) {
     case 'AWAITING':
     case 'UNPAID':
     case 'ONGOING':
+    case 'RESCHEDULED':
       return Tone.warning;
     case 'REJECTED':
     case 'NOT_SELECTED':

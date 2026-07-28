@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
-import 'package:tht_app/core/models/wallet.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
-import 'package:tht_app/core/repositories/wallet_repository.dart';
+import 'package:tht_app/features/wallet/providers/wallet_providers.dart';
+
+export 'package:tht_app/features/wallet/providers/wallet_providers.dart'
+    show walletProvider;
 
 /// The teacher's headline numbers.
 final tutorStatsProvider = FutureProvider.autoDispose<TutorStats>(
@@ -15,11 +17,6 @@ final tutorStatsProvider = FutureProvider.autoDispose<TutorStats>(
 /// Today's teaching, with per-tuition attendance state.
 final todayScheduleProvider = FutureProvider.autoDispose<TodaySchedule>(
   (ref) => ref.watch(jobsRepositoryProvider).todaySchedule(),
-);
-
-/// Credit balance and validity — decides whether the teacher can unlock leads.
-final walletProvider = FutureProvider.autoDispose<Wallet>(
-  (ref) => ref.watch(walletRepositoryProvider).wallet(),
 );
 
 /// Verification state, for the header pill and the KYC prompt.
