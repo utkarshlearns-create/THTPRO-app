@@ -14,7 +14,7 @@ link rather than a half-built dashboard.
 
 ```bash
 flutter pub get
-flutter run                       # hits production api.thehometuitions.com
+flutter run                       # hits the live backend at thtpro.onrender.com
 ```
 
 Point it somewhere else at build time — no source edits:
@@ -30,9 +30,12 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8000
 flutter run -d chrome --web-port=5000
 ```
 
-The web target is for previewing UI only. Browsers enforce CORS, which the API
-does not open to `localhost`, so calls will fail there — test real flows on a
-device or emulator.
+The web target is for previewing layout only. The app calls the backend
+directly, unlike the website — which serves relative `/api/...` URLs and
+proxies them server-side through its Next.js rewrites, so the browser there is
+always same-origin and CORS never applies. Here it does, so a browser build
+needs the dev origin listed in Django's `CORS_ALLOWED_ORIGINS`. Test real flows
+on a device or emulator, where CORS does not exist at all.
 
 ## Layout
 
