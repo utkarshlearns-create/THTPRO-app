@@ -43,9 +43,13 @@ class CheckoutFailed extends CheckoutResult {
 /// single-use per flow — it must be disposed or its listeners fire again on the
 /// next payment.
 class CheckoutService {
-  /// Razorpay's Flutter plugin has no web implementation. On web this returns a
-  /// failure with an honest message rather than crashing inside the plugin.
-  static bool get isSupported => !kIsWeb;
+  /// Razorpay's Flutter plugin ships Android and iOS only — no web, no desktop.
+  /// Anywhere else this returns an honest message instead of throwing a
+  /// MissingPluginException from inside the checkout sheet.
+  static bool get isSupported =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   Future<CheckoutResult> open({
     required PaymentOrder order,
@@ -53,8 +57,8 @@ class CheckoutService {
   }) async {
     if (!isSupported) {
       return const CheckoutFailed(
-        'Payments are only available in the mobile app. Open The Home Tuitions '
-        'on your phone to add credits.',
+        'Payments work in the Android and iOS app. Open The Home Tuitions on '
+        'your phone to add credits.',
       );
     }
 

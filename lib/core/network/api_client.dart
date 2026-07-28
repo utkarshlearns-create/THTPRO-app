@@ -46,6 +46,34 @@ class ApiClient {
       ),
     );
 
+    // In debug builds, print what actually failed. "You're offline" is the right
+    // thing to show a user, but it hides whether the cause was a blocked CORS
+    // preflight, a bad hostname, or a 500 — and those need different fixes.
+    if (kDebugMode) {
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            debugPrint('→ ${options.method} ${options.uri}');
+            handler.next(options);
+          },
+          onResponse: (response, handler) {
+            debugPrint(
+              '← ${response.statusCode} ${response.requestOptions.uri}',
+            );
+            handler.next(response);
+          },
+          onError: (err, handler) {
+            debugPrint(
+              '✗ ${err.type.name} ${err.requestOptions.uri}\n'
+              '  status: ${err.response?.statusCode ?? "no response"}\n'
+              '  message: ${err.message}',
+            );
+            handler.next(err);
+          },
+        ),
+      );
+    }
+
     return dio;
   }
 

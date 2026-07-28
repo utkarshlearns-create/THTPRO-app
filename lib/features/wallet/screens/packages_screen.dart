@@ -251,8 +251,8 @@ class _WebNotice extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              'Payments work in the mobile app. You can browse plans here, but '
-              'buying one needs the app on your phone.',
+              'Payments work in the Android and iOS app. You can browse plans '
+              'here, but buying one needs the app on your phone.',
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
