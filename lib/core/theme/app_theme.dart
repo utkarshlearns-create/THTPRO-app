@@ -6,11 +6,23 @@ abstract final class AppTheme {
   /// Plus Jakarta Sans — the same face the website sets in `globals.css`.
   static const String fontFamily = 'PlusJakartaSans';
 
+  /// Plus Jakarta Sans has no glyph for ₹ (U+20B9), and this app shows a fee or
+  /// a balance on nearly every screen. Without a fallback the engine hunts for a
+  /// Noto font it cannot find and draws tofu boxes where the money should be.
+  /// These are the system faces that do carry the rupee sign on each platform.
+  static const List<String> fontFallback = [
+    'Roboto', // Android
+    'SF Pro Text', // iOS / macOS
+    'Segoe UI', // Windows
+    'Noto Sans',
+  ];
+
   // ── Light ──
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
         fontFamily: fontFamily,
+        fontFamilyFallback: fontFallback,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.light,
@@ -171,6 +183,7 @@ abstract final class AppTheme {
         useMaterial3: true,
         brightness: Brightness.dark,
         fontFamily: fontFamily,
+        fontFamilyFallback: fontFallback,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.dark,

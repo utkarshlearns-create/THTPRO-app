@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
@@ -143,10 +144,25 @@ class ErrorView extends StatelessWidget {
           ),
           if (onRetry != null) ...[
             SizedBox(height: compact ? AppSpacing.base : AppSpacing.lg),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Try again'),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              alignment: WrapAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Try again'),
+                ),
+                // "Offline" covers a bad hostname, a blocked CORS preflight and
+                // a sleeping server equally, and those need different fixes.
+                // Offer the answer rather than making someone open DevTools.
+                if (offline)
+                  TextButton(
+                    onPressed: () => context.push('/connection-check'),
+                    child: const Text('Why?'),
+                  ),
+              ],
             ),
           ],
         ],

@@ -28,6 +28,7 @@ import 'package:tht_app/features/wallet/screens/wallet_screen.dart';
 import 'package:tht_app/features/wallet/screens/packages_screen.dart';
 import 'package:tht_app/features/notifications/screens/notifications_screen.dart';
 import 'package:tht_app/features/shared/screens/splash_screen.dart';
+import 'package:tht_app/features/shared/screens/connection_check_screen.dart';
 
 import 'package:tht_app/features/institution/screens/institution_shell.dart';
 import 'package:tht_app/features/institution/screens/institution_dashboard_screen.dart';
@@ -71,6 +72,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/explore',
         '/tutors',
         '/find-jobs',
+        // Deliberately public: when the backend is unreachable, signing in is
+        // the thing that fails, so gating the diagnostic behind auth would put
+        // it out of reach exactly when it is needed.
+        '/connection-check',
         '/',
       ];
       final isPublicRoute =
@@ -125,6 +130,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/continue-on-web',
         builder: (_, __) => const ContinueOnWebScreen(),
+      ),
+      // Reachable from any "you're offline" state, and public on purpose: if the
+      // backend cannot be reached then signing in is exactly what is failing.
+      GoRoute(
+        path: '/connection-check',
+        builder: (_, __) => const ConnectionCheckScreen(),
       ),
       GoRoute(
         path: '/explore',
