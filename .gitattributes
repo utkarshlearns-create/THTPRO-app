@@ -1,0 +1,24 @@
+# Normalise line endings in the repository to LF regardless of platform.
+# Without this, a Windows clone with core.autocrlf=true commits CRLF blobs and
+# every file reads as modified on a Mac or CI checkout.
+* text=auto eol=lf
+
+# Windows toolchain files that genuinely want CRLF.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.sln text eol=crlf
+
+# Never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.svg text
+*.jar binary
+*.keystore binary
+*.jks binary
