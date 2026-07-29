@@ -76,6 +76,9 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                     package: p,
                     busy: _busyPackageId == p.id,
                     disabled: _busyPackageId != null,
+                    // Cheapest per credit, not cheapest overall — that is the
+                    // comparison a buyer is actually making between plans.
+                    bestValue: p.id == _bestValueId(credit),
                     onBuy: () => _buy(p),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -122,6 +125,16 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
         },
       ),
     );
+  }
+
+  /// The plan with the lowest price per credit, or null when fewer than two
+  /// plans are comparable — a single option is not a "best" one.
+  int? _bestValueId(List<CreditPackage> packages) {
+    final comparable =
+        packages.where((p) => (p.pricePerCredit ?? 0) > 0).toList();
+    if (comparable.length < 2) return null;
+    comparable.sort((a, b) => a.pricePerCredit!.compareTo(b.pricePerCredit!));
+    return comparable.first.id;
   }
 
   Future<void> _buy(CreditPackage package) async {
@@ -274,6 +287,7 @@ class _PackageCard extends StatelessWidget {
     required this.busy,
     required this.disabled,
     required this.onBuy,
+    this.bestValue = false,
   });
 
   final CreditPackage package;
@@ -281,16 +295,31 @@ class _PackageCard extends StatelessWidget {
   final bool disabled;
   final VoidCallback onBuy;
 
+  /// Lowest cost per credit of the plans on offer.
+  final bool bestValue;
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
     final perCredit = package.pricePerCredit;
 
     return THTCard(
+      elevated: bestValue,
+      borderColor: bestValue ? AppColors.primaryOrange : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (bestValue) ...[
+            const Pill(
+              'Best value per credit',
+              tone: Tone.accent,
+              icon: Icons.savings_outlined,
+              dense: true,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -30,6 +30,10 @@ class JobCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // A class block, so the feed scans down the left edge by what is
+              // being taught rather than by a wall of subject names.
+              _ClassBlock(job: job),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,7 +54,6 @@ class JobCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       [
-                        if (job.classGrade.isNotEmpty) job.classGrade,
                         if (job.board.isNotEmpty) job.board,
                         job.modeLabel,
                       ].where((s) => s.isNotEmpty).join(' · '),
@@ -139,6 +142,68 @@ class JobCard extends StatelessWidget {
               style: TextStyle(fontSize: 11.5, color: muted),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The class this job is for, as a block on the leading edge.
+class _ClassBlock extends StatelessWidget {
+  const _ClassBlock({required this.job});
+
+  final Job job;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    // A lead nobody has applied to is the one worth a teacher's attention.
+    final tone = job.hasApplied
+        ? Tone.neutral
+        : job.applicationCount == 0
+            ? Tone.success
+            : Tone.info;
+
+    final grade = job.classGrade.trim();
+    final short = grade.isEmpty
+        ? '—'
+        : grade.replaceAll(RegExp(r'^Class\s+', caseSensitive: false), '');
+
+    return Container(
+      width: 56,
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.md,
+        horizontal: 6,
+      ),
+      decoration: BoxDecoration(
+        color: tone.background(brightness),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'CLASS',
+            style: TextStyle(
+              fontSize: 8.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              height: 1,
+              color: tone.foreground(brightness).withValues(alpha: 0.75),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            short,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              height: 1.05,
+              color: tone.foreground(brightness),
+            ),
+          ),
         ],
       ),
     );

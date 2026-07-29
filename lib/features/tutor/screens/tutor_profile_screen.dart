@@ -273,6 +273,8 @@ class _Teaching extends StatelessWidget {
       children: [
         SectionHeader(
           'Teaching',
+          icon: Icons.menu_book_rounded,
+          iconTone: Tone.accent,
           actionLabel: 'Edit',
           onAction: () =>
               EditProfileSheet.show(context, profile, ProfileSection.teaching),
@@ -347,6 +349,8 @@ class _Reach extends StatelessWidget {
       children: [
         SectionHeader(
           'Where you teach',
+          icon: Icons.place_rounded,
+          iconTone: Tone.info,
           actionLabel: 'Edit',
           onAction: () =>
               EditProfileSheet.show(context, profile, ProfileSection.location),
@@ -409,7 +413,11 @@ class _PreferencesState extends ConsumerState<_Preferences> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Preferences'),
+        const SectionHeader(
+          'Preferences',
+          icon: Icons.tune_rounded,
+          iconTone: Tone.neutral,
+        ),
         const SizedBox(height: AppSpacing.md),
         THTCard(
           padding: EdgeInsets.zero,
@@ -477,6 +485,8 @@ class _Qualifications extends StatelessWidget {
       children: [
         const SectionHeader(
           'Qualifications',
+          icon: Icons.school_rounded,
+          iconTone: Tone.success,
           subtitle: 'Your education record is edited on the website',
         ),
         const SizedBox(height: AppSpacing.md),

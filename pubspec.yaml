@@ -23,7 +23,6 @@ dependencies:
   # Auth / Storage
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.2.3
-  google_sign_in: ^6.2.1
   jwt_decoder: ^2.0.1
 
   # UI

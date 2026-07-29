@@ -224,7 +224,11 @@ class _History extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Recent activity'),
+        const SectionHeader(
+          'Recent activity',
+          icon: Icons.receipt_long_rounded,
+          iconTone: Tone.info,
+        ),
         const SizedBox(height: AppSpacing.md),
         AsyncView<List<WalletTransaction>>(
           value: transactions,

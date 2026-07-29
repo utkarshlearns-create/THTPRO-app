@@ -8,8 +8,9 @@ import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/features/shared/widgets/tht_text_field.dart';
 import 'package:tht_app/features/shared/widgets/tht_button.dart';
 
-/// Login screen — mirrors views/Login.jsx.
-/// Supports phone or email login + Google OAuth.
+/// Sign in with a phone number or email.
+///
+/// The same credentials as the website — one account, one backend, one session.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -302,45 +303,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   isLoading: _loading,
                   isExpanded: true,
                 ),
-                const SizedBox(height: 16),
-
-                // ── Divider ──
-                Row(
-                  children: [
-                    Expanded(
-                        child: Divider(
-                            color: isDark
-                                ? AppColors.darkBorder
-                                : AppColors.slate200)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'or',
-                        style: TextStyle(
-                          color:
-                              isDark ? AppColors.slate500 : AppColors.slate400,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                        child: Divider(
-                            color: isDark
-                                ? AppColors.darkBorder
-                                : AppColors.slate200)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // ── Google sign-in ──
-                ThtButton(
-                  label: 'Continue with Google',
-                  onPressed: _handleGoogleLogin,
-                  variant: ThtButtonVariant.outlined,
-                  isExpanded: true,
-                  icon: Icons.g_mobiledata_rounded,
-                ),
                 const SizedBox(height: 24),
 
                 // ── Sign up link ──
@@ -439,15 +401,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Future<void> _handleGoogleLogin() async {
-    // TODO: Integrate google_sign_in package
-    // 1. Get ID token from Google
-    // 2. POST /api/users/auth/google/ with {credential: idToken}
-    // 3. Handle role-selection modal if new user
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Google sign-in coming soon')),
-    );
-  }
 }
 
 class _ModeTab extends StatelessWidget {
