@@ -1,32 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
-import 'package:tht_app/core/ui/pill.dart';
-import 'package:tht_app/core/ui/section_header.dart';
-import 'package:tht_app/core/ui/states.dart';
-import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
-import 'package:tht_app/core/utils/formatters.dart';
-import 'package:tht_app/features/explore/providers/tutor_search_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// The public landing screen.
 ///
-/// Someone here has not signed in, and may not have decided to. So it does two
-/// things in order: let them look at real teachers without an account, and then
-/// let them say which of the three things they are. Everything used to funnel
-/// into /signup, including the "Find a Tutor" button — which asked for a phone
-/// number before showing a single teacher.
-class HomeScreen extends ConsumerWidget {
+/// Someone here has not signed in and may not have decided to, so it stays
+/// short: one line on what this is, a way to look around without an account,
+/// and three ways to say who you are. Deliberately no content feed — browsing
+/// belongs on the screen built for browsing, and a landing page is judged by
+/// how quickly it gets out of the way.
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -51,34 +43,22 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xl),
                     const _GuestActions(),
                     const SizedBox(height: AppSpacing.xxl),
-                    const _FeaturedTutors(),
-                    const SizedBox(height: AppSpacing.xxl),
-                    Text(
-                      'GET STARTED',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: isDark ? AppColors.slate400 : AppColors.slate500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
                     Text(
                       'What brings you here?',
                       style: TextStyle(
-                        fontSize: 21,
+                        fontSize: 19,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
+                        letterSpacing: -0.3,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.base),
                     const _RolePaths(),
-                    const SizedBox(height: AppSpacing.xxl),
-                    const _TrustRow(),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.xl),
+                    const _TrustLine(),
+                    const SizedBox(height: AppSpacing.sm),
                     const _Legal(),
-                    const SizedBox(height: AppSpacing.xxl),
+                    const SizedBox(height: AppSpacing.lg),
                   ],
                 ),
               ),
@@ -201,124 +181,6 @@ class _GuestActions extends StatelessWidget {
   }
 }
 
-// ── Real teachers, not an illustration ───────────────────────────────────────
-
-class _FeaturedTutors extends ConsumerWidget {
-  const _FeaturedTutors();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final featured = ref.watch(featuredTutorsProvider);
-
-    return featured.when(
-      // A landing screen must not show an error box to someone who has not even
-      // signed in yet — if this cannot load, the section simply is not there.
-      error: (_, __) => const SizedBox.shrink(),
-      loading: () => const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader('Teachers on the platform'),
-          SizedBox(height: AppSpacing.md),
-          SkeletonBox(height: 132, radius: AppRadius.lg),
-        ],
-      ),
-      data: (tutors) {
-        if (tutors.isEmpty) return const SizedBox.shrink();
-        final shown = tutors.take(8).toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              'Teachers on the platform',
-              icon: Icons.groups_rounded,
-              iconTone: Tone.accent,
-              actionLabel: 'See all',
-              onAction: () => context.push('/explore'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              height: 168,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                itemCount: shown.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(width: AppSpacing.md),
-                itemBuilder: (_, i) => _TutorPreview(tutor: shown[i]),
-              ),
-            ),
-          ],
-        ).animate(delay: 160.ms).fadeIn(duration: 400.ms);
-      },
-    );
-  }
-}
-
-class _TutorPreview extends StatelessWidget {
-  const _TutorPreview({required this.tutor});
-
-  final PublicTutor tutor;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
-
-    return SizedBox(
-      width: 168,
-      child: THTCard(
-        onTap: () => context.push('/tutors/${tutor.id}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            THTAvatar(
-              name: tutor.name,
-              imageUrl: tutor.imageUrl,
-              size: 44,
-              verified: tutor.isKycVerified,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              Fmt.titleCase(tutor.name),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.slate50 : AppColors.slate900,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              tutor.subjects.isEmpty
-                  ? 'Teacher'
-                  : Fmt.list(tutor.subjects, max: 2),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, height: 1.35, color: muted),
-            ),
-            const Spacer(),
-            if (tutor.hasRatings)
-              Pill(
-                tutor.avgRating!.toStringAsFixed(1),
-                tone: Tone.success,
-                icon: Icons.star_rounded,
-                dense: true,
-              )
-            else if (tutor.experienceYears > 0)
-              Pill(
-                '${Fmt.plural(tutor.experienceYears, 'yr')} exp',
-                dense: true,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Three ways in ────────────────────────────────────────────────────────────
 
 class _RolePaths extends StatelessWidget {
@@ -431,64 +293,43 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-// ── Trust ────────────────────────────────────────────────────────────────────
-
-class _TrustRow extends StatelessWidget {
-  const _TrustRow();
+/// without an account, and this is the only screen everyone passes through.
+/// One quiet line of reassurance.
+///
+/// Not "100% verified tutors": the app carries a per-teacher is_kyc_verified
+/// flag and a verified-only filter in search, so a blanket claim is
+/// contradicted two taps later. This says only what is true of every teacher.
+class _TrustLine extends StatelessWidget {
+  const _TrustLine();
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    // Deliberately not "100% verified tutors": the app has a per-teacher
-    // is_kyc_verified flag and an explicit verified-only filter, so a blanket
-    // claim is contradicted two taps later. This says what is actually true.
-    const points = [
-      (Icons.verified_user_outlined, 'ID-checked teachers, reviewed by our team'),
-      (Icons.rate_review_outlined, 'Ratings come from parents who actually hired'),
-      (Icons.support_agent_outlined, 'A real counsellor helps you through it'),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.base),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.slate800 : AppColors.slate50,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: Column(
-        children: [
-          for (var i = 0; i < points.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Icon(
-                  points[i].$1,
-                  size: 17,
-                  color: Tone.success.foreground(brightness),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    points[i].$2,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      height: 1.45,
-                      color: isDark ? AppColors.slate300 : AppColors.slate600,
-                    ),
-                  ),
-                ),
-              ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.verified_user_outlined,
+          size: 15,
+          color: Tone.success.foreground(brightness),
+        ),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
+            'Teachers are ID-checked by our team',
+            style: TextStyle(
+              fontSize: 12.5,
+              color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
-          ],
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Terms and privacy. Play and the App Store both require these to be reachable
-/// without an account, and this is the only screen everyone passes through.
 class _Legal extends StatelessWidget {
   const _Legal();
 
