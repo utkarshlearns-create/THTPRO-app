@@ -13,7 +13,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 /// Signup screen
 /// Multi-step: role selection → phone/email → OTP → password.
 class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({super.key});
+  const SignupScreen({super.key, this.initialRole});
+
+  /// Preselects a role when the user already declared one — tapping "I'm a
+  /// teacher" on the home screen and then landing on a form set to Parent is a
+  /// small betrayal of a choice they just made.
+  final String? initialRole;
 
   @override
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
@@ -21,7 +26,16 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   int _step = 0; // 0: role, 1: details, 2: OTP, 3: password
-  String _selectedRole = 'PARENT';
+  late String _selectedRole = _validRole(widget.initialRole) ?? 'PARENT';
+
+  /// Only the three roles this app serves may be preselected; anything else in
+  /// the URL is ignored rather than trusted.
+  static String? _validRole(String? raw) {
+    final role = raw?.toUpperCase();
+    return const {'PARENT', 'TEACHER', 'INSTITUTION'}.contains(role)
+        ? role
+        : null;
+  }
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -219,7 +233,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           isSelected: _selectedRole == 'TEACHER',
           onTap: () => setState(() => _selectedRole = 'TEACHER'),
         ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.1, end: 0),
-        
+
+        const SizedBox(height: 16),
+
+        // Institutes have a full journey in the app — dashboard, vacancies,
+        // teacher directory — but no way to sign up for it until now.
+        _RoleCard(
+          icon: Icons.apartment_outlined,
+          title: 'School / Institute',
+          subtitle: 'Hire teachers for your centre',
+          isSelected: _selectedRole == 'INSTITUTION',
+          onTap: () => setState(() => _selectedRole = 'INSTITUTION'),
+        ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.1, end: 0),
+
         const Spacer(),
         
         Container(

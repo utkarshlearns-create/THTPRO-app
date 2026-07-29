@@ -121,7 +121,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/signup',
-        builder: (_, __) => const SignupScreen(),
+        // ?role=TEACHER carries the choice made on the home screen into the
+        // form, so the role step opens on what they already picked.
+        builder: (_, state) => SignupScreen(
+          initialRole: state.uri.queryParameters['role'],
+        ),
       ),
       GoRoute(
         path: '/forgot-password',
