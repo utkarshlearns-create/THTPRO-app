@@ -120,11 +120,14 @@ class _Header extends ConsumerWidget {
                   // /api/ranking/me/. A new teacher shows nothing here rather
                   // than an invented level.
                   if (score != null && score.isRated)
-                    Pill(
-                      score.badgeLabel,
-                      tone: _badgeTone(score.badge),
-                      icon: Icons.workspace_premium_rounded,
-                      dense: true,
+                    GestureDetector(
+                      onTap: () => context.push('/tutor-score'),
+                      child: Pill(
+                        score.badgeLabel,
+                        tone: _badgeTone(score.badge),
+                        icon: Icons.workspace_premium_rounded,
+                        dense: true,
+                      ),
                     ),
                   if (kyc != null)
                     Pill(
@@ -862,12 +865,15 @@ class _QuickActions extends StatelessWidget {
               ),
             ),
             SizedBox(width: AppSpacing.md),
+            // Profile has its own bottom-bar tab, so the third slot goes to
+            // the leads a teacher has already paid for — which had no entrance
+            // at all.
             Expanded(
               child: _ActionTile(
-                icon: Icons.person_outline_rounded,
-                label: 'Profile',
-                route: '/tutor-profile',
-                tone: Tone.neutral,
+                icon: Icons.lock_open_rounded,
+                label: 'My leads',
+                route: '/tutor-leads',
+                tone: Tone.success,
               ),
             ),
           ],

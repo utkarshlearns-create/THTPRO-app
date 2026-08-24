@@ -128,6 +128,19 @@ class Application {
       const {'PENDING', 'ACCEPTED'}.contains(demoStatus.toUpperCase()) &&
       !isCompleted;
 
+  /// Our team has put a slot on the calendar and is waiting on the parent to
+  /// accept it. Without a date the demo has only been *requested*, and there is
+  /// nothing yet for the parent to agree to.
+  bool get isDemoAwaitingParent =>
+      demoStatus.toUpperCase() == 'PENDING' && demoDate != null;
+
+  /// The parent has agreed to the slot; the demo has not happened yet.
+  bool get isDemoBooked => demoStatus.toUpperCase() == 'ACCEPTED';
+
+  /// The demo has been taken. This is the only state in which the server will
+  /// accept the parent's approval — and only with a review attached.
+  bool get isDemoDone => demoStatus.toUpperCase() == 'COMPLETED';
+
   /// Where this application sits, as one word for a pill. Reads the demo and
   /// completion state too, so "Hired" doesn't hide a finished tuition.
   String get stageLabel {

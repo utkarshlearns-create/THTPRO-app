@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/constants/search_constants.dart';
+import 'package:tht_app/core/providers/master_data_provider.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
+import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
 
 /// The filter sheet for the job feed.
 ///
 /// Edits a local copy and only commits on "Show jobs", so a half-set filter
 /// never reloads the list underneath the sheet.
-class JobFilterSheet extends StatefulWidget {
+class JobFilterSheet extends ConsumerStatefulWidget {
   const JobFilterSheet({super.key, required this.initial});
 
   final JobFilters initial;
@@ -22,10 +25,10 @@ class JobFilterSheet extends StatefulWidget {
       );
 
   @override
-  State<JobFilterSheet> createState() => _JobFilterSheetState();
+  ConsumerState<JobFilterSheet> createState() => _JobFilterSheetState();
 }
 
-class _JobFilterSheetState extends State<JobFilterSheet> {
+class _JobFilterSheetState extends ConsumerState<JobFilterSheet> {
   late JobFilters _draft = widget.initial;
 
   static const _modes = {
@@ -40,6 +43,18 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cities = SearchConstants.locationData.values.expand((c) => c).toList()
       ..sort();
+
+    // Boards come from the platform's own list so the filter sends the short
+    // name a job is stored against. Absent while it loads — the group simply
+    // does not appear rather than showing an empty row.
+    final boards = ref.watch(masterDataProvider).valueOrNull?.boards ?? const [];
+
+    // Null for a teacher who has not set a gender. There is nothing to filter
+    // by then, and the same blank is what blocks them applying to a
+    // gender-specific lead at all.
+    final rawGender =
+        ref.watch(tutorProfileProvider).valueOrNull?.gender.trim() ?? '';
+    final myGender = rawGender.isEmpty ? null : rawGender;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -113,6 +128,20 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
                       ),
                   ],
                 ),
+                if (boards.isNotEmpty)
+                  _Group(
+                    label: 'Board',
+                    children: [
+                      for (final b in boards)
+                        _Choice(
+                          label: b,
+                          selected: _draft.board == b,
+                          onTap: () => setState(() => _draft = _draft.copyWith(
+                                board: () => _draft.board == b ? null : b,
+                              )),
+                        ),
+                    ],
+                  ),
                 _Group(
                   label: 'Teaching mode',
                   children: [
@@ -141,6 +170,28 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
+                // Not a gender chooser. The endpoint returns leads whose
+                // preference matches this value *or* is "Any", so sending the
+                // teacher's own gender means "only what I can apply for" —
+                // applying to a mismatched lead is refused outright.
+                if (myGender != null)
+                  SwitchListTile.adaptive(
+                    value: _draft.gender != null,
+                    onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          gender: () => v ? myGender : null,
+                        )),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Only jobs I can apply for',
+                      style:
+                          TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text(
+                      'Hides requirements asking for a teacher of another '
+                      'gender.',
+                      style: TextStyle(fontSize: 12.5, height: 1.4),
+                    ),
+                  ),
                 SwitchListTile.adaptive(
                   value: _draft.unappliedOnly,
                   onChanged: (v) =>

@@ -14,11 +14,20 @@ class ParentShell extends StatelessWidget {
 
     // Finding a teacher is the parent's main job, so Explore gets a tab. The old
     // "Dashboard" tab duplicated Home once Home took on the stats.
+    //
+    // Alerts gave its slot to Profile, matching the teacher and institute bars.
+    // Notifications moved to a top-level route reached from the home bell and
+    // from Profile — a tab went, not an entrance.
     int getSelectedIndex() {
       if (location.startsWith('/find-teachers')) return 1;
-      if (location.startsWith('/my-jobs')) return 2;
+      // The current teacher belongs to Requirements — it is reached from a
+      // requirement and describes one. Without this it fell through to Home.
+      if (location.startsWith('/my-jobs') ||
+          location.startsWith('/current-tutor')) {
+        return 2;
+      }
       if (location.startsWith('/wallet')) return 3;
-      if (location.startsWith('/notifications')) return 4;
+      if (location.startsWith('/parent-profile')) return 4;
       return 0; // /parent-home
     }
 
@@ -37,7 +46,7 @@ class ParentShell extends StatelessWidget {
           context.go('/wallet');
           break;
         case 4:
-          context.go('/notifications');
+          context.go('/parent-profile');
           break;
       }
     }
@@ -79,9 +88,9 @@ class ParentShell extends StatelessWidget {
               label: 'Wallet',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Alerts',
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person_rounded),
+              label: 'Profile',
             ),
           ],
         ),

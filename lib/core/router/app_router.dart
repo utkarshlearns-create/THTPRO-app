@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:tht_app/core/notifications/push_service.dart';
 
 // ── Screen imports ──
 import 'package:tht_app/features/auth/screens/login_screen.dart';
@@ -11,6 +12,8 @@ import 'package:tht_app/features/auth/screens/continue_on_web_screen.dart';
 import 'package:tht_app/features/home/screens/home_screen.dart';
 import 'package:tht_app/features/parent/screens/parent_shell.dart';
 import 'package:tht_app/features/parent/screens/parent_home_screen.dart';
+import 'package:tht_app/features/parent/screens/parent_profile_screen.dart';
+import 'package:tht_app/features/parent/screens/current_tutor_screen.dart';
 import 'package:tht_app/features/parent/screens/my_job_detail_screen.dart';
 import 'package:tht_app/features/parent/screens/job_wizard_screen.dart';
 import 'package:tht_app/features/parent/screens/my_jobs_screen.dart';
@@ -20,6 +23,12 @@ import 'package:tht_app/features/tutor/screens/tutor_profile_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_kyc_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_applications_screen.dart';
 import 'package:tht_app/features/tutor/screens/tutor_schedule_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_attendance_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_score_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_education_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_referrals_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_leads_screen.dart';
+import 'package:tht_app/features/tutor/screens/tutor_tuitions_screen.dart';
 import 'package:tht_app/features/explore/screens/explore_screen.dart';
 import 'package:tht_app/features/explore/screens/tutor_detail_screen.dart';
 import 'package:tht_app/features/jobs/screens/find_jobs_screen.dart';
@@ -27,14 +36,20 @@ import 'package:tht_app/features/jobs/screens/job_detail_screen.dart';
 import 'package:tht_app/features/wallet/screens/wallet_screen.dart';
 import 'package:tht_app/features/wallet/screens/packages_screen.dart';
 import 'package:tht_app/features/notifications/screens/notifications_screen.dart';
+import 'package:tht_app/features/messages/screens/conversations_screen.dart';
+import 'package:tht_app/features/messages/screens/thread_screen.dart';
 import 'package:tht_app/features/shared/screens/splash_screen.dart';
 import 'package:tht_app/features/shared/screens/connection_check_screen.dart';
+import 'package:tht_app/features/shared/screens/account_security_screen.dart';
+import 'package:tht_app/features/support/screens/support_screen.dart';
+import 'package:tht_app/features/support/screens/genie_screen.dart';
 
 import 'package:tht_app/features/institution/screens/institution_shell.dart';
 import 'package:tht_app/features/institution/screens/institution_dashboard_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_jobs_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_teachers_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_profile_screen.dart';
+import 'package:tht_app/features/institution/screens/post_vacancy_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _parentShellKey = GlobalKey<NavigatorState>();
@@ -53,7 +68,7 @@ final _institutionShellKey = GlobalKey<NavigatorState>();
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
-  return GoRouter(
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
@@ -202,9 +217,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/notifications',
+            path: '/current-tutor',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: NotificationsScreen(),
+              child: CurrentTutorScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/parent-profile',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: ParentProfileScreen(),
             ),
           ),
         ],
@@ -252,6 +273,42 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/tutor-schedule',
             pageBuilder: (_, __) => const NoTransitionPage(
               child: TutorScheduleScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-leads',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorLeadsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-tuitions',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorTuitionsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-referrals',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorReferralsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-education',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorEducationScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-score',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorScoreScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tutor-attendance',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: TutorAttendanceScreen(),
             ),
           ),
           GoRoute(
@@ -305,12 +362,17 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           // An institute reviews applicants on the same screen a parent does —
-          // both own the job and see the same applicant list.
+          // both own the job and see the same applicant list. The actions on it
+          // are PARENT-only server-side and are hidden for institutes.
           GoRoute(
-            path: '/my-jobs/:id',
+            path: '/inst-jobs/:id',
             builder: (_, state) => MyJobDetailScreen(
               jobId: int.parse(state.pathParameters['id']!),
             ),
+          ),
+          GoRoute(
+            path: '/inst-post-vacancy',
+            builder: (_, __) => const PostVacancyScreen(),
           ),
         ],
       ),
@@ -319,6 +381,45 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/packages',
         builder: (_, __) => const PackagesScreen(),
+      ),
+      // Top-level, not inside the parent shell. The shell picks its tab by
+      // prefix with a fall-through to Home, so once Profile took the fifth slot
+      // a parent reading their notifications would have seen Home highlighted —
+      // the bar lying about where they were. Pushed full-screen it gets a back
+      // button and correctly no bottom bar. Teachers and institutes have their
+      // own /tutor-notifications and /inst-notifications inside their shells.
+      GoRoute(
+        path: '/notifications',
+        builder: (_, __) => const NotificationsScreen(),
+      ),
+      // Messaging is shared by parents and teachers and reached from either
+      // profile, so it lives at the top level rather than in one shell.
+      GoRoute(
+        path: '/messages/:id',
+        builder: (_, state) => ThreadScreen(
+          conversationId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/messages',
+        builder: (_, __) => const ConversationsScreen(),
+      ),
+      // Help is reached from every role's profile, so it sits at the top level
+      // rather than inside one shell.
+      GoRoute(
+        path: '/support',
+        builder: (_, __) => const SupportScreen(),
+      ),
+      GoRoute(
+        path: '/genie',
+        builder: (_, __) => const GenieScreen(),
+      ),
+      // Password and phone, for every role — the endpoints behind it are
+      // role-agnostic, so one screen serves all three profiles. Top-level and
+      // pushed, so it keeps a back button and no bottom bar.
+      GoRoute(
+        path: '/account-security',
+        builder: (_, __) => const AccountSecurityScreen(),
       ),
       // Full-screen on purpose: posting a requirement is a multi-step form, and
       // a bottom bar offering four ways to leave it half-finished is a way to
@@ -329,6 +430,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  // Notification taps. A tap can land before this provider is built — the app
+  // may be launching because of it — so the parked destination is drained here
+  // as well as handled live.
+  //
+  // Only followed once signed in: every push destination is a private screen,
+  // and pushing one at a signed-out user would bounce them to /login having
+  // lost where they were going.
+  PushService.instance.onNavigate = (route) {
+    if (ref.read(authProvider).isAuthenticated) router.push(route);
+  };
+  final parked = PushService.instance.pendingRoute;
+  if (parked != null && authState.isAuthenticated) {
+    PushService.instance.pendingRoute = null;
+    // After the first frame: the Navigator does not exist during build.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => router.push(parked));
+  }
+
+  return router;
 });
 
 /// Where a signed-in user lands, by role.

@@ -12,6 +12,7 @@ class TutorFilters {
     this.query = '',
     this.subject,
     this.classGrade,
+    this.state,
     this.city,
     this.locality,
     this.mode,
@@ -21,6 +22,11 @@ class TutorFilters {
   final String query;
   final String? subject;
   final String? classGrade;
+
+  /// Narrows the city list, and is a filter in its own right — the search
+  /// endpoint has always accepted it and the app never sent one.
+  final String? state;
+
   final String? city;
   final String? locality;
   final String? mode;
@@ -29,7 +35,7 @@ class TutorFilters {
   final bool verifiedOnly;
 
   int get activeCount =>
-      [subject, classGrade, city, locality, mode]
+      [subject, classGrade, state, city, locality, mode]
           .where((f) => f != null && f.isNotEmpty)
           .length +
       (verifiedOnly ? 1 : 0);
@@ -40,6 +46,7 @@ class TutorFilters {
     String? query,
     String? Function()? subject,
     String? Function()? classGrade,
+    String? Function()? state,
     String? Function()? city,
     String? Function()? locality,
     String? Function()? mode,
@@ -49,6 +56,7 @@ class TutorFilters {
         query: query ?? this.query,
         subject: subject == null ? this.subject : subject(),
         classGrade: classGrade == null ? this.classGrade : classGrade(),
+        state: state == null ? this.state : state(),
         city: city == null ? this.city : city(),
         locality: locality == null ? this.locality : locality(),
         mode: mode == null ? this.mode : mode(),
@@ -59,6 +67,7 @@ class TutorFilters {
         if (query.trim().isNotEmpty) 'q': query.trim(),
         if (subject != null && subject!.isNotEmpty) 'subject': subject,
         if (classGrade != null && classGrade!.isNotEmpty) 'class': classGrade,
+        if (state != null && state!.isNotEmpty) 'state': state,
         if (city != null && city!.isNotEmpty) 'city': city,
         if (locality != null && locality!.isNotEmpty) 'locality': locality,
         if (mode != null && mode!.isNotEmpty) 'mode': mode,

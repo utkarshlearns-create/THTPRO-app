@@ -43,3 +43,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ── Firebase ──────────────────────────────────────────────────────────────────
+# Per-project config tying this build to the tht-app-60862 Firebase project.
+# Not a credential in the way a service-account key is, but it does not belong
+# in the repo. Each machine downloads its own from the Firebase console:
+#   Project settings → General → Your apps → google-services.json
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# A service-account key must NEVER live in the app repo — it belongs to the
+# backend only. Listed so an accidental copy here cannot be committed.
+*firebase-adminsdk*.json
+*service-account*.json
+
+# ── Release signing ───────────────────────────────────────────────────────────
+# The keystore and its passwords. Committing either would let anyone publish an
+# update impersonating this app. Both live outside the repo; these entries exist
+# so a stray copy inside it cannot be committed by accident.
+android/key.properties
+*.jks
+*.keystore

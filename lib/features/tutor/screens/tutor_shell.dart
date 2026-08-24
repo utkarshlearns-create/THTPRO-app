@@ -17,8 +17,28 @@ class TutorShell extends StatelessWidget {
     // Home once the home screen took on the stats; both are reached from
     // Profile and the home banner instead.
     int getSelectedIndex() {
-      if (location.startsWith('/tutor-jobs')) return 1;
-      if (location.startsWith('/tutor-schedule')) return 2;
+      // Unlocked leads belong to the Jobs tab — they are leads you took from
+      // that feed, and it is the tab a teacher expects to be on.
+      if (location.startsWith('/tutor-jobs') ||
+          location.startsWith('/tutor-leads')) {
+        return 1;
+      }
+      // Score is reached from the header badge and from Profile, and belongs to
+      // the teacher's own record — same fall-through trap as attendance below.
+      if (location.startsWith('/tutor-score') ||
+          location.startsWith('/tutor-education') ||
+          location.startsWith('/tutor-referrals')) {
+        return 4;
+      }
+      // Attendance history belongs to Tuitions and is only reached from it.
+      // Without this it fell through to the `return 0` below, so a teacher
+      // reading their log saw Home highlighted — the bar lying about where
+      // they were.
+      if (location.startsWith('/tutor-schedule') ||
+          location.startsWith('/tutor-tuitions') ||
+          location.startsWith('/tutor-attendance')) {
+        return 2;
+      }
       if (location.startsWith('/tutor-wallet')) return 3;
       if (location.startsWith('/tutor-profile')) return 4;
       return 0; // /tutor-home

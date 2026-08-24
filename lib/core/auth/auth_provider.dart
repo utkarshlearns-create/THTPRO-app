@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:tht_app/core/auth/user_role.dart';
 import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/network/token_storage.dart';
+import 'package:tht_app/core/notifications/push_service.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 
 export 'package:tht_app/core/auth/user_role.dart';
@@ -151,6 +154,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       preLeaderRole: preLeaderRole,
       isLoading: false,
     );
+
+    // Attach this device now that there is an account to attach it to, and a
+    // reason for the user to accept the permission prompt. Deliberately not
+    // awaited: a slow or refused registration must not hold up the redirect
+    // into the app, and PushService swallows its own failures.
+    unawaited(PushService.instance.registerDevice());
   }
 
   /// Called after a role change.
@@ -162,6 +171,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Full sign-out — clears storage and resets state.
   Future<void> logout() async {
+    // Detach this device first, while the token still authenticates. Doing it
+    // after clearing would send an unauthenticated request and leave the row
+    // behind — the next account on this phone would get the old user's push.
+    await PushService.instance.unregisterDevice();
     await TokenStorage.clearAll();
     state = const AuthState(isAuthenticated: false, isLoading: false);
   }

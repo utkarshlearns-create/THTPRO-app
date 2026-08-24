@@ -137,19 +137,48 @@ class Job {
   }
 
   /// `₹4,000–4,500 / month`, or null when no budget was recorded.
+  ///
+  /// `budget_range` is not a structured field. Depending on where the
+  /// requirement was posted it arrives as a bare range (`4000-4500`), as a
+  /// sentence the wizard composed (`₹6,500 - ₹7,000 / month (2 days a week)`),
+  /// or as prose (`Negotiable based on requirements`).
+  ///
+  /// So the numbers are *extracted*, never derived by deleting the other
+  /// characters. Stripping non-digits from the sentence form concatenated every
+  /// figure in it — 6,500 and 7,000 and the 2 from "2 days" became a fee of
+  /// ₹65,00,70,002 a month.
   String? get feeLabel {
     final raw = budgetRange.trim();
     if (raw.isEmpty) return null;
-    final parts = raw.split(RegExp(r'\s*-\s*'));
-    String money(String s) {
-      final n = int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), ''));
-      return n == null ? s : '₹${_grouped(n)}';
-    }
 
-    if (parts.length == 2 && parts.every((p) => p.trim().isNotEmpty)) {
-      return '${money(parts[0])}–${money(parts[1]).replaceFirst('₹', '')} / month';
+    final amounts = _amountsIn(raw);
+    // Nothing numeric to show — "Negotiable based on requirements" is a real
+    // answer, so pass it through rather than inventing a figure.
+    if (amounts.isEmpty) return raw;
+
+    if (amounts.length == 1 || amounts.first == amounts.last) {
+      return '₹${_grouped(amounts.first)} / month';
     }
-    return '${money(raw)} / month';
+    return '₹${_grouped(amounts.first)}–${_grouped(amounts.last)} / month';
+  }
+
+  /// The plausible money figures in [text], smallest first.
+  ///
+  /// Digit groups under 100 are dropped: they are the day counts, subject
+  /// counts and child counts that share the sentence with the fee, and no
+  /// monthly tuition is ₹6. Only the lowest and highest survive, so a stray
+  /// third figure cannot widen the range.
+  static List<int> _amountsIn(String text) {
+    final found = RegExp(r'\d[\d,]*')
+        .allMatches(text)
+        .map((m) => int.tryParse(m.group(0)!.replaceAll(',', '')))
+        .whereType<int>()
+        .where((n) => n >= 100)
+        .toList()
+      ..sort();
+
+    if (found.isEmpty) return const [];
+    return [found.first, found.last];
   }
 
   /// Indian digit grouping without pulling in intl for one label.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
@@ -24,7 +25,21 @@ class TutorScheduleScreen extends ConsumerWidget {
     final schedule = ref.watch(todayScheduleProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My tuitions')),
+      appBar: AppBar(
+        title: const Text('My tuitions'),
+        actions: [
+          IconButton(
+            onPressed: () => context.push('/tutor-tuitions'),
+            icon: const Icon(Icons.format_list_bulleted_rounded),
+            tooltip: 'All tuitions',
+          ),
+          IconButton(
+            onPressed: () => context.push('/tutor-attendance'),
+            icon: const Icon(Icons.history_rounded),
+            tooltip: 'Attendance history',
+          ),
+        ],
+      ),
       body: AsyncView<TodaySchedule>(
         value: schedule,
         onRetry: () => ref.invalidate(todayScheduleProvider),

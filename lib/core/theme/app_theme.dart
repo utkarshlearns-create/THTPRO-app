@@ -153,11 +153,22 @@ abstract final class AppTheme {
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.slate100,
           selectedColor: AppColors.primaryOrangeLight,
+          // Colours stated outright. Left to Material's defaults these resolved
+          // to a grey close enough to the chip's own fill that the labels in
+          // the requirement wizard were barely readable.
           labelStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
             fontSize: 13,
             fontWeight: FontWeight.w500,
+            color: AppColors.slate700,
           ),
+          secondaryLabelStyle: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryOrangeDark,
+          ),
+          checkmarkColor: AppColors.primaryOrangeDark,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -273,6 +284,30 @@ abstract final class AppTheme {
           color: AppColors.darkBorder,
           thickness: 1,
           space: 0,
+        ),
+        // Dark had no chip theme at all, so chips fell back to Material's
+        // defaults and drifted away from the rest of the surface.
+        chipTheme: ChipThemeData(
+          backgroundColor: AppColors.slate800,
+          selectedColor: AppColors.primaryOrange.withValues(alpha: 0.22),
+          labelStyle: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.slate200,
+          ),
+          secondaryLabelStyle: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFFB923C),
+          ),
+          checkmarkColor: const Color(0xFFFB923C),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          side: BorderSide.none,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         ),
         snackBarTheme: SnackBarThemeData(
           backgroundColor: AppColors.slate700,

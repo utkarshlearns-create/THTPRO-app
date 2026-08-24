@@ -66,15 +66,20 @@ class StatTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              color: isDark ? AppColors.slate400 : AppColors.slate500,
+          // Flexible so a two-line label in a tight grid cell ellipsises
+          // instead of overflowing the tile — three tiles across a phone leaves
+          // little vertical room once the label wraps.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+                color: isDark ? AppColors.slate400 : AppColors.slate500,
+              ),
             ),
           ),
           if (caption != null) ...[

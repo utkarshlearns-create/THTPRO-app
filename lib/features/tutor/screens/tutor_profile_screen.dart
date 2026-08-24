@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
+import 'package:tht_app/core/models/upload_file.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
@@ -15,7 +17,9 @@ import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
+import 'package:tht_app/features/tutor/widgets/class_subjects_sheet.dart';
 import 'package:tht_app/features/tutor/widgets/edit_profile_sheet.dart';
+import 'package:tht_app/features/tutor/widgets/reach_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// The teacher's profile — what families see, and how complete it is.
@@ -73,6 +77,8 @@ class TutorProfileScreen extends ConsumerWidget {
               _Completeness(profile: p),
               const SizedBox(height: AppSpacing.xl),
               _Teaching(profile: p),
+              const SizedBox(height: AppSpacing.base),
+              _IntroVideo(profile: p),
               const SizedBox(height: AppSpacing.xl),
               _Reach(profile: p),
               const SizedBox(height: AppSpacing.xl),
@@ -81,6 +87,8 @@ class TutorProfileScreen extends ConsumerWidget {
               _Qualifications(profile: p),
               const SizedBox(height: AppSpacing.xl),
               const _Verification(),
+              const SizedBox(height: AppSpacing.xl),
+              _Account(profile: p),
             ],
           ),
         ),
@@ -116,13 +124,21 @@ class TutorProfileScreen extends ConsumerWidget {
 
 // ── Identity ─────────────────────────────────────────────────────────────────
 
-class _Identity extends ConsumerWidget {
+class _Identity extends ConsumerStatefulWidget {
   const _Identity({required this.profile});
 
   final TutorProfile profile;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Identity> createState() => _IdentityState();
+}
+
+class _IdentityState extends ConsumerState<_Identity> {
+  bool _uploading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(currentUserProvider).valueOrNull;
     final name = profile.fullName.trim().isNotEmpty
@@ -133,10 +149,46 @@ class _Identity extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          THTAvatar(
-            name: name,
-            imageUrl: profile.imageUrl,
-            size: 60,
+          // A photo is the first thing a family looks at, so it is editable
+          // where it is shown rather than behind the details sheet.
+          Stack(
+            children: [
+              THTAvatar(
+                name: name,
+                imageUrl: profile.imageUrl,
+                size: 60,
+                onTap: _uploading ? null : _pickPhoto,
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? AppColors.darkCard : Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                  child: _uploading
+                      ? const SizedBox(
+                          width: 11,
+                          height: 11,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.6,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.photo_camera_rounded,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: AppSpacing.base),
           Expanded(
@@ -180,13 +232,64 @@ class _Identity extends ConsumerWidget {
             ),
           ),
           IconButton(
-            onPressed: () => EditProfileSheet.show(context, profile, ProfileSection.about),
+            onPressed: () =>
+                EditProfileSheet.show(context, profile, ProfileSection.about),
             icon: const Icon(Icons.edit_outlined, size: 19),
             tooltip: 'Edit your details',
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _pickPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        // A profile photo is displayed at 60–120px; a full-resolution phone
+        // photo is megabytes of upload for no visible gain.
+        maxWidth: 1200,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+
+      setState(() => _uploading = true);
+      await ref.read(usersRepositoryProvider).updateProfilePhoto(
+            UploadFile(
+              bytes: await picked.readAsBytes(),
+              filename: picked.name,
+            ),
+          );
+      if (!mounted) return;
+      ref.invalidate(tutorProfileProvider);
+      context.showMessage('Photo updated.');
+    } catch (e) {
+      if (mounted) context.showFailure(e);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
   }
 }
 
@@ -302,21 +405,11 @@ class _Teaching extends StatelessWidget {
                 label: 'Teaching mode',
                 value: _mode(profile.teachingMode),
               ),
-              const Divider(height: 1),
-              _Chips(
-                label: 'Subjects',
-                values: profile.subjects,
-                emptyHint: 'Set on the website',
-              ),
-              const Divider(height: 1),
-              _Chips(
-                label: 'Classes',
-                values: profile.classes,
-                emptyHint: 'Set on the website',
-              ),
             ],
           ),
         ),
+        const SizedBox(height: AppSpacing.md),
+        _ClassSubjects(profile: profile),
       ],
     );
   }
@@ -331,6 +424,235 @@ class _Teaching extends StatelessWidget {
         return 'Home or online';
       default:
         return raw.isEmpty ? 'Not set' : raw;
+    }
+  }
+}
+
+/// The class-by-class breakdown, and the way into editing it.
+///
+/// Its own card rather than two rows of chips: this is the field every match
+/// runs on, and the pairing matters — "Class 10 · Maths, Science" says
+/// something that two separate lists of classes and subjects do not.
+class _ClassSubjects extends StatelessWidget {
+  const _ClassSubjects({required this.profile});
+
+  final TutorProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final map = profile.classSubjects;
+
+    return THTCard(
+      onTap: () => ClassSubjectsSheet.show(context, profile),
+      borderColor: map.isEmpty ? Tone.warning.border(brightness) : null,
+      background: map.isEmpty ? Tone.warning.background(brightness) : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Classes and subjects',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: map.isEmpty
+                        ? Tone.warning.foreground(brightness)
+                        : (isDark ? AppColors.slate100 : AppColors.slate800),
+                  ),
+                ),
+              ),
+              Icon(Icons.edit_outlined, size: 17, color: muted),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (map.isEmpty)
+            Text(
+              'Not set yet — no job can match you until you add at least one '
+              'class and its subjects.',
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: Tone.warning.foreground(brightness),
+              ),
+            )
+          else
+            for (final entry in map.entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.45,
+                      fontFamily: DefaultTextStyle.of(context).style.fontFamily,
+                      color: isDark ? AppColors.slate200 : AppColors.slate700,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${entry.key}  ',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(
+                        text: entry.value.isEmpty
+                            ? 'no subjects yet'
+                            : entry.value.join(', '),
+                        style: entry.value.isEmpty
+                            ? TextStyle(
+                                color: muted, fontStyle: FontStyle.italic)
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A short clip families watch before choosing.
+///
+/// No video player is bundled, so an existing clip opens in the device's own
+/// player rather than half-working inline.
+class _IntroVideo extends ConsumerStatefulWidget {
+  const _IntroVideo({required this.profile});
+
+  final TutorProfile profile;
+
+  @override
+  ConsumerState<_IntroVideo> createState() => _IntroVideoState();
+}
+
+class _IntroVideoState extends ConsumerState<_IntroVideo> {
+  bool _uploading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final url = widget.profile.introVideoUrl;
+    final has = url != null && url.trim().isNotEmpty;
+
+    return THTCard(
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: (has ? Tone.success : Tone.neutral).background(brightness),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(
+              has ? Icons.play_arrow_rounded : Icons.videocam_outlined,
+              size: 20,
+              color: (has ? Tone.success : Tone.neutral).foreground(brightness),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Intro video',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.slate100 : AppColors.slate800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  has
+                      ? 'Families can watch this on your profile.'
+                      : 'A short clip introducing yourself helps families '
+                          'choose you.',
+                  style: TextStyle(fontSize: 12.5, height: 1.4, color: muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          if (_uploading)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else ...[
+            if (has)
+              IconButton(
+                onPressed: () => launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                tooltip: 'Watch',
+              ),
+            TextButton(
+              onPressed: _pick,
+              child: Text(has ? 'Replace' : 'Add'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pick() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.videocam_outlined),
+              title: const Text('Record a video'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    try {
+      final picked = await ImagePicker().pickVideo(
+        source: source,
+        // The website caps uploads at 50 MB and nothing enforces that here, so
+        // the length is capped instead — a minute is more than enough for an
+        // introduction and keeps the file inside that budget.
+        maxDuration: const Duration(minutes: 1),
+      );
+      if (picked == null || !mounted) return;
+
+      setState(() => _uploading = true);
+      await ref.read(usersRepositoryProvider).updateIntroVideo(
+            UploadFile(
+              bytes: await picked.readAsBytes(),
+              filename: picked.name,
+            ),
+          );
+      if (!mounted) return;
+      ref.invalidate(tutorProfileProvider);
+      context.showMessage('Intro video updated.');
+    } catch (e) {
+      if (mounted) context.showFailure(e);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
     }
   }
 }
@@ -363,9 +685,9 @@ class _Reach extends StatelessWidget {
               _Row(
                 label: 'Base',
                 value: [profile.locality, profile.city, profile.state]
-                        .where((s) => s.trim().isNotEmpty)
-                        .join(', ')
-                        .ifEmpty('Not set'),
+                    .where((s) => s.trim().isNotEmpty)
+                    .join(', ')
+                    .ifEmpty('Not set'),
               ),
               const Divider(height: 1),
               _Row(
@@ -377,12 +699,27 @@ class _Reach extends StatelessWidget {
                 label: 'Areas you cover',
                 values: profile.preferredLocations,
                 emptyHint: 'Add areas so nearby leads reach you',
+                onTap: () => ReachSheet.show(
+                  context,
+                  profile,
+                  ReachField.locations,
+                ),
               ),
               const Divider(height: 1),
               _Chips(
                 label: 'Boards',
                 values: profile.preferredBoards,
                 emptyHint: 'Any board',
+                onTap: () =>
+                    ReachSheet.show(context, profile, ReachField.boards),
+              ),
+              const Divider(height: 1),
+              _Chips(
+                label: 'When you are free',
+                values: profile.availableTimeSlots,
+                emptyHint: 'Add your hours to be matched on timing',
+                onTap: () =>
+                    ReachSheet.show(context, profile, ReachField.timeSlots),
               ),
             ],
           ),
@@ -450,7 +787,9 @@ class _PreferencesState extends ConsumerState<_Preferences> {
   Future<void> _save(String field, bool value) async {
     setState(() => _saving = field);
     try {
-      await ref.read(usersRepositoryProvider).updateTutorProfile({field: value});
+      await ref
+          .read(usersRepositoryProvider)
+          .updateTutorProfile({field: value});
       ref.invalidate(tutorProfileProvider);
     } catch (e) {
       if (mounted) context.showFailure(e);
@@ -487,7 +826,7 @@ class _Qualifications extends StatelessWidget {
           'Qualifications',
           icon: Icons.school_rounded,
           iconTone: Tone.success,
-          subtitle: 'Your education record is edited on the website',
+          subtitle: 'Degrees, marks and teaching certifications',
         ),
         const SizedBox(height: AppSpacing.md),
         THTCard(
@@ -516,18 +855,187 @@ class _Qualifications extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: AppSpacing.base),
-              OutlinedButton.icon(
-                onPressed: () => launchUrl(
-                  Uri.parse('${ApiConfig.siteUrl}/tutor'),
-                  mode: LaunchMode.externalApplication,
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/tutor-education'),
+                  icon: const Icon(Icons.school_outlined, size: 17),
+                  label: const Text('Edit your education'),
                 ),
-                icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                label: const Text('Edit education on the website'),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Account ──────────────────────────────────────────────────────────────────
+
+/// The things that belong to the account rather than the teaching profile.
+///
+/// Attendance history sits here as a second entrance — its first is the icon on
+/// My tuitions, where a teacher goes between sessions.
+class _Account extends StatelessWidget {
+  const _Account({required this.profile});
+
+  final TutorProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Future<void> open(String path) => launchUrl(
+          Uri.parse('${ApiConfig.siteUrl}$path'),
+          mode: LaunchMode.externalApplication,
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          'Account',
+          icon: Icons.settings_outlined,
+          iconTone: Tone.neutral,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        THTCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              // What families actually see. A teacher tuning their profile
+              // has no other way to check the result.
+              _AccountRow(
+                icon: Icons.visibility_outlined,
+                label: 'Preview my public profile',
+                onTap: () => context.push('/tutors/${profile.id}'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.forum_outlined,
+                label: 'Messages',
+                onTap: () => context.push('/messages'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.card_giftcard_outlined,
+                label: 'Refer and earn',
+                onTap: () => context.push('/tutor-referrals'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.workspace_premium_outlined,
+                label: 'Your score and rank',
+                onTap: () => context.push('/tutor-score'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.event_note_outlined,
+                label: 'Attendance history',
+                onTap: () => context.push('/tutor-attendance'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.notifications_none_rounded,
+                label: 'Notifications',
+                onTap: () => context.go('/tutor-notifications'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.help_outline_rounded,
+                label: 'Help and support',
+                onTap: () => context.push('/support'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.lock_outline_rounded,
+                label: 'Sign-in and security',
+                onTap: () => context.push('/account-security'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.description_outlined,
+                label: 'Terms of service',
+                external: true,
+                onTap: () => open('/terms'),
+                isDark: isDark,
+              ),
+              const Divider(height: 1),
+              _AccountRow(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Privacy policy',
+                external: true,
+                // The site serves this at /privacy-policy; /privacy is a 404.
+                onTap: () => open('/privacy-policy'),
+                isDark: isDark,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AccountRow extends StatelessWidget {
+  const _AccountRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.isDark,
+    this.external = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool external;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.base,
+          vertical: AppSpacing.base,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 19, color: muted),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.slate100 : AppColors.slate800,
+                ),
+              ),
+            ),
+            Icon(
+              external
+                  ? Icons.open_in_new_rounded
+                  : Icons.chevron_right_rounded,
+              size: external ? 15 : 20,
+              color: muted,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -642,45 +1150,58 @@ class _Chips extends StatelessWidget {
     required this.label,
     required this.values,
     required this.emptyHint,
+    this.onTap,
   });
 
   final String label;
   final List<String> values;
   final String emptyHint;
 
+  /// Makes the whole row an entrance to editing this list.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
 
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.base),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? AppColors.slate400 : AppColors.slate500,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.base),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(fontSize: 13, color: muted),
+                  ),
+                ),
+                if (onTap != null)
+                  Icon(Icons.edit_outlined, size: 15, color: muted),
+              ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          if (values.isEmpty)
-            Text(
-              emptyHint,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontStyle: FontStyle.italic,
-                color: isDark ? AppColors.slate500 : AppColors.slate400,
+            const SizedBox(height: AppSpacing.sm),
+            if (values.isEmpty)
+              Text(
+                emptyHint,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontStyle: FontStyle.italic,
+                  color: isDark ? AppColors.slate500 : AppColors.slate400,
+                ),
+              )
+            else
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [for (final v in values) Pill(v, dense: true)],
               ),
-            )
-          else
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [for (final v in values) Pill(v, dense: true)],
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

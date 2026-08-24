@@ -246,10 +246,20 @@ class SkeletonList extends StatelessWidget {
 
 /// A row of stat-tile skeletons matching the dashboard grid.
 class SkeletonTiles extends StatelessWidget {
-  const SkeletonTiles({super.key, this.count = 4, this.crossAxisCount = 2});
+  const SkeletonTiles({
+    super.key,
+    this.count = 4,
+    this.crossAxisCount = 2,
+    this.childAspectRatio,
+  });
 
   final int count;
   final int crossAxisCount;
+
+  /// Must match the grid this is standing in for. The default suits two
+  /// columns; three across the same width gives tiles too short for the
+  /// contents, which overflows rather than shrinking.
+  final double? childAspectRatio;
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +271,8 @@ class SkeletonTiles extends StatelessWidget {
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: AppSpacing.md,
         crossAxisSpacing: AppSpacing.md,
-        childAspectRatio: 1.45,
+        childAspectRatio:
+            childAspectRatio ?? (crossAxisCount >= 3 ? 0.95 : 1.45),
       ),
       itemBuilder: (_, __) => const THTCard(
         child: Column(

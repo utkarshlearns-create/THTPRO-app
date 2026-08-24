@@ -1,36 +1,28 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:tht_app/core/constants/kyc_documents.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
+import 'package:tht_app/core/models/upload_file.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
-import 'package:tht_app/core/ui/pill.dart';
+import 'package:tht_app/core/ui/note_box.dart';
+import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
 
-/// One document the teacher can attach.
-class _Doc {
-  const _Doc(this.field, this.label, this.hint, {this.required = false});
-
-  /// The backend field name this file is posted as.
-  final String field;
-
-  final String label;
-  final String hint;
-  final bool required;
-}
-
-/// Identity verification.
+/// Identity and qualification verification.
 ///
 /// Verification is what stands between a teacher and any leads at all, so the
-/// screen is explicit about exactly what is needed and what happens next — never
-/// a bare "Upload documents" button with no list.
+/// screen is explicit about what is needed and where each document stands.
+///
+/// Every slot the KYC record holds is offered here — the app used to expose
+/// three of seventeen, which left the professional certificates (B.Ed, TET,
+/// CTET, NET…) uploadable only on the website even though they feed the score.
 class TutorKYCScreen extends ConsumerStatefulWidget {
   const TutorKYCScreen({super.key});
 
@@ -39,26 +31,18 @@ class TutorKYCScreen extends ConsumerStatefulWidget {
 }
 
 class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
-  /// Aadhaar is the only hard requirement; the qualification certificate speeds
-  /// approval, so it is offered here rather than left for a later round-trip.
-  static const _docs = [
-    _Doc('aadhaar_front', 'Aadhaar — front', 'The side with your photo',
-        required: true),
-    _Doc('aadhaar_back', 'Aadhaar — back', 'The side with your address',
-        required: true),
-    _Doc(
-      'highest_qualification_certificate',
-      'Highest qualification',
-      'Degree or marksheet — speeds up approval',
-    ),
-  ];
+  /// Files chosen this session, keyed by form field. Not paths — a picked file
+  /// has no readable path on web.
+  final _picked = <String, XFile>{};
 
-  final _picked = <String, String>{};
   bool _termsAccepted = false;
   bool _submitting = false;
 
-  bool get _hasRequired =>
-      _docs.where((d) => d.required).every((d) => _picked.containsKey(d.field));
+  /// The field currently being replaced on its own, so only its row spins.
+  String? _replacing;
+
+  bool get _hasRequired => KycDocuments.requiredDocs
+      .every((d) => _picked.containsKey(d.field));
 
   @override
   Widget build(BuildContext context) {
@@ -71,108 +55,65 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
         onRetry: () => ref.invalidate(kycStatusProvider),
         loading: const Padding(
           padding: EdgeInsets.all(AppSpacing.lg),
-          child: SkeletonList(count: 3, itemHeight: 90),
+          child: SkeletonList(count: 4, itemHeight: 84),
         ),
-        data: (status) => status.isVerified
-            ? _verified(status)
-            : _form(status),
+        data: (status) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(kycStatusProvider);
+            await ref.read(kycStatusProvider.future);
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.base,
+              AppSpacing.lg,
+              AppSpacing.xxxl,
+            ),
+            children: _body(status),
+          ),
+        ),
       ),
     );
   }
 
-  // ── Already verified: nothing to do here ──
-
-  Widget _verified(KycStatus status) {
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        THTCard(
-          background: Tone.success.background(Theme.of(context).brightness),
-          borderColor: Tone.success.border(Theme.of(context).brightness),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.verified_rounded,
-                    color: Tone.success
-                        .foreground(Theme.of(context).brightness),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    "You're verified",
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: Tone.success
-                          .foreground(Theme.of(context).brightness),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Families see an ID-verified badge on your profile. Your '
-                'documents are locked now — contact your admin if something '
-                'needs correcting.',
-                style: TextStyle(
-                  fontSize: 13.5,
-                  height: 1.55,
-                  color: Tone.success
-                      .foreground(Theme.of(context).brightness)
-                      .withValues(alpha: 0.95),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Not verified: what to send, and where it stands ──
-
-  Widget _form(KycStatus status) {
+  List<Widget> _body(KycStatus status) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
-    final inReview = status.isPending;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.xxxl,
+    // Once approved, the identity documents are frozen — but a verified teacher
+    // can still add a certificate they have just earned.
+    final frozen = status.isVerified;
+
+    return [
+      _StatusBanner(status: status),
+      if (status.submissionCount > 0) ...[
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Submitted ${status.submissionCount} '
+          '${status.submissionCount == 1 ? 'time' : 'times'} so far.',
+          style: TextStyle(fontSize: 12, color: muted),
+        ),
+      ],
+      const SizedBox(height: AppSpacing.lg),
+      Text(
+        'Photos only — JPG or PNG. PDFs are not accepted. Make sure the text '
+        'is readable and all four corners are in frame.',
+        style: TextStyle(fontSize: 12.5, height: 1.5, color: muted),
       ),
-      children: [
-        if (status.nextStep != null)
-          _StatusBanner(status: status),
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          inReview ? 'Your documents' : 'What we need',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.slate50 : AppColors.slate900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Photos only — JPG or PNG. PDFs are not accepted. Make sure the text '
-          'is readable and all four corners are in frame.',
-          style: TextStyle(fontSize: 12.5, height: 1.5, color: muted),
-        ),
-        const SizedBox(height: AppSpacing.base),
-        for (final doc in _docs) ...[
-          _DocRow(
-            doc: doc,
-            path: _picked[doc.field],
-            onPick: () => _pick(doc),
-            onClear: () => setState(() => _picked.remove(doc.field)),
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ],
+      const SizedBox(height: AppSpacing.lg),
+
+      _group('Identity', KycDocuments.identity, status, frozen,
+          tone: Tone.info),
+      _group('Education', KycDocuments.academic, status, frozen,
+          tone: Tone.accent,
+          note: 'Verified degrees raise your score, which decides how high you '
+              'appear to families.'),
+      _group('Teaching certificates', KycDocuments.professional, status, frozen,
+          tone: Tone.success,
+          note: 'Each verified certificate adds to your qualification score. '
+              'Add only the ones you actually hold.'),
+
+      if (!frozen) ...[
         const SizedBox(height: AppSpacing.sm),
         _TermsCheck(
           value: _termsAccepted,
@@ -190,7 +131,11 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
                     color: Colors.white,
                   ),
                 )
-              : Text(inReview ? 'Send updated documents' : 'Submit for verification'),
+              : Text(
+                  status.isPending || status.isRejected
+                      ? 'Send updated documents'
+                      : 'Submit for verification',
+                ),
         ),
         if (!_hasRequired) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -208,12 +153,65 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
           ),
         ],
       ],
-    );
+    ];
   }
 
   bool get _canSubmit => _hasRequired && _termsAccepted && !_submitting;
 
-  Future<void> _pick(_Doc doc) async {
+  Widget _group(
+    String title,
+    List<KycDoc> docs,
+    KycStatus status,
+    bool frozen, {
+    required Tone tone,
+    String? note,
+  }) {
+    final done = docs.where((d) => status.isDocVerified(d.verifiedField)).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title,
+          icon: docs.first.icon,
+          iconTone: tone,
+          subtitle: done > 0 ? '$done of ${docs.length} verified' : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (note != null) ...[
+          Text(
+            note,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.45,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.slate400
+                  : AppColors.slate500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        for (final doc in docs) ...[
+          _DocRow(
+            doc: doc,
+            picked: _picked[doc.field],
+            status: status,
+            frozen: frozen,
+            busy: _replacing == doc.field,
+            onPick: () => _pick(doc),
+            onClear: () => setState(() => _picked.remove(doc.field)),
+            // Once approved, a single certificate can be added without
+            // resubmitting the whole record and re-entering review.
+            onReplaceNow: frozen ? () => _replaceOne(doc) : null,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        const SizedBox(height: AppSpacing.base),
+      ],
+    );
+  }
+
+  Future<XFile?> _choose() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -221,7 +219,7 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
+              leading: const Icon(Icons.camera_alt_outlined),
               title: const Text('Take a photo'),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
@@ -234,20 +232,51 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
         ),
       ),
     );
-    if (source == null) return;
+    if (source == null) return null;
 
+    return ImagePicker().pickImage(
+      source: source,
+      // Full-resolution phone photos are many megabytes and the upload is
+      // often on mobile data; this stays readable at a fraction of the size.
+      maxWidth: 2000,
+      imageQuality: 85,
+    );
+  }
+
+  Future<void> _pick(KycDoc doc) async {
     try {
-      final file = await ImagePicker().pickImage(
-        source: source,
-        // Full-resolution phone photos are many megabytes and the upload is
-        // often on mobile data; this stays readable at a fraction of the size.
-        maxWidth: 2000,
-        imageQuality: 85,
-      );
+      final file = await _choose();
       if (file == null || !mounted) return;
-      setState(() => _picked[doc.field] = file.path);
+      setState(() => _picked[doc.field] = file);
     } catch (e) {
       if (mounted) context.showFailure(e);
+    }
+  }
+
+  /// Replaces one document without resubmitting the whole record.
+  ///
+  /// `PATCH /api/users/kyc/document/` exists precisely so a verified teacher
+  /// can fill a gap without dropping back into review. It had no caller.
+  Future<void> _replaceOne(KycDoc doc) async {
+    try {
+      final file = await _choose();
+      if (file == null || !mounted) return;
+
+      setState(() => _replacing = doc.field);
+      await ref.read(usersRepositoryProvider).uploadKycDocument(
+            field: doc.field,
+            file: UploadFile(
+              bytes: await file.readAsBytes(),
+              filename: file.name,
+            ),
+          );
+      if (!mounted) return;
+      ref.invalidate(kycStatusProvider);
+      context.showMessage('${doc.label} sent for checking.');
+    } catch (e) {
+      if (mounted) context.showFailure(e);
+    } finally {
+      if (mounted) setState(() => _replacing = null);
     }
   }
 
@@ -259,7 +288,13 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
       // The server rejects documents outright if terms were never accepted, so
       // record acceptance first rather than letting the upload fail.
       await repo.acceptTerms();
-      await repo.submitKyc(Map.of(_picked));
+      await repo.submitKyc({
+        for (final entry in _picked.entries)
+          entry.key: UploadFile(
+            bytes: await entry.value.readAsBytes(),
+            filename: entry.value.name,
+          ),
+      });
       if (!mounted) return;
 
       ref.invalidate(kycStatusProvider);
@@ -284,70 +319,26 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final tone = status.isRejected
-        ? Tone.critical
-        : status.isPending
-            ? Tone.info
-            : Tone.warning;
-    final fg = tone.foreground(brightness);
+    final tone = status.isVerified
+        ? Tone.success
+        : status.isRejected
+            ? Tone.critical
+            : status.isPending
+                ? Tone.info
+                : Tone.warning;
 
-    return THTCard(
-      background: tone.background(brightness),
-      borderColor: tone.border(brightness),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                status.isPending
-                    ? Icons.hourglass_top_rounded
-                    : status.isRejected
-                        ? Icons.error_outline_rounded
-                        : Icons.badge_outlined,
-                size: 19,
-                color: fg,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  status.shortLabel,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: fg,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            status.nextStep!,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.55,
-              color: fg.withValues(alpha: 0.95),
-            ),
-          ),
-          if (status.documentsToResubmit.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final doc in status.documentsToResubmit)
-                  Pill(
-                    doc.replaceAll('_', ' '),
-                    tone: Tone.critical,
-                    dense: true,
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
+    return NoteBox(
+      tone: tone,
+      icon: status.isVerified
+          ? Icons.verified_rounded
+          : status.isRejected
+              ? Icons.error_outline_rounded
+              : Icons.shield_outlined,
+      title: status.shortLabel,
+      message: status.isVerified
+          ? 'Families see an ID-verified badge on your profile. You can still '
+              'add a certificate you have newly earned.'
+          : (status.nextStep ?? 'Our team is checking your documents.'),
     );
   }
 }
@@ -357,29 +348,51 @@ class _StatusBanner extends StatelessWidget {
 class _DocRow extends StatelessWidget {
   const _DocRow({
     required this.doc,
-    required this.path,
+    required this.picked,
+    required this.status,
+    required this.frozen,
+    required this.busy,
     required this.onPick,
     required this.onClear,
+    this.onReplaceNow,
   });
 
-  final _Doc doc;
-  final String? path;
+  final KycDoc doc;
+  final XFile? picked;
+  final KycStatus status;
+  final bool frozen;
+  final bool busy;
   final VoidCallback onPick;
   final VoidCallback onClear;
+
+  /// Set only when a single-document replace is allowed.
+  final VoidCallback? onReplaceNow;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
-    final attached = path != null;
+
+    final attached = picked != null;
+    final verified = status.isDocVerified(doc.verifiedField);
+    final onFile = status.hasDoc(doc.field);
+    final needsAgain = status.needsResubmit(doc.field);
+
+    final tone = needsAgain
+        ? Tone.critical
+        : verified
+            ? Tone.success
+            : attached
+                ? Tone.info
+                : Tone.neutral;
 
     return THTCard(
-      onTap: attached ? null : onPick,
-      borderColor: attached ? Tone.success.border(brightness) : null,
+      onTap: busy ? null : (onReplaceNow ?? (attached ? null : onPick)),
+      borderColor: tone == Tone.neutral ? null : tone.border(brightness),
       child: Row(
         children: [
-          _Thumb(path: path, attached: attached, brightness: brightness),
+          _Thumb(picked: picked, brightness: brightness, doc: doc),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -387,12 +400,17 @@ class _DocRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      doc.label,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? AppColors.slate50 : AppColors.slate900,
+                    Flexible(
+                      child: Text(
+                        doc.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isDark ? AppColors.slate50 : AppColors.slate900,
+                        ),
                       ),
                     ),
                     if (doc.required) ...[
@@ -400,7 +418,7 @@ class _DocRow extends StatelessWidget {
                       Text(
                         '*',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: Tone.critical.foreground(brightness),
                         ),
@@ -410,92 +428,117 @@ class _DocRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  attached ? 'Attached' : doc.hint,
+                  _subtitle(attached, verified, onFile, needsAgain),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 12,
                     height: 1.4,
-                    color: attached
-                        ? Tone.success.foreground(brightness)
-                        : muted,
+                    color: tone == Tone.neutral
+                        ? muted
+                        : tone.foreground(brightness),
                   ),
                 ),
               ],
             ),
           ),
-          if (attached)
+          const SizedBox(width: AppSpacing.sm),
+          if (busy)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (verified)
+            Icon(
+              Icons.verified_rounded,
+              size: 20,
+              color: Tone.success.foreground(brightness),
+            )
+          else if (attached)
             IconButton(
               onPressed: onClear,
               icon: const Icon(Icons.close_rounded, size: 18),
-              tooltip: 'Remove ${doc.label}',
+              tooltip: 'Remove',
             )
           else
-            Icon(Icons.add_a_photo_outlined, size: 19, color: muted),
+            TextButton(
+              onPressed: onReplaceNow ?? onPick,
+              child: Text(onFile ? 'Replace' : 'Add'),
+            ),
         ],
       ),
     );
+  }
+
+  String _subtitle(bool attached, bool verified, bool onFile, bool needsAgain) {
+    if (needsAgain) return 'Our team asked for this one again';
+    if (verified) return 'Verified by our team';
+    if (attached) return 'Ready to send';
+    if (onFile) return 'Uploaded — waiting to be checked';
+    return doc.hint;
   }
 }
 
 class _Thumb extends StatelessWidget {
   const _Thumb({
-    required this.path,
-    required this.attached,
+    required this.picked,
     required this.brightness,
+    required this.doc,
   });
 
-  final String? path;
-  final bool attached;
+  final XFile? picked;
   final Brightness brightness;
+  final KycDoc doc;
 
   @override
   Widget build(BuildContext context) {
     final isDark = brightness == Brightness.dark;
+    final file = picked;
 
-    if (!attached) {
+    if (file == null) {
       return Container(
-        width: 46,
-        height: 46,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: isDark ? AppColors.slate800 : AppColors.slate100,
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
-        child: Icon(
-          Icons.description_outlined,
-          size: 20,
-          color: isDark ? AppColors.slate400 : AppColors.slate400,
-        ),
+        child: Icon(doc.icon, size: 20, color: AppColors.slate400),
       );
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.sm),
       child: SizedBox(
-        width: 46,
-        height: 46,
-        // The picked file is a local path, so it renders from disk. On web the
-        // path is a blob URL that File cannot read, hence the icon fallback.
-        child: kIsWeb
-            ? Container(
-                color: Tone.success.background(brightness),
-                child: Icon(
-                  Icons.check_rounded,
-                  color: Tone.success.foreground(brightness),
-                ),
-              )
-            : Image.file(
-                File(path!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: Tone.success.background(brightness),
-                  child: Icon(
-                    Icons.check_rounded,
-                    color: Tone.success.foreground(brightness),
-                  ),
-                ),
-              ),
+        width: 44,
+        height: 44,
+        // Rendered from bytes rather than a path, so the thumbnail works in a
+        // browser too — on web the picked file has a blob URL that `File`
+        // cannot open.
+        child: FutureBuilder<Uint8List>(
+          future: file.readAsBytes(),
+          builder: (context, snapshot) {
+            final bytes = snapshot.data;
+            if (bytes == null) return _placeholder();
+            return Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _placeholder(),
+            );
+          },
+        ),
       ),
     );
   }
+
+  Widget _placeholder() => Container(
+        color: Tone.success.background(brightness),
+        child: Icon(
+          Icons.check_rounded,
+          color: Tone.success.foreground(brightness),
+        ),
+      );
 }
 
 // ── Terms ────────────────────────────────────────────────────────────────────
@@ -508,11 +551,13 @@ class _TermsCheck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: () => onChanged(!value),
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -521,13 +566,18 @@ class _TermsCheck extends StatelessWidget {
               onChanged: (v) => onChanged(v ?? false),
               visualDensity: VisualDensity.compact,
             ),
-            const Expanded(
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
               child: Padding(
-                padding: EdgeInsets.only(top: 11),
+                padding: const EdgeInsets.only(top: 10),
                 child: Text(
                   'I confirm these documents are mine and accept the Terms & '
                   'Conditions.',
-                  style: TextStyle(fontSize: 13, height: 1.45),
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: isDark ? AppColors.slate300 : AppColors.slate600,
+                  ),
                 ),
               ),
             ),

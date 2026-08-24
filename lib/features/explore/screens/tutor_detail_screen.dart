@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/detail_row.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
@@ -59,37 +60,56 @@ class TutorDetailScreen extends ConsumerWidget {
             await ref.read(tutorProvider(tutorId).future);
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.xxxl,
-            ),
+            padding: const EdgeInsets.only(bottom: AppSpacing.xxxl),
             children: [
+              // Full-bleed: the cover band runs edge to edge, so this one
+              // section brings no page padding of its own.
               _Header(tutor: t),
-              const SizedBox(height: AppSpacing.lg),
-              _ContactCard(tutor: t),
-              if (t.aboutMe.trim().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xl),
-                const SectionHeader('About'),
-                const SizedBox(height: AppSpacing.md),
-                THTCard(
-                  child: Text(
-                    t.aboutMe.trim(),
-                    style: const TextStyle(fontSize: 14, height: 1.6),
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSpacing.lg),
+                    _ContactCard(tutor: t),
+                    if (t.introVideoUrl != null &&
+                        t.introVideoUrl!.trim().isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _IntroVideo(url: t.introVideoUrl!.trim()),
+                    ],
+                    if (t.aboutMe.trim().isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      const SectionHeader('About'),
+                      const SizedBox(height: AppSpacing.md),
+                      THTCard(
+                        child: Text(
+                          t.aboutMe.trim(),
+                          style: const TextStyle(fontSize: 14, height: 1.6),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.xl),
+                    _Teaches(tutor: t),
+                    if (t.availableTimeSlots.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _Schedule(tutor: t),
+                    ],
+                    if (t.preferredLocations.isNotEmpty ||
+                        t.preferredBoards.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _Coverage(tutor: t),
+                    ],
+                    if (t.hasRatings) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _Ratings(tutor: t),
+                    ],
+                    if (t.reviews.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _Reviews(tutor: t),
+                    ],
+                  ],
                 ),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              _Teaches(tutor: t),
-              if (t.hasRatings) ...[
-                const SizedBox(height: AppSpacing.xl),
-                _Ratings(tutor: t),
-              ],
-              if (t.reviews.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xl),
-                _Reviews(tutor: t),
-              ],
+              ),
             ],
           ),
         ),
@@ -109,51 +129,106 @@ class TutorDetailScreen extends ConsumerWidget {
 
 // ── Header ───────────────────────────────────────────────────────────────────
 
+/// A cover band with the portrait breaking out of its lower edge.
+///
+/// The headline beneath the name is [PublicTutor.credentialLine] — the getter
+/// already existed for the search card and says the one thing a parent wants
+/// first: how long they have taught, what they hold, and where they are.
 class _Header extends StatelessWidget {
   const _Header({required this.tutor});
 
   final PublicTutor tutor;
 
+  static const double _bandHeight = 116;
+  static const double _avatarSize = 88;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final primary = Theme.of(context).colorScheme.primary;
+    final credentials = tutor.credentialLine;
 
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        THTAvatar(
-          name: tutor.name,
-          imageUrl: tutor.imageUrl,
-          size: 72,
-          verified: tutor.isKycVerified,
+        // Explicit height, and the avatar is a fully-constrained Positioned —
+        // no intrinsic pass, so this cannot become the unbounded-height crash.
+        SizedBox(
+          height: _bandHeight + _avatarSize / 2,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                height: _bandHeight,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        primary,
+                        Color.lerp(primary, Colors.black, 0.25)!,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: AppSpacing.lg,
+                bottom: 0,
+                width: _avatarSize,
+                height: _avatarSize,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: THTAvatar(
+                    name: tutor.name,
+                    imageUrl: tutor.imageUrl,
+                    size: _avatarSize - 6,
+                    verified: tutor.isKycVerified,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(width: AppSpacing.base),
-        Expanded(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                tutor.name.trim().isEmpty ? 'Teacher' : Fmt.titleCase(tutor.name),
+                tutor.name.trim().isEmpty
+                    ? 'Teacher'
+                    : Fmt.titleCase(tutor.name),
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 23,
                   fontWeight: FontWeight.w800,
                   height: 1.2,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.5,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                [
-                  if (tutor.experienceYears > 0)
-                    '${Fmt.plural(tutor.experienceYears, 'year')} teaching',
-                  if (tutor.highestQualification.trim().isNotEmpty)
-                    tutor.highestQualification,
-                ].join(' · '),
-                style: TextStyle(fontSize: 13, height: 1.4, color: muted),
-              ),
-              const SizedBox(height: AppSpacing.sm),
+              if (credentials.trim().isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  credentials,
+                  style: TextStyle(fontSize: 13.5, height: 1.45, color: muted),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
               Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
@@ -167,15 +242,226 @@ class _Header extends StatelessWidget {
                     ),
                   if (tutor.hasRatings)
                     Pill(
-                      tutor.avgRating!.toStringAsFixed(1),
+                      '${tutor.avgRating!.toStringAsFixed(1)} '
+                      '(${Fmt.number(tutor.ratingCount)})',
                       tone: Tone.success,
                       icon: Icons.star_rounded,
                       dense: true,
                     ),
+                  // Teaching qualifications, on the model since it was written
+                  // and never shown on this screen until now.
+                  if (tutor.isBed)
+                    const Pill('B.Ed', tone: Tone.info, dense: true),
+                  if (tutor.isTet)
+                    const Pill('TET qualified', tone: Tone.info, dense: true),
                   if (tutor.memberSince != null)
-                    Pill('On THT since ${tutor.memberSince!.year}', dense: true),
+                    Pill('On THT since ${tutor.memberSince!.year}',
+                        dense: true),
                 ],
               ),
+              if (tutor.ongoingTuitions > 0 || tutor.scheduledDemos > 0) ...[
+                const SizedBox(height: AppSpacing.md),
+                _ActivityLine(tutor: tutor, muted: muted),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// How busy this teacher is.
+///
+/// Only drawn when there is something to report — a row of zeroes on a teacher
+/// who has just joined reads as a warning rather than as a blank slate.
+class _ActivityLine extends StatelessWidget {
+  const _ActivityLine({required this.tutor, required this.muted});
+
+  final PublicTutor tutor;
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = [
+      if (tutor.ongoingTuitions > 0)
+        '${Fmt.plural(tutor.ongoingTuitions, 'tuition')} running',
+      if (tutor.scheduledDemos > 0)
+        '${Fmt.plural(tutor.scheduledDemos, 'demo')} scheduled',
+    ];
+
+    return Row(
+      children: [
+        Icon(Icons.insights_rounded, size: 14, color: muted),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            parts.join(' · '),
+            style: TextStyle(fontSize: 12.5, color: muted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Intro video ──────────────────────────────────────────────────────────────
+
+/// The teacher's introduction, opened externally.
+///
+/// There is no video player in this app's dependencies, and adding one to play
+/// a clip most teachers have not uploaded is not the trade. The card makes the
+/// hand-off obvious rather than pretending to be a player.
+class _IntroVideo extends StatelessWidget {
+  const _IntroVideo({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          'Introduction',
+          icon: Icons.play_circle_outline_rounded,
+          iconTone: Tone.info,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        THTCard(
+          padding: EdgeInsets.zero,
+          onTap: () => launchUrl(
+            Uri.parse(url),
+            mode: LaunchMode.externalApplication,
+          ),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primary.withValues(alpha: 0.14),
+                    primary.withValues(alpha: 0.28),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Watch their introduction',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Schedule ─────────────────────────────────────────────────────────────────
+
+/// When they are free. Was buried as one row inside "What they teach", where a
+/// parent working out whether the times suit them had to hunt for it.
+class _Schedule extends StatelessWidget {
+  const _Schedule({required this.tutor});
+
+  final PublicTutor tutor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          'When they are free',
+          icon: Icons.schedule_rounded,
+          iconTone: Tone.warning,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        THTCard(
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final slot in tutor.availableTimeSlots)
+                Pill(slot, tone: Tone.warning, dense: true),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Coverage ─────────────────────────────────────────────────────────────────
+
+/// Where they will travel and which boards they know.
+///
+/// Boards are shown here as information about the teacher. Note the search has
+/// no board filter — this is a fact on a profile, not a facet.
+class _Coverage extends StatelessWidget {
+  const _Coverage({required this.tutor});
+
+  final PublicTutor tutor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          'Reach',
+          icon: Icons.travel_explore_rounded,
+          iconTone: Tone.success,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        THTCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (tutor.preferredLocations.isNotEmpty)
+                DetailChips(
+                  label: 'Also travels to',
+                  values: tutor.preferredLocations,
+                  emptyHint: 'Not listed',
+                ),
+              if (tutor.preferredLocations.isNotEmpty &&
+                  tutor.preferredBoards.isNotEmpty)
+                const Divider(height: 1),
+              if (tutor.preferredBoards.isNotEmpty)
+                DetailChips(
+                  label: 'Boards they teach',
+                  values: tutor.preferredBoards,
+                  emptyHint: 'Not listed',
+                ),
             ],
           ),
         ),
@@ -467,6 +753,10 @@ class _Teaches extends StatelessWidget {
         THTCard(
           padding: EdgeInsets.zero,
           child: Column(
+            // Stretch, or the chip groups shrink-wrap and drift to the centre
+            // while the label/value rows beside them stay full width. Safe on a
+            // Column: the cross axis is horizontal and the card bounds it.
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               group('Subjects', tutor.subjects, empty: 'Not listed'),
               const Divider(height: 1),
@@ -493,10 +783,8 @@ class _Teaches extends StatelessWidget {
                       .join(', '),
                 ),
               ],
-              if (tutor.availableTimeSlots.isNotEmpty) ...[
-                const Divider(height: 1),
-                group('Available', tutor.availableTimeSlots),
-              ],
+              // Availability has its own section now — it is a scheduling
+              // question, not a "what do they teach" one.
             ],
           ),
         ),

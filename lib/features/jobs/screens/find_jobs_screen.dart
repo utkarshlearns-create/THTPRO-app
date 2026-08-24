@@ -57,6 +57,12 @@ class _FindJobsScreenState extends ConsumerState<FindJobsScreen> {
       appBar: AppBar(
         title: const Text('Find jobs'),
         actions: [
+          // The leads already paid for, one tap from the feed they came out of.
+          IconButton(
+            onPressed: () => context.push('/tutor-leads'),
+            icon: const Icon(Icons.lock_open_rounded),
+            tooltip: 'Unlocked leads',
+          ),
           _FilterButton(
             count: state.filters.activeCount,
             onPressed: () async {

@@ -10,6 +10,14 @@ abstract final class AppColors {
   static const Color primaryOrangeLight = Color(0xFFFFF7ED); // orange-50
   static const Color primaryBlue = Color(0xFF3B82F6); // blue-500
 
+  // ── Parent blue ──
+  //
+  // The action colour on parent surfaces. Note this is blue-600, not the
+  // blue-500 above: white on #3B82F6 measures 3.68:1, which fails WCAG AA for
+  // the 15px semibold label the button theme sets. #2563EB measures 5.17:1.
+  static const Color primaryBlueDark = Color(0xFF2563EB); // blue-600
+  static const Color primaryBlueDeep = Color(0xFF1D4ED8); // blue-700
+
   // ── Neutrals (Slate palette, matching Tailwind slate) ──
   static const Color slate50 = Color(0xFFF8FAFC);
   static const Color slate100 = Color(0xFFF1F5F9);

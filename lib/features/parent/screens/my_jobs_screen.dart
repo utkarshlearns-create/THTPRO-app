@@ -12,11 +12,26 @@ import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/parent/providers/parent_providers.dart';
 
 /// The requirements this parent has posted, and where each one stands.
-class MyJobsScreen extends ConsumerWidget {
+///
+/// Live and finished are separated. They used to share one list, so a closed
+/// requirement from months ago sat between two active ones and a parent had to
+/// read every status pill to find what still needed them.
+class MyJobsScreen extends ConsumerStatefulWidget {
   const MyJobsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyJobsScreen> createState() => _MyJobsScreenState();
+}
+
+class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
+  bool _showPast = false;
+
+  /// A requirement nobody is going to act on again.
+  static bool _isFinished(Job job) => const {'CLOSED', 'CANCELLED', 'REJECTED'}
+      .contains(job.status.toUpperCase());
+
+  @override
+  Widget build(BuildContext context) {
     final jobs = ref.watch(myJobsProvider);
 
     return Scaffold(
@@ -33,38 +48,95 @@ class MyJobsScreen extends ConsumerWidget {
           padding: EdgeInsets.all(AppSpacing.lg),
           child: SkeletonList(count: 3, itemHeight: 120),
         ),
-        data: (list) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(myJobsProvider);
-            await ref.read(myJobsProvider.future);
-          },
-          child: list.isEmpty
-              ? ListView(
-                  children: [
-                    EmptyState(
-                      icon: Icons.post_add_rounded,
-                      title: 'No requirements posted yet',
-                      message: 'Tell us what your child needs help with, and we '
-                          'will bring matching teachers to you.',
-                      actionLabel: 'Post a requirement',
-                      onAction: () => context.push('/post-requirement'),
-                    ),
-                  ],
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.base,
-                    AppSpacing.lg,
-                    // Room for the floating button not to cover the last card.
-                    AppSpacing.massive + AppSpacing.xl,
+        data: (all) {
+          final live = all.where((j) => !_isFinished(j)).toList();
+          final past = all.where(_isFinished).toList();
+          final list = _showPast ? past : live;
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(myJobsProvider);
+              await ref.read(myJobsProvider.future);
+            },
+            child: all.isEmpty
+                ? ListView(
+                    children: [
+                      EmptyState(
+                        icon: Icons.post_add_rounded,
+                        title: 'No requirements posted yet',
+                        message:
+                            'Tell us what your child needs help with, and we '
+                            'will bring matching teachers to you.',
+                        actionLabel: 'Post a requirement',
+                        onAction: () => context.push('/post-requirement'),
+                      ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      // Only worth the space once something has actually closed.
+                      if (past.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                            AppSpacing.lg,
+                            AppSpacing.sm,
+                          ),
+                          child: SegmentedButton<bool>(
+                            segments: [
+                              ButtonSegment(
+                                value: false,
+                                label: Text('Live · ${live.length}'),
+                              ),
+                              ButtonSegment(
+                                value: true,
+                                label: Text('Past · ${past.length}'),
+                              ),
+                            ],
+                            selected: {_showPast},
+                            showSelectedIcon: false,
+                            onSelectionChanged: (v) =>
+                                setState(() => _showPast = v.first),
+                          ),
+                        ),
+                      Expanded(
+                        child: list.isEmpty
+                            ? ListView(
+                                children: [
+                                  EmptyState(
+                                    icon: _showPast
+                                        ? Icons.history_rounded
+                                        : Icons.post_add_rounded,
+                                    title: _showPast
+                                        ? 'Nothing closed yet'
+                                        : 'No live requirements',
+                                    message: _showPast
+                                        ? 'Requirements you close move here.'
+                                        : 'Post one and matching teachers will '
+                                            'start applying.',
+                                    compact: true,
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.lg,
+                                  AppSpacing.base,
+                                  AppSpacing.lg,
+                                  // Room for the floating button not to cover the last card.
+                                  AppSpacing.massive + AppSpacing.xl,
+                                ),
+                                itemCount: list.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: AppSpacing.md),
+                                itemBuilder: (_, i) => _JobCard(job: list[i]),
+                              ),
+                      ),
+                    ],
                   ),
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.md),
-                  itemBuilder: (_, i) => _JobCard(job: list[i]),
-                ),
-        ),
+          );
+        },
       ),
     );
   }

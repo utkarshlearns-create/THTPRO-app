@@ -34,7 +34,12 @@ class _TutorFilterSheetState extends State<TutorFilterSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cities = SearchConstants.locationData.values.expand((c) => c).toList()
+    // Picking a state narrows the cities to that state's, which is how the
+    // location data is keyed. With no state chosen, every city is offered.
+    final cities = (_draft.state == null
+            ? SearchConstants.locationData.values.expand((c) => c)
+            : (SearchConstants.locationData[_draft.state!] ?? const <String>[]))
+        .toList()
       ..sort();
 
     return DraggableScrollableSheet(
@@ -121,6 +126,24 @@ class _TutorFilterSheetState extends State<TutorFilterSheet> {
                               mode: () =>
                                   _draft.mode == entry.key ? null : entry.key,
                             )),
+                      ),
+                  ],
+                ),
+                _Group(
+                  label: 'State',
+                  children: [
+                    for (final state in SearchConstants.locationData.keys)
+                      _Choice(
+                        label: state,
+                        selected: _draft.state == state,
+                        onTap: () => setState(() {
+                          final clearing = _draft.state == state;
+                          _draft = _draft.copyWith(
+                            state: () => clearing ? null : state,
+                            // The old city no longer belongs to this state.
+                            city: () => null,
+                          );
+                        }),
                       ),
                   ],
                 ),
@@ -228,6 +251,10 @@ class _Choice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Resolved from the scheme, not a literal: this sheet is shared with the
+    // parent side, where the primary colour is blue.
+    final primary = Theme.of(context).colorScheme.primary;
+
     return ChoiceChip(
       label: Text(label),
       selected: selected,
@@ -236,11 +263,11 @@ class _Choice extends StatelessWidget {
       labelStyle: TextStyle(
         fontSize: 13,
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        color: selected ? AppColors.primaryOrangeDark : null,
+        color: selected ? primary : null,
       ),
-      selectedColor: AppColors.primaryOrangeLight,
+      selectedColor: primary.withValues(alpha: 0.12),
       side: selected
-          ? const BorderSide(color: AppColors.primaryOrange)
+          ? BorderSide(color: primary)
           : BorderSide(
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.darkBorder

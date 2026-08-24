@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
+import 'package:tht_app/core/models/tuition_record.dart';
+import 'package:tht_app/core/models/unlocked_lead.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/models/tutor_score.dart';
@@ -38,9 +41,20 @@ final kycStatusProvider = FutureProvider.autoDispose<KycStatus>(
 );
 
 /// Leads the teacher has already paid to see but not yet acted on.
-final unlockedLeadsProvider =
-    FutureProvider.autoDispose<List<Map<String, dynamic>>>(
+final unlockedLeadsProvider = FutureProvider.autoDispose<List<UnlockedLead>>(
   (ref) => ref.watch(usersRepositoryProvider).unlockedLeads(),
+);
+
+/// Every tuition this teacher holds or has held, split by whether it is still
+/// running. The dashboard's "today" view is a different, narrower thing.
+final myTuitionsProvider = FutureProvider.autoDispose<
+    ({List<TuitionRecord> active, List<TuitionRecord> past})>(
+  (ref) => ref.watch(jobsRepositoryProvider).myTuitions(),
+);
+
+/// Demos our team has scheduled for this teacher.
+final tutorDemosProvider = FutureProvider.autoDispose<List<Application>>(
+  (ref) => ref.watch(jobsRepositoryProvider).tutorDemos(),
 );
 
 /// Badge count on the notification bell.

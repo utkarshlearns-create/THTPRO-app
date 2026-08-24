@@ -67,7 +67,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             icon: Badge(
               isLabelVisible: state.filters.activeCount > 0,
               label: Text('${state.filters.activeCount}'),
-              backgroundColor: AppColors.primaryOrange,
+              // Shared with the parent side, so it follows the scheme.
+              backgroundColor: Theme.of(context).colorScheme.primary,
               child: const Icon(Icons.tune_rounded),
             ),
           ),

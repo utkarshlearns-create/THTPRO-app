@@ -63,6 +63,20 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   late final _locality = TextEditingController(text: widget.profile.locality);
   late final _pincode = TextEditingController(text: widget.profile.pincode);
 
+  // The address detail lives only in `raw` — the app models the fields it
+  // edits, and these were not edited until now.
+  late final _houseNo = TextEditingController(text: _raw('house_no'));
+  late final _area = TextEditingController(text: _raw('area'));
+  late final _landmark = TextEditingController(text: _raw('landmark'));
+  late final _localAddress = TextEditingController(text: _raw('local_address'));
+  late final _permanentAddress =
+      TextEditingController(text: _raw('permanent_address'));
+
+  String _raw(String key) {
+    final v = widget.profile.raw[key];
+    return v == null ? '' : v.toString();
+  }
+
   late String? _gender =
       widget.profile.gender.trim().isEmpty ? null : widget.profile.gender;
   late DateTime? _dob = widget.profile.dob;
@@ -90,6 +104,11 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
       _fee,
       _locality,
       _pincode,
+      _houseNo,
+      _area,
+      _landmark,
+      _localAddress,
+      _permanentAddress,
     ]) {
       c.dispose();
     }
@@ -368,14 +387,76 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'The areas you can travel to are set on the website, where you can '
-            'pick them off a map of your city.',
+            'Your address',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.slate100
+                  : AppColors.slate800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Only our team sees this. Families never get your address — they '
+            'get yours only after you agree to teach them.',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate400
                   : AppColors.slate500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+          TextFormField(
+            controller: _houseNo,
+            decoration: InputDecoration(
+              labelText: 'House / flat number',
+              errorText: _fieldErrors['house_no'],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+          TextFormField(
+            controller: _area,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: 'Area',
+              hintText: 'Sector 4',
+              errorText: _fieldErrors['area'],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+          TextFormField(
+            controller: _landmark,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Landmark',
+              hintText: 'Near the community centre',
+              errorText: _fieldErrors['landmark'],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+          TextFormField(
+            controller: _localAddress,
+            maxLines: 2,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Where you live now',
+              alignLabelWithHint: true,
+              errorText: _fieldErrors['local_address'],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+          TextFormField(
+            controller: _permanentAddress,
+            maxLines: 2,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Permanent address',
+              hintText: 'If different from above',
+              alignLabelWithHint: true,
+              errorText: _fieldErrors['permanent_address'],
             ),
           ),
         ];
@@ -431,6 +512,12 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
         put('city', _city ?? '', p.city);
         put('locality', _locality.text.trim(), p.locality);
         put('pincode', _pincode.text.trim(), p.pincode);
+        put('house_no', _houseNo.text.trim(), _raw('house_no'));
+        put('area', _area.text.trim(), _raw('area'));
+        put('landmark', _landmark.text.trim(), _raw('landmark'));
+        put('local_address', _localAddress.text.trim(), _raw('local_address'));
+        put('permanent_address', _permanentAddress.text.trim(),
+            _raw('permanent_address'));
     }
 
     return out;

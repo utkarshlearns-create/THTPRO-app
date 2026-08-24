@@ -106,6 +106,35 @@ class JobWizardState {
     );
   }
 
+  /// Cities the backend knows about, in the order it returned them.
+  ///
+  /// Beats a hardcoded list: an admin adding a city makes it selectable here
+  /// without an app release.
+  List<String> get cities => masterLocations
+      .map((l) => (l is Map ? l['city'] : null)?.toString() ?? '')
+      .where((c) => c.isNotEmpty)
+      .toList();
+
+  /// Named areas within [city].
+  ///
+  /// These ride along inside `locations` — `LocationSerializer` nests each
+  /// city's `localities` — so they cost no extra request. Empty means none are
+  /// seeded for that city, and the form should fall back to free text.
+  List<String> localitiesFor(String city) {
+    final match = masterLocations.firstWhere(
+      (l) => l is Map && '${l['city']}'.toLowerCase() == city.toLowerCase(),
+      orElse: () => null,
+    );
+    if (match is! Map) return const [];
+    final raw = match['localities'];
+    if (raw is! List) return const [];
+    return raw
+        .where((e) => e is Map && e['is_active'] != false)
+        .map((e) => '${(e as Map)['name']}')
+        .where((n) => n.trim().isNotEmpty)
+        .toList();
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'student_name': studentName,
@@ -131,8 +160,11 @@ class JobWizardState {
 }
 
 class JobWizardNotifier extends StateNotifier<JobWizardState> {
-  JobWizardNotifier() : super(const JobWizardState()) {
-    _init();
+  /// [initialState] skips the master-data fetch, for tests and previews that
+  /// supply their own subjects, boards and locations.
+  JobWizardNotifier({JobWizardState? initialState})
+      : super(initialState ?? const JobWizardState()) {
+    if (initialState == null) _init();
   }
 
   Future<void> _init() async {
@@ -211,6 +243,14 @@ class JobWizardNotifier extends StateNotifier<JobWizardState> {
     if (classGrade != null) {
       _applyDynamicPricing(classGrade);
     }
+  }
+
+  /// A hobby or "other" class has no school board — music, art, spoken English
+  /// and the like. The pricing rules already branch on this; the form has to
+  /// branch on the same test or the two disagree.
+  static bool isBoardless(String classGrade) {
+    final lower = classGrade.toLowerCase();
+    return lower.contains('hobby') || lower.contains('other');
   }
 
   void _applyDynamicPricing(String classGrade) {

@@ -24,6 +24,8 @@ class TutorProfile {
     this.expectedFee,
     this.subjects = const [],
     this.classes = const [],
+    this.classSubjects = const {},
+    this.availableTimeSlots = const [],
     this.preferredBoards = const [],
     this.preferredLocations = const [],
     this.highestQualification = '',
@@ -32,6 +34,7 @@ class TutorProfile {
     this.allowDirectContactUnlock = false,
     this.termsAccepted = false,
     this.imageUrl,
+    this.introVideoUrl,
     this.raw = const {},
   });
 
@@ -57,12 +60,23 @@ class TutorProfile {
   final int experienceYears;
   final double? expectedFee;
 
-  /// Read-only on this endpoint — changed through the website's subject picker.
+  /// Read-only on this endpoint — the server derives both from
+  /// [classSubjects], which is the field to write.
   final List<String> subjects;
   final List<String> classes;
 
+  /// What the teacher teaches, as `{class: [subjects]}`.
+  ///
+  /// This is the writable shape. `subjects` and `classes` are in the
+  /// serializer's `read_only_fields`, so a PATCH of either is silently
+  /// discarded — editing has to go through here.
+  final Map<String, List<String>> classSubjects;
+
   final List<String> preferredBoards;
   final List<String> preferredLocations;
+
+  /// When the teacher is free, e.g. `Weekday evenings`.
+  final List<String> availableTimeSlots;
   final String highestQualification;
 
   /// The backend's own completeness score, 0–100.
@@ -75,6 +89,9 @@ class TutorProfile {
 
   final bool termsAccepted;
   final String? imageUrl;
+
+  /// A short clip families watch before deciding. Null until one is uploaded.
+  final String? introVideoUrl;
 
   /// Everything the API returned, for fields the app shows but does not edit.
   final Map<String, dynamic> raw;
@@ -102,6 +119,29 @@ class TutorProfile {
     return null;
   }
 
+  /// `{"Class 10": ["Maths", "Science"]}`, tolerating the shapes the field has
+  /// held over time: a missing value, a class with no subjects yet, or a single
+  /// subject stored as a bare string rather than a list.
+  static Map<String, List<String>> _classSubjects(Object? raw) {
+    if (raw is! Map) return const {};
+    final out = <String, List<String>>{};
+    raw.forEach((key, value) {
+      final name = key.toString().trim();
+      if (name.isEmpty) return;
+      if (value is List) {
+        out[name] = value
+            .map((s) => s.toString().trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } else if (value is String && value.trim().isNotEmpty) {
+        out[name] = [value.trim()];
+      } else {
+        out[name] = const [];
+      }
+    });
+    return out;
+  }
+
   factory TutorProfile.fromJson(Map<String, dynamic> json) => TutorProfile(
         id: asInt(json, 'id'),
         fullName: asString(json, 'full_name'),
@@ -119,8 +159,10 @@ class TutorProfile {
         expectedFee: asDoubleOrNull(json, 'expected_fee'),
         subjects: asStringList(json, 'subjects'),
         classes: asStringList(json, 'classes'),
+        classSubjects: _classSubjects(json['class_subjects']),
         preferredBoards: asStringList(json, 'preferred_boards'),
         preferredLocations: asStringList(json, 'preferred_locations'),
+        availableTimeSlots: asStringList(json, 'available_time_slots'),
         highestQualification: asString(json, 'highest_qualification'),
         completionPercentage: asInt(json, 'profile_completion_percentage'),
         openToInstituteJobs: asBool(json, 'open_to_institute_jobs'),
@@ -128,6 +170,7 @@ class TutorProfile {
         termsAccepted: asBool(json, 'terms_accepted'),
         imageUrl: asStringOrNull(json, 'image') ??
             asStringOrNull(json, 'external_profile_image_url'),
+        introVideoUrl: asStringOrNull(json, 'intro_video'),
         raw: json,
       );
 }

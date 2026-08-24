@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/models/co_applicants.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
@@ -17,6 +18,8 @@ class JobFilters {
     this.city,
     this.locality,
     this.mode,
+    this.board,
+    this.gender,
     this.unappliedOnly = false,
   });
 
@@ -26,6 +29,16 @@ class JobFilters {
   final String? city;
   final String? locality;
   final String? mode;
+
+  /// A board's short name — `CBSE`, `ICSE` — which is how jobs store it.
+  final String? board;
+
+  /// The teacher's own gender, sent to hide leads asking for the other one.
+  ///
+  /// Not a gender *chooser*: the endpoint answers with jobs whose preference
+  /// matches this value **or** is "Any", so it means "only what I can apply
+  /// for". The sheet fills it from the profile rather than asking.
+  final String? gender;
 
   /// Hides leads this teacher has already applied to — the common case when
   /// coming back to the feed a second time.
@@ -38,6 +51,8 @@ class JobFilters {
         city,
         locality,
         mode,
+        board,
+        gender,
       ].where((f) => f != null && f.isNotEmpty).length + (unappliedOnly ? 1 : 0);
 
   bool get isEmpty => activeCount == 0 && query.trim().isEmpty;
@@ -49,6 +64,8 @@ class JobFilters {
     String? Function()? city,
     String? Function()? locality,
     String? Function()? mode,
+    String? Function()? board,
+    String? Function()? gender,
     bool? unappliedOnly,
   }) =>
       JobFilters(
@@ -58,6 +75,8 @@ class JobFilters {
         city: city == null ? this.city : city(),
         locality: locality == null ? this.locality : locality(),
         mode: mode == null ? this.mode : mode(),
+        board: board == null ? this.board : board(),
+        gender: gender == null ? this.gender : gender(),
         unappliedOnly: unappliedOnly ?? this.unappliedOnly,
       );
 
@@ -69,6 +88,8 @@ class JobFilters {
         if (city != null && city!.isNotEmpty) 'city': city,
         if (locality != null && locality!.isNotEmpty) 'locality': locality,
         if (mode != null && mode!.isNotEmpty) 'mode': mode,
+        if (board != null && board!.isNotEmpty) 'board': board,
+        if (gender != null && gender!.isNotEmpty) 'gender': gender,
       };
 }
 
@@ -222,6 +243,15 @@ final jobFeedProvider =
 /// One job on its own, for the detail screen.
 final jobProvider = FutureProvider.autoDispose.family<Job, int>(
   (ref, jobId) => ref.watch(jobsRepositoryProvider).job(jobId),
+);
+
+/// Who else has applied to a job this teacher is already in for.
+///
+/// Only meaningful once applied — the endpoint 403s otherwise — so the caller
+/// gates on `hasApplied` rather than letting this surface an error.
+final coApplicantsProvider =
+    FutureProvider.autoDispose.family<CoApplicants, int>(
+  (ref, jobId) => ref.watch(jobsRepositoryProvider).coApplicants(jobId),
 );
 
 /// Whether this teacher holds the parent's contact for a given job.

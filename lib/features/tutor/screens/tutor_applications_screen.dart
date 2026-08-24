@@ -9,7 +9,9 @@ import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
+import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/features/tutor/providers/applications_provider.dart';
+import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
 
 /// The teacher's pipeline: everything they've applied to and where it stands.
 class TutorApplicationsScreen extends ConsumerWidget {
@@ -52,6 +54,7 @@ class TutorApplicationsScreen extends ConsumerWidget {
 
           return Column(
             children: [
+              const _UpcomingDemos(),
               _StageTabs(
                 all: all,
                 selected: stage,
@@ -169,16 +172,102 @@ class _StageTabs extends StatelessWidget {
   }
 }
 
+/// Demos our team has put on the calendar.
+///
+/// `GET /api/jobs/tutor/demos/` was fetched by nobody. A demo is the single
+/// most time-critical thing in a teacher's week — missing one loses the
+/// tuition — so it gets a strip above the pipeline rather than being buried in
+/// a status line further down.
+class _UpcomingDemos extends ConsumerWidget {
+  const _UpcomingDemos();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demos = ref.watch(tutorDemosProvider).valueOrNull;
+    if (demos == null) return const SizedBox.shrink();
+
+    // Only what is still ahead. A completed demo belongs in the pipeline
+    // below, not in a banner asking the teacher to attend it.
+    final upcoming = demos.where((d) => d.hasUpcomingDemo).toList()
+      ..sort((a, b) {
+        final at = a.demoDate, bt = b.demoDate;
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return at.compareTo(bt);
+      });
+    if (upcoming.isEmpty) return const SizedBox.shrink();
+
+    final brightness = Theme.of(context).brightness;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
+      child: THTCard(
+        background: Tone.info.background(brightness),
+        borderColor: Tone.info.border(brightness),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.event_available_rounded,
+                  size: 17,
+                  color: Tone.info.foreground(brightness),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  upcoming.length == 1
+                      ? 'You have a demo coming up'
+                      : '${upcoming.length} demos coming up',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Tone.info.foreground(brightness),
+                  ),
+                ),
+              ],
+            ),
+            for (final demo in upcoming.take(3)) ...[
+              const SizedBox(height: 6),
+              Text(
+                '${demo.job?.contextLine.isNotEmpty == true ? '${demo.job!.contextLine} — ' : ''}'
+                '${Fmt.dateTime(demo.demoDate)}',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.45,
+                  color: Tone.info.foreground(brightness).withValues(alpha: 0.95),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Application card ─────────────────────────────────────────────────────────
 
-class _ApplicationCard extends StatelessWidget {
+class _ApplicationCard extends ConsumerStatefulWidget {
   const _ApplicationCard({required this.application});
 
   final Application application;
 
   @override
+  ConsumerState<_ApplicationCard> createState() => _ApplicationCardState();
+}
+
+class _ApplicationCardState extends ConsumerState<_ApplicationCard> {
+  bool _working = false;
+
+  @override
   Widget build(BuildContext context) {
-    final a = application;
+    final a = widget.application;
     final job = a.job;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
@@ -283,6 +372,8 @@ class _ApplicationCard extends StatelessWidget {
               ),
             ),
           ],
+
+          ..._actions(a),
         ],
       ),
     );
@@ -327,4 +418,145 @@ class _ApplicationCard extends StatelessWidget {
     }
     return null;
   }
+
+  /// The one thing the teacher can do about this application from here.
+  ///
+  /// The screen used to be entirely read-only, which stalled two flows: a demo
+  /// nobody marks as taken leaves the parent's approve button refused, and a
+  /// finished tuition that is never closed keeps counting against the
+  /// active-tuition cap that blocks new applications.
+  List<Widget> _actions(Application a) {
+    if (a.isDemoBooked && !a.isDemoDone) {
+      return [
+        const SizedBox(height: AppSpacing.base),
+        _ActionButton(
+          icon: Icons.task_alt_rounded,
+          label: 'I have taken the demo',
+          busy: _working,
+          onPressed: _completeDemo,
+        ),
+      ];
+    }
+
+    if (a.isRunning) {
+      return [
+        const SizedBox(height: AppSpacing.base),
+        _ActionButton(
+          icon: Icons.flag_outlined,
+          label: 'End this tuition',
+          busy: _working,
+          onPressed: _endTuition,
+        ),
+      ];
+    }
+
+    return const [];
+  }
+
+  Future<void> _completeDemo() async {
+    final ok = await _ask(
+      title: 'Mark the demo as taken?',
+      body: 'We will tell the family so they can give their feedback. Only do '
+          'this once you have actually taken the class.',
+      confirmLabel: 'Yes, I took it',
+    );
+    if (ok != true) return;
+
+    await _run(
+      () => ref
+          .read(jobsRepositoryProvider)
+          .completeDemo(widget.application.id),
+      success: 'Demo recorded. The family has been asked for their feedback.',
+    );
+  }
+
+  Future<void> _endTuition() async {
+    final ok = await _ask(
+      title: 'End this tuition?',
+      body: 'Mark it finished once your last session is done. It stops '
+          'counting towards your active-tuition limit, which frees you to '
+          'apply for new jobs.',
+      confirmLabel: 'End it',
+    );
+    if (ok != true) return;
+
+    await _run(
+      () => ref.read(jobsRepositoryProvider).endTuition(widget.application.id),
+      success: 'Tuition closed. Your payout is settled at month end.',
+    );
+  }
+
+  Future<void> _run(
+    Future<void> Function() action, {
+    required String success,
+  }) async {
+    setState(() => _working = true);
+    try {
+      await action();
+      if (!mounted) return;
+      ref
+        ..invalidate(tutorApplicationsProvider)
+        ..invalidate(tutorStatsProvider)
+        ..invalidate(todayScheduleProvider);
+      context.showMessage(success);
+    } catch (e) {
+      if (mounted) context.showFailure(e);
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<bool?> _ask({
+    required String title,
+    required String body,
+    required String confirmLabel,
+  }) =>
+      showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(title),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Not yet'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(confirmLabel),
+            ),
+          ],
+        ),
+      );
 }
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.busy,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool busy;
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: busy ? null : () => onPressed(),
+          icon: busy
+              ? const SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(icon, size: 17),
+          label: Text(label),
+        ),
+      );
+}
+

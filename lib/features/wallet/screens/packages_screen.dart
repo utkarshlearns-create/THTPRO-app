@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:tht_app/core/models/upgrade_quote.dart';
 import 'package:tht_app/core/models/wallet.dart';
 import 'package:tht_app/core/repositories/wallet_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
+import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -13,7 +15,7 @@ import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/wallet/providers/wallet_providers.dart';
 import 'package:tht_app/features/wallet/services/checkout_service.dart';
 
-/// The plans a teacher can buy, and the checkout that follows.
+/// The plans a user can buy, and the checkout that follows.
 class PackagesScreen extends ConsumerStatefulWidget {
   const PackagesScreen({super.key});
 
@@ -29,6 +31,12 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
   Widget build(BuildContext context) {
     final packages = ref.watch(creditPackagesProvider);
     final wallet = ref.watch(walletProvider).valueOrNull;
+
+    // Both fall back to safe defaults on failure, so neither can strand the
+    // page — read them without an AsyncView.
+    final offer = ref.watch(walletOfferProvider).valueOrNull ?? RenewalOffer.none;
+    final expiry =
+        ref.watch(walletExpiryProvider).valueOrNull ?? WalletExpiryStatus.unknown;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add credits')),
@@ -50,11 +58,14 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
 
           final credit = list.where((p) => !p.isValidityOnly).toList();
           final validity = list.where((p) => p.isValidityOnly).toList();
+          final bestValueId = _bestValueId(credit);
 
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(creditPackagesProvider);
               ref.invalidate(walletProvider);
+              ref.invalidate(walletOfferProvider);
+              ref.invalidate(walletExpiryProvider);
               await ref.read(creditPackagesProvider.future);
             },
             child: ListView(
@@ -65,56 +76,63 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                 AppSpacing.xxxl,
               ),
               children: [
-                if (wallet != null) _CurrentPlan(wallet: wallet),
-                const SizedBox(height: AppSpacing.lg),
+                if (wallet != null) ...[
+                  _CurrentPlan(wallet: wallet),
+                  const SizedBox(height: AppSpacing.base),
+                ],
+                if (offer.isLive) ...[
+                  _OfferBanner(offer: offer),
+                  const SizedBox(height: AppSpacing.base),
+                ],
                 if (!CheckoutService.isSupported) ...[
                   const _WebNotice(),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.base),
                 ],
+                const SizedBox(height: AppSpacing.xs),
+                const SectionHeader(
+                  'Credit plans',
+                  subtitle: 'Credits let you unlock a parent’s contact.',
+                  icon: Icons.toll_rounded,
+                  iconTone: Tone.accent,
+                ),
+                const SizedBox(height: AppSpacing.md),
                 for (final p in credit) ...[
-                  _PackageCard(
+                  _PlanCard(
                     package: p,
+                    offer: offer,
                     busy: _busyPackageId == p.id,
                     disabled: _busyPackageId != null,
                     // Cheapest per credit, not cheapest overall — that is the
                     // comparison a buyer is actually making between plans.
-                    bestValue: p.id == _bestValueId(credit),
-                    onBuy: () => _buy(p),
+                    bestValue: p.id == bestValueId,
+                    onBuy: () => _buy(p, offer),
                   ),
                   const SizedBox(height: AppSpacing.md),
                 ],
                 if (validity.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'EXTEND YOUR VALIDITY',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.7,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.slate400
-                          : AppColors.slate500,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'These add days to credits you already hold. They do not add '
-                    'new credits.',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      height: 1.5,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.slate400
-                          : AppColors.slate500,
-                    ),
+                  const SizedBox(height: AppSpacing.base),
+                  const SectionHeader(
+                    'Extend your validity',
+                    subtitle: 'Adds days to credits you already hold. '
+                        'These do not add new credits.',
+                    icon: Icons.more_time_rounded,
+                    iconTone: Tone.info,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   for (final p in validity) ...[
-                    _PackageCard(
+                    _PlanCard(
                       package: p,
+                      offer: offer,
                       busy: _busyPackageId == p.id,
                       disabled: _busyPackageId != null,
-                      onBuy: () => _buy(p),
+                      // The server rejects this outright for anyone who has
+                      // never bought credits. Say so here rather than letting
+                      // the tap come back as a raw error.
+                      lockedReason: expiry.canBuyValidity
+                          ? null
+                          : 'Buy a credit plan first — this only extends '
+                              'credits you already hold.',
+                      onBuy: () => _buy(p, offer),
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -137,12 +155,17 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
     return comparable.first.id;
   }
 
-  Future<void> _buy(CreditPackage package) async {
+  Future<void> _buy(CreditPackage package, RenewalOffer offer) async {
     setState(() => _busyPackageId = package.id);
     final repo = ref.read(walletRepositoryProvider);
 
     try {
-      final order = await repo.createOrder(package.id);
+      final order = await repo.createOrder(
+        package.id,
+        // The server resolves the user's offer with or without this, but naming
+        // it keeps the code honest about the price the card just quoted.
+        offerCode: offer.isLive ? offer.code : null,
+      );
       if (!mounted) return;
 
       final result = await CheckoutService().open(
@@ -169,6 +192,10 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
           if (!mounted) return;
           ref.invalidate(walletProvider);
           ref.invalidate(walletTransactionsProvider);
+          // An offer is single-use, and buying validity changes whether more
+          // validity may be bought.
+          ref.invalidate(walletOfferProvider);
+          ref.invalidate(walletExpiryProvider);
           context.showMessage(
             package.isValidityOnly
                 ? 'Validity extended by ${Fmt.plural(package.validityDays, 'day')}.'
@@ -224,7 +251,8 @@ class _CurrentPlan extends StatelessWidget {
             ),
           ),
           if (wallet.isExpired)
-            const Pill('Expired', tone: Tone.critical, icon: Icons.timer_off_outlined)
+            const Pill('Expired',
+                tone: Tone.critical, icon: Icons.timer_off_outlined)
           else if (days != null)
             Pill(
               '${Fmt.plural(days, 'day')} left',
@@ -237,6 +265,64 @@ class _CurrentPlan extends StatelessWidget {
               tone: Tone.info,
               icon: Icons.schedule_rounded,
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The discount the server is already applying.
+///
+/// Without this the page quotes full price and the payment sheet charges less,
+/// which reads as a pricing bug even though the user is better off.
+class _OfferBanner extends StatelessWidget {
+  const _OfferBanner({required this.offer});
+
+  final RenewalOffer offer;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final fg = Tone.success.foreground(brightness);
+    final pct = offer.percentOff;
+    final label = pct == pct.roundToDouble()
+        ? pct.toStringAsFixed(0)
+        : pct.toStringAsFixed(1);
+
+    return THTCard(
+      background: Tone.success.background(brightness),
+      borderColor: Tone.success.border(brightness),
+      child: Row(
+        children: [
+          Icon(Icons.local_offer_rounded, size: 19, color: fg),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$label% off your renewal',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: fg,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  offer.expiresAt == null
+                      ? 'Applied automatically at checkout.'
+                      : 'Applied automatically at checkout · ends '
+                          '${Fmt.relative(offer.expiresAt).toLowerCase()}.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: fg.withValues(alpha: 0.95),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -281,16 +367,19 @@ class _WebNotice extends StatelessWidget {
 
 // ── One plan ─────────────────────────────────────────────────────────────────
 
-class _PackageCard extends StatelessWidget {
-  const _PackageCard({
+class _PlanCard extends ConsumerWidget {
+  const _PlanCard({
     required this.package,
+    required this.offer,
     required this.busy,
     required this.disabled,
     required this.onBuy,
     this.bestValue = false,
+    this.lockedReason,
   });
 
   final CreditPackage package;
+  final RenewalOffer offer;
   final bool busy;
   final bool disabled;
   final VoidCallback onBuy;
@@ -298,16 +387,44 @@ class _PackageCard extends StatelessWidget {
   /// Lowest cost per credit of the plans on offer.
   final bool bestValue;
 
+  /// Why this plan cannot be bought right now, or null when it can.
+  final String? lockedReason;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
-    final perCredit = package.pricePerCredit;
+    final locked = lockedReason != null;
+    final discounted = offer.isLive;
+
+    // Only quoted for a plan that can actually be bought, and only shown when
+    // the server says there is real value to credit back — a quote that fails
+    // or has nothing to prorate leaves the card exactly as it was.
+    final quote = locked
+        ? null
+        : ref.watch(upgradeQuoteProvider(package.id)).valueOrNull;
+    final upgrade = quote != null && quote.isRealUpgrade ? quote : null;
+    final payable =
+        discounted ? offer.discounted(package.price) : package.price;
+
+    // Per the price actually payable, not the struck-through one — a discounted
+    // ₹479 plan sitting above "₹200 per credit" invites the buyer to check the
+    // arithmetic and conclude one of the two numbers is lying.
+    final perCredit = package.credits > 0 ? payable / package.credits : null;
+
+    // A validity plan carries no credits, so leading with "0" would be a lie —
+    // for those the days are the headline.
+    final heroValue = package.isValidityOnly
+        ? Fmt.number(package.validityDays)
+        : Fmt.number(package.credits);
+    final heroUnit = package.isValidityOnly
+        ? (package.validityDays == 1 ? 'day' : 'days')
+        : (package.credits == 1 ? 'credit' : 'credits');
 
     return THTCard(
       elevated: bestValue,
-      borderColor: bestValue ? AppColors.primaryOrange : null,
+      borderColor: bestValue ? Theme.of(context).colorScheme.primary : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -327,18 +444,46 @@ class _PackageCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      package.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? AppColors.slate50 : AppColors.slate900,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          heroValue,
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                            letterSpacing: -1,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            color:
+                                isDark ? AppColors.slate50 : AppColors.slate900,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Text(
+                            heroUnit,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: muted,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _subtitle(),
-                      style: TextStyle(fontSize: 12.5, height: 1.45, color: muted),
+                      package.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
+                        color: muted,
+                      ),
                     ),
                   ],
                 ),
@@ -347,12 +492,22 @@ class _PackageCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  if (discounted)
+                    Text(
+                      Fmt.rupees(package.price),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: muted,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: muted,
+                      ),
+                    ),
                   Text(
-                    Fmt.rupees(package.price),
+                    Fmt.rupees(payable),
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 21,
                       fontWeight: FontWeight.w800,
-                      height: 1.1,
+                      height: 1.15,
                       letterSpacing: -0.4,
                       fontFeatures: const [FontFeature.tabularFigures()],
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -369,18 +524,48 @@ class _PackageCard extends StatelessWidget {
               ),
             ],
           ),
-          if (package.description.trim().isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              // A validity plan's hero number already *is* its validity, so
+              // repeating it in a pill says the same thing twice.
+              if (!package.isValidityOnly)
+                Pill(
+                  package.validityLabel,
+                  tone: package.isLifetime ? Tone.success : Tone.info,
+                  icon: package.isLifetime
+                      ? Icons.all_inclusive_rounded
+                      : Icons.schedule_rounded,
+                  dense: true,
+                ),
+              if (discounted)
+                Pill(
+                  '${offer.percentOff.toStringAsFixed(0)}% OFF',
+                  tone: Tone.success,
+                  icon: Icons.local_offer_rounded,
+                  dense: true,
+                ),
+            ],
+          ),
+          if (package.features.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            Text(
-              package.description.trim(),
-              style: TextStyle(fontSize: 12.5, height: 1.5, color: muted),
-            ),
+            _FeatureList(features: package.features),
+          ],
+          if (locked) ...[
+            const SizedBox(height: AppSpacing.md),
+            _LockedNote(reason: lockedReason!),
+          ],
+          if (upgrade != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _UpgradeNote(quote: upgrade),
           ],
           const SizedBox(height: AppSpacing.base),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: disabled ? null : onBuy,
+              onPressed: disabled || locked ? null : onBuy,
               child: busy
                   ? const SizedBox(
                       width: 18,
@@ -390,22 +575,167 @@ class _PackageCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : Text('Buy for ${Fmt.rupees(package.price)}'),
+                  : Text('Buy for ${Fmt.rupees(payable)}'),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  String _subtitle() {
-    if (package.isValidityOnly) {
-      return 'Adds ${Fmt.plural(package.validityDays, 'day')} to your existing '
-          'credits';
-    }
-    final credits = '${Fmt.number(package.credits)} credits';
-    return package.validityDays > 0
-        ? '$credits, valid ${Fmt.plural(package.validityDays, 'day')}'
-        : credits;
+/// What the plan costs given what is left of the current one.
+///
+/// Deliberately additive rather than replacing the headline price: the buy
+/// button charges the plan's own price, and quoting the prorated figure in the
+/// hero slot would put a number on the card that the payment sheet then
+/// contradicts. Upgrading is arranged by our team, so this tells the teacher
+/// what to ask for.
+class _UpgradeNote extends StatelessWidget {
+  const _UpgradeNote({required this.quote});
+
+  final UpgradeQuote quote;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final fg = Tone.info.foreground(brightness);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Tone.info.background(brightness),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Tone.info.border(brightness)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.upgrade_rounded, size: 16, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                'Upgrade for ${Fmt.rupees(quote.upgradePrice)}',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: fg,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '${Fmt.rupees(quote.remainingValue)} left on '
+            '${quote.currentPlanName ?? 'your current plan'} comes off the '
+            'price'
+            '${quote.upgradeCredits > 0 ? ', and you gain ${Fmt.plural(quote.upgradeCredits, 'credit')}' : ''}'
+            '. Ask your counsellor to apply it.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: fg.withValues(alpha: 0.95),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The admin's bullets for a plan.
+///
+/// Kept below the structured facts on purpose: these are free text that can
+/// duplicate — and occasionally contradict — the real validity and credit
+/// figures above, so they read as supporting copy, not as the specification.
+class _FeatureList extends StatelessWidget {
+  const _FeatureList({required this.features});
+
+  final List<String> features;
+
+  static const int _max = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final shown = features.where((f) => f.trim().isNotEmpty).take(_max).toList();
+    final extra = features.length - shown.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final f in shown)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 14,
+                  color: Tone.success.foreground(brightness),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    f.trim(),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.45,
+                      color: isDark ? AppColors.slate300 : AppColors.slate600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (extra > 0)
+          Text(
+            '+$extra more',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.slate400 : AppColors.slate500,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _LockedNote extends StatelessWidget {
+  const _LockedNote({required this.reason});
+
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final fg = Tone.warning.foreground(brightness);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Tone.warning.background(brightness),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Tone.warning.border(brightness)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lock_outline_rounded, size: 16, color: fg),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              reason,
+              style: TextStyle(fontSize: 12.5, height: 1.45, color: fg),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

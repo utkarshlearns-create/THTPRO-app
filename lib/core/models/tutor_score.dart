@@ -14,8 +14,12 @@ class TutorScore {
     this.absentCount = 0,
     this.modulesPresent = 0,
     this.qualificationScore,
+    this.attendanceScore,
+    this.communicationScore,
     this.demoScore,
+    this.monthOneReviewScore,
     this.parentRatingScore,
+    this.studentPerformanceScore,
     this.cityRank,
     this.cityCohort,
     this.lastCalculatedAt,
@@ -35,9 +39,58 @@ class TutorScore {
   /// not meaningful yet.
   final int modulesPresent;
 
+  // ── The seven modules the score is made of ──
+  //
+  // Each is null until there is data for it. That is the point of
+  // [modulesPresent]: the total is rescaled across whichever modules a teacher
+  // actually has, so a missing module is "not measured yet", never a zero.
+
   final double? qualificationScore;
+  final double? attendanceScore;
+  final double? communicationScore;
   final double? demoScore;
+  final double? monthOneReviewScore;
   final double? parentRatingScore;
+  final double? studentPerformanceScore;
+
+  /// The modules that have been scored, in the order a teacher earns them.
+  List<({String label, double? value, String hint})> get modules => [
+        (
+          label: 'Qualifications',
+          value: qualificationScore,
+          hint: 'Your degrees, B.Ed and teaching certifications',
+        ),
+        (
+          label: 'Demo classes',
+          value: demoScore,
+          hint: 'How your demo lessons were rated',
+        ),
+        (
+          label: 'Attendance',
+          value: attendanceScore,
+          hint: 'Turning up, and turning up on time',
+        ),
+        (
+          label: 'Parent reviews',
+          value: parentRatingScore,
+          hint: 'What the families you taught said',
+        ),
+        (
+          label: 'Communication',
+          value: communicationScore,
+          hint: 'How you deal with families and our team',
+        ),
+        (
+          label: 'First month',
+          value: monthOneReviewScore,
+          hint: 'Your review after a month of teaching',
+        ),
+        (
+          label: 'Student progress',
+          value: studentPerformanceScore,
+          hint: 'How the students you teach are doing',
+        ),
+      ];
 
   /// Position among teachers in the same city, when a snapshot exists.
   final int? cityRank;
@@ -103,8 +156,13 @@ class TutorScore {
       absentCount: asInt(json, 'absent_count'),
       modulesPresent: asInt(json, 'modules_present'),
       qualificationScore: asDoubleOrNull(json, 'qualification_score'),
+      attendanceScore: asDoubleOrNull(json, 'attendance_score'),
+      communicationScore: asDoubleOrNull(json, 'communication_score'),
       demoScore: asDoubleOrNull(json, 'demo_score'),
+      monthOneReviewScore: asDoubleOrNull(json, 'month1_review_score'),
       parentRatingScore: asDoubleOrNull(json, 'parent_rating_score'),
+      studentPerformanceScore:
+          asDoubleOrNull(json, 'student_performance_score'),
       cityRank: city == null ? null : asIntOrNull(city, 'rank'),
       cityCohort: city == null ? null : asIntOrNull(city, 'cohort_size'),
       lastCalculatedAt: asDateOrNull(json, 'last_calculated_at'),

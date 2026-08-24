@@ -126,7 +126,10 @@ class _NotificationCard extends StatelessWidget {
       // signal, so the list reads at a glance.
       background: n.isRead
           ? null
-          : (isDark ? AppColors.slate800 : AppColors.primaryOrangeLight),
+          : (isDark
+              ? AppColors.slate800
+              // Follows the scheme — parents see this screen in blue.
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.07)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

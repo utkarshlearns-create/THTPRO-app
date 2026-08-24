@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/models/institution_profile.dart';
+import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/detail_row.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
+import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
-import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/institution/providers/institution_providers.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// The institute's own details — what a teacher sees before applying.
 class InstitutionProfileScreen extends ConsumerWidget {
@@ -55,9 +59,15 @@ class InstitutionProfileScreen extends ConsumerWidget {
             ),
             children: [
               _Identity(profile: p),
+              if (p.weakestSpot != null) ...[
+                const SizedBox(height: AppSpacing.base),
+                _Completeness(profile: p),
+              ],
               const SizedBox(height: AppSpacing.xl),
               SectionHeader(
                 'Details',
+                icon: Icons.apartment_rounded,
+                iconTone: Tone.info,
                 actionLabel: 'Edit',
                 onAction: () => EditInstitutionSheet.show(context, p),
               ),
@@ -66,19 +76,41 @@ class InstitutionProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    _Row(
+                    DetailRow(
                       label: 'Contact person',
                       value: p.contactPerson.orNotSet,
                     ),
                     const Divider(height: 1),
-                    _Row(
+                    DetailRow(
                       label: 'Established',
                       value: p.establishedYear?.toString() ?? 'Not set',
                     ),
                     const Divider(height: 1),
-                    _Row(label: 'Address', value: p.address.orNotSet),
+                    DetailRow(label: 'Address', value: p.address.orNotSet),
                     const Divider(height: 1),
-                    _Row(label: 'Website', value: p.website.orNotSet),
+                    // Tappable when there is something to open. The edit form
+                    // already insists on a scheme, so this is safe to hand to
+                    // the launcher without re-parsing.
+                    DetailRow(
+                      label: 'Website',
+                      value: p.website.orNotSet,
+                      trailingIcon: p.website.trim().isEmpty
+                          ? null
+                          : Icons.open_in_new_rounded,
+                      onTap: p.website.trim().isEmpty
+                          ? null
+                          : () => launchUrl(
+                                Uri.parse(p.website.trim()),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                    ),
+                    if (p.createdAt != null) ...[
+                      const Divider(height: 1),
+                      DetailRow(
+                        label: 'On The Home Tuitions since',
+                        value: '${p.createdAt!.year}',
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -86,6 +118,8 @@ class InstitutionProfileScreen extends ConsumerWidget {
               const SectionHeader(
                 'About',
                 subtitle: 'Teachers read this before applying',
+                icon: Icons.notes_rounded,
+                iconTone: Tone.neutral,
               ),
               const SizedBox(height: AppSpacing.md),
               THTCard(
@@ -110,6 +144,8 @@ class InstitutionProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: AppSpacing.xl),
+              const _Account(),
             ],
           ),
         ),
@@ -155,22 +191,13 @@ class _Identity extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.primaryOrangeLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Text(
-              Fmt.initials(profile.name),
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primaryOrangeDark,
-              ),
-            ),
+          // Squared, and it finally shows the logo: `logo` has been on the
+          // model since it was written and this screen drew initials over it.
+          THTAvatar(
+            name: profile.name,
+            imageUrl: profile.logoUrl,
+            size: 56,
+            squared: true,
           ),
           const SizedBox(width: AppSpacing.base),
           Expanded(
@@ -218,43 +245,164 @@ class _Identity extends StatelessWidget {
   }
 }
 
-class _Row extends StatelessWidget {
-  const _Row({required this.label, required this.value});
+/// What is still missing, and why it matters.
+///
+/// The dashboard already nags about this; repeating it here puts the prompt
+/// next to the form that fixes it rather than a tab away.
+class _Completeness extends StatelessWidget {
+  const _Completeness({required this.profile});
 
+  final InstitutionProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final fg = Tone.warning.foreground(brightness);
+
+    return THTCard(
+      onTap: () => EditInstitutionSheet.show(context, profile),
+      background: Tone.warning.background(brightness),
+      borderColor: Tone.warning.border(brightness),
+      child: Row(
+        children: [
+          Icon(Icons.edit_note_rounded, size: 19, color: fg),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              profile.weakestSpot!,
+              style: TextStyle(fontSize: 12.5, height: 1.45, color: fg),
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: fg),
+        ],
+      ),
+    );
+  }
+}
+
+/// The policy links and the way back to notifications.
+class _Account extends StatelessWidget {
+  const _Account();
+
+  @override
+  Widget build(BuildContext context) {
+    Future<void> open(String path) => launchUrl(
+          Uri.parse('${ApiConfig.siteUrl}$path'),
+          mode: LaunchMode.externalApplication,
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          'Account',
+          icon: Icons.settings_outlined,
+          iconTone: Tone.neutral,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        THTCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _LinkRow(
+                icon: Icons.work_outline_rounded,
+                label: 'Your vacancies',
+                onTap: () => context.go('/inst-jobs'),
+              ),
+              const Divider(height: 1),
+              _LinkRow(
+                icon: Icons.notifications_none_rounded,
+                label: 'Notifications',
+                onTap: () => context.go('/inst-notifications'),
+              ),
+              const Divider(height: 1),
+              _LinkRow(
+                icon: Icons.help_outline_rounded,
+                label: 'Help and support',
+                onTap: () => context.push('/support'),
+              ),
+              const Divider(height: 1),
+              _LinkRow(
+                icon: Icons.lock_outline_rounded,
+                label: 'Sign-in and security',
+                onTap: () => context.push('/account-security'),
+              ),
+              const Divider(height: 1),
+              _LinkRow(
+                icon: Icons.description_outlined,
+                label: 'Terms of service',
+                external: true,
+                onTap: () => open('/terms'),
+              ),
+              const Divider(height: 1),
+              _LinkRow(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Privacy policy',
+                external: true,
+                // The site serves this at /privacy-policy; /privacy is a 404.
+                onTap: () => open('/privacy-policy'),
+              ),
+              const Divider(height: 1),
+              _LinkRow(
+                icon: Icons.receipt_long_outlined,
+                label: 'Refund policy',
+                external: true,
+                onTap: () => open('/refund-policy'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.external = false,
+  });
+
+  final IconData icon;
   final String label;
-  final String value;
+  final VoidCallback onTap;
+
+  /// Leaves the app — say so with the icon rather than a surprise.
+  final bool external;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
 
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.base),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? AppColors.slate400 : AppColors.slate500,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.base),
+        child: Row(
+          children: [
+            Icon(icon, size: 19, color: muted),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-              ),
+            Icon(
+              external
+                  ? Icons.open_in_new_rounded
+                  : Icons.chevron_right_rounded,
+              size: external ? 16 : 20,
+              color: muted,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

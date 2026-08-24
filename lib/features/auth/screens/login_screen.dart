@@ -614,8 +614,12 @@ class _Brand extends StatelessWidget {
 
 // ── Illustration ─────────────────────────────────────────────────────────────
 
-/// The tutoring illustration, with the two subject badges floating off its
+/// The tutoring photograph, with the two subject badges floating off its
 /// corners the way they do in the design.
+///
+/// Pre-cropped to this band's ratio at build time rather than letting BoxFit
+/// carve a 1.7:1 slice out of a square — a centre crop of the original put the
+/// faces on the top edge.
 class _Hero extends StatelessWidget {
   const _Hero();
 
@@ -632,7 +636,7 @@ class _Hero extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppRadius.xxl),
               child: Image.asset(
-                'assets/images/hero-main.png',
+                'assets/images/hero-tuition.jpg',
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
                 errorBuilder: (_, __, ___) => const ColoredBox(
@@ -664,6 +668,11 @@ class _Hero extends StatelessWidget {
   }
 }
 
+/// Opaque, with a ring the colour of the page behind it.
+///
+/// These straddle the photograph's edge. A translucent fill there reads as a
+/// smudge on the picture rather than a badge sitting in front of it — the edge
+/// has to be crisp for the overlap to look deliberate.
 class _FloatingBadge extends StatelessWidget {
   const _FloatingBadge({required this.icon});
 
@@ -678,11 +687,22 @@ class _FloatingBadge extends StatelessWidget {
       height: 52,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isDark
-            ? AppColors.primaryOrange.withValues(alpha: 0.16)
-            : AppColors.primaryOrange.withValues(alpha: 0.11),
+        color: isDark ? const Color(0xFF3A2416) : const Color(0xFFFBE4D2),
+        border: Border.all(
+          color: isDark ? AppColors.slate950 : const Color(0xFFFDF4EC),
+          width: 3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.45)
+                : AppColors.primaryOrange.withValues(alpha: 0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Icon(icon, size: 24, color: AppColors.primaryOrange),
+      child: Icon(icon, size: 23, color: AppColors.primaryOrange),
     );
   }
 }
