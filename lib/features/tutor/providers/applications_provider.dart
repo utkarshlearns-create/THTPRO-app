@@ -37,10 +37,23 @@ extension ApplicationStageX on ApplicationStage {
   }
 }
 
-final tutorApplicationsProvider =
-    FutureProvider.autoDispose<List<Application>>(
+final tutorApplicationsProvider = FutureProvider.autoDispose<List<Application>>(
   (ref) => ref.watch(jobsRepositoryProvider).tutorApplications(),
 );
+
+/// This teacher's application against one job, or null if they have not
+/// applied to it.
+///
+/// Derived from the list rather than fetched: there is no per-application
+/// endpoint, and the list is already loaded wherever this is needed.
+final applicationForJobProvider =
+    FutureProvider.autoDispose.family<Application?, int>((ref, jobId) async {
+  final all = await ref.watch(tutorApplicationsProvider.future);
+  for (final a in all) {
+    if (a.jobId == jobId) return a;
+  }
+  return null;
+});
 
 /// The stage tab currently selected.
 final applicationStageProvider =

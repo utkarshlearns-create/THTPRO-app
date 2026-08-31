@@ -21,6 +21,7 @@ import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
 import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
 import 'package:tht_app/features/jobs/widgets/chance_sheet.dart';
+import 'package:tht_app/features/jobs/widgets/application_timeline_sheet.dart';
 import 'package:tht_app/features/jobs/widgets/counsellor_strip.dart';
 import 'package:tht_app/features/jobs/widgets/two_ways_card.dart';
 import 'package:tht_app/features/jobs/widgets/ineligible_notice.dart';
@@ -452,10 +453,11 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
               ),
             ),
             TextButton(
-              // go, not push: this page is on the root navigator and the target
-              // lives in the tutor shell. Pushing asks that shell to exist
-              // twice in one stack and it renders blank.
-              onPressed: () => context.go('/tutor-applications'),
+              // A sheet, not a route. The whole applications list made the
+              // teacher hunt for the job they were already looking at, and
+              // this page cannot push into the tutor shell anyway.
+              onPressed: () =>
+                  ApplicationTimelineSheet.show(context, widget.job.id),
               child: const Text('Track it'),
             ),
           ],
