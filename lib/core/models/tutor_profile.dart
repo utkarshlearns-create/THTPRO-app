@@ -25,6 +25,8 @@ class TutorProfile {
     this.subjects = const [],
     this.classes = const [],
     this.classSubjects = const {},
+    this.isEligible = true,
+    this.ineligibleReason,
     this.availableTimeSlots = const [],
     this.preferredBoards = const [],
     this.preferredLocations = const [],
@@ -93,6 +95,21 @@ class TutorProfile {
   /// A short clip families watch before deciding. Null until one is uploaded.
   final String? introVideoUrl;
 
+  /// Whether this teacher may apply for jobs at all.
+  ///
+  /// A curation gate, not a ban: an ineligible teacher signs in, browses,
+  /// edits their profile and uses their wallet exactly as before — only
+  /// applying is closed to them, on every job rather than a particular one.
+  ///
+  /// **Defaults to true, and only an explicit `false` blocks.** An older
+  /// server omits the field entirely, and reading that absence as "barred"
+  /// would lock every teacher out of the product.
+  final bool isEligible;
+
+  /// Why an admin marked them ineligible, when they recorded one. Null or
+  /// empty is normal — the reason is optional on the admin's side.
+  final String? ineligibleReason;
+
   /// Everything the API returned, for fields the app shows but does not edit.
   final Map<String, dynamic> raw;
 
@@ -160,6 +177,9 @@ class TutorProfile {
         subjects: asStringList(json, 'subjects'),
         classes: asStringList(json, 'classes'),
         classSubjects: _classSubjects(json['class_subjects']),
+        // Only an explicit false bars anyone.
+        isEligible: json['is_eligible'] != false,
+        ineligibleReason: asStringOrNull(json, 'ineligible_reason'),
         preferredBoards: asStringList(json, 'preferred_boards'),
         preferredLocations: asStringList(json, 'preferred_locations'),
         availableTimeSlots: asStringList(json, 'available_time_slots'),

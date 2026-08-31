@@ -10,6 +10,7 @@ class ApiFailure implements Exception {
     this.statusCode,
     this.fieldErrors = const {},
     this.isConnectionProblem = false,
+    this.body = const {},
   });
 
   /// One sentence, in the user's language, about what went wrong.
@@ -24,6 +25,17 @@ class ApiFailure implements Exception {
   /// True when the request never reached the server — worth offering "Retry"
   /// rather than asking the user to change their input.
   final bool isConnectionProblem;
+
+  /// The response body as it arrived, untouched.
+  ///
+  /// [fieldErrors] keeps only strings and lists, so the boolean flags the API
+  /// uses to say *which kind* of refusal this is — `not_eligible`,
+  /// `lead_full`, `limit_reached` — were being dropped before any screen could
+  /// branch on them. This keeps them.
+  final Map<String, dynamic> body;
+
+  /// Reads a boolean flag the server set on a refusal.
+  bool flag(String name) => body[name] == true;
 
   /// The session is gone and the user has to sign in again.
   bool get isUnauthorized => statusCode == 401;
@@ -75,14 +87,18 @@ class ApiFailure implements Exception {
     final fields = _fieldErrors(data);
     final detail = _detail(data);
 
+    final body = data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
+
     if (detail != null) {
-      return ApiFailure(detail, statusCode: status, fieldErrors: fields);
+      return ApiFailure(detail,
+          statusCode: status, fieldErrors: fields, body: body);
     }
     if (fields.isNotEmpty) {
-      return ApiFailure(fields.values.first, statusCode: status, fieldErrors: fields);
+      return ApiFailure(fields.values.first,
+          statusCode: status, fieldErrors: fields, body: body);
     }
 
-    return ApiFailure(_forStatus(status), statusCode: status);
+    return ApiFailure(_forStatus(status), statusCode: status, body: body);
   }
 
   /// Pulls the single human-readable message DRF puts at the top level.
