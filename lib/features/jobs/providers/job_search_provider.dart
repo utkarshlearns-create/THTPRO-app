@@ -24,11 +24,13 @@ class JobFilters {
     this.board,
     this.gender,
     this.unappliedOnly = false,
+    this.buyableOnly = false,
   });
 
   final String query;
   final String? subject;
   final String? grade;
+
   /// Narrows the city dropdown only.
   ///
   /// Deliberately absent from [toQuery]: `/api/jobs/search/` accepts `city` and
@@ -54,8 +56,18 @@ class JobFilters {
   /// coming back to the feed a second time.
   final bool unappliedOnly;
 
+  /// Shows only leads whose contact can be bought outright.
+  ///
+  /// Client-side, because `/api/jobs/search/` has no parameter for it — the
+  /// server takes subject, grade, city, locality, mode, board and gender, and
+  /// nothing about pay-per-lead. So this narrows what has already been
+  /// fetched, and a page with no buyable leads on it looks empty until more
+  /// are loaded. [JobFeedState.visible] is where it is applied.
+  final bool buyableOnly;
+
   /// How many filters are active, for the badge on the filter button.
-  int get activeCount => [
+  int get activeCount =>
+      [
         subject,
         grade,
         city,
@@ -63,7 +75,9 @@ class JobFilters {
         mode,
         board,
         gender,
-      ].where((f) => f != null && f.isNotEmpty).length + (unappliedOnly ? 1 : 0);
+      ].where((f) => f != null && f.isNotEmpty).length +
+      (unappliedOnly ? 1 : 0) +
+      (buyableOnly ? 1 : 0);
 
   bool get isEmpty => activeCount == 0 && query.trim().isEmpty;
 
@@ -78,6 +92,7 @@ class JobFilters {
     String? Function()? board,
     String? Function()? gender,
     bool? unappliedOnly,
+    bool? buyableOnly,
   }) =>
       JobFilters(
         query: query ?? this.query,
@@ -90,6 +105,7 @@ class JobFilters {
         board: board == null ? this.board : board(),
         gender: gender == null ? this.gender : gender(),
         unappliedOnly: unappliedOnly ?? this.unappliedOnly,
+        buyableOnly: buyableOnly ?? this.buyableOnly,
       );
 
   /// Only non-empty values, so the API isn't handed blank filters.
@@ -131,8 +147,16 @@ class JobFeedState {
   final ApiFailure? failure;
 
   /// The list after client-side filters the API doesn't support.
-  List<Job> get visible =>
-      filters.unappliedOnly ? jobs.where((j) => !j.hasApplied).toList() : jobs;
+  List<Job> get visible {
+    var out = jobs;
+    if (filters.unappliedOnly) {
+      out = out.where((j) => !j.hasApplied).toList();
+    }
+    if (filters.buyableOnly) {
+      out = out.where((j) => j.isBuyable).toList();
+    }
+    return out;
+  }
 
   JobFeedState copyWith({
     List<Job>? jobs,
@@ -237,7 +261,9 @@ class JobFeedNotifier extends StateNotifier<JobFeedState> {
   /// `next` is authoritative when the endpoint paginates; when it returns a bare
   /// list there is nothing more to fetch.
   bool _hasMore(Paginated<Job> page) =>
-      page.hasNext || (page.totalCount > 0 && state.jobs.length + page.items.length < page.totalCount);
+      page.hasNext ||
+      (page.totalCount > 0 &&
+          state.jobs.length + page.items.length < page.totalCount);
 
   @override
   void dispose() {
@@ -276,8 +302,7 @@ final unlockStatusProvider =
 ///
 /// Shown to someone deciding whether to buy: three people holding the number
 /// is a materially different proposition from none.
-final leadBuyersProvider =
-    FutureProvider.autoDispose.family<LeadBuyers, int>(
+final leadBuyersProvider = FutureProvider.autoDispose.family<LeadBuyers, int>(
   (ref, jobId) => ref.watch(jobsRepositoryProvider).leadBuyers(jobId),
 );
 
@@ -287,6 +312,5 @@ final leadBuyersProvider =
 /// ask about themselves, staff may ask about anyone.
 final chanceDetailProvider =
     FutureProvider.autoDispose.family<ChanceDetail, (int, int)>(
-  (ref, key) =>
-      ref.watch(jobsRepositoryProvider).chanceDetail(key.$1, key.$2),
+  (ref, key) => ref.watch(jobsRepositoryProvider).chanceDetail(key.$1, key.$2),
 );

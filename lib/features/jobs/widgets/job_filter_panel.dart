@@ -38,9 +38,8 @@ class JobFilterPanel extends ConsumerStatefulWidget {
             reverseCurve: Curves.easeInCubic,
           );
           return SlideTransition(
-            position:
-                Tween(begin: const Offset(1, 0), end: Offset.zero)
-                    .animate(curved),
+            position: Tween(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(curved),
             child: child,
           );
         },
@@ -204,6 +203,27 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
                             fontSize: 14.5,
                             fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ),
+                      SwitchListTile.adaptive(
+                        value: _draft.buyableOnly,
+                        onChanged: (v) => setState(
+                          () => _draft = _draft.copyWith(buyableOnly: v),
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(
+                          'Only leads I can buy',
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        // The server has no parameter for this, so it narrows
+                        // what has already been fetched. Saying so is kinder
+                        // than a list that looks empty for no visible reason.
+                        subtitle: const Text(
+                          'Filters the jobs already loaded — scroll for more',
+                          style: TextStyle(fontSize: 12, height: 1.35),
                         ),
                       ),
                     ],
@@ -416,9 +436,7 @@ class _Dropdown extends StatelessWidget {
                   ),
           ),
           child: Text(
-            value == null
-                ? 'Any'
-                : (labelFor?.call(value!) ?? value!),
+            value == null ? 'Any' : (labelFor?.call(value!) ?? value!),
             style: TextStyle(
               fontSize: 15,
               fontWeight: value == null ? FontWeight.w400 : FontWeight.w600,
@@ -486,7 +504,8 @@ class _OptionPickerState extends State<_OptionPicker> {
             .toList();
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: widget.searchable ? 0.75 : 0.5,

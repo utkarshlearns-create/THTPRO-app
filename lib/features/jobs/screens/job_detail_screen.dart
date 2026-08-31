@@ -490,12 +490,17 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.how_to_reg_outlined, size: 18),
               SizedBox(width: AppSpacing.sm),
-              Text(
-                'Put your name forward',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              // Expanded so the heading wraps at large text scales instead of
+              // running off the side of the card.
+              Expanded(
+                child: Text(
+                  'Put your name forward',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -1292,24 +1297,53 @@ class _Requirement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = <(IconData, String, String)>[
+    // Colour carries meaning here rather than decoration. A teacher scanning a
+    // job looks for two things first — what it pays and where it is — so those
+    // two get the eye: money in green, a red pin for the place. The rest stay
+    // quiet so the two that matter still stand out.
+    //
+    // Icons, not emoji: emoji are drawn by whatever font the device ships,
+    // so they land at different sizes and weights on different phones and
+    // ignore the theme entirely.
+    final rows = <(IconData, String, String, Tone?)>[
       if (job.feeLabel != null)
-        (Icons.payments_outlined, 'Fee offered', job.feeLabel!),
+        (
+          Icons.payments_rounded,
+          'Fee offered',
+          job.feeLabel!,
+          Tone.success,
+        ),
       if (job.locality.isNotEmpty)
-        (Icons.location_on_outlined, 'Area', job.locality),
+        (Icons.location_on_rounded, 'Area', job.locality, Tone.critical),
       if (job.detailedAddress.trim().isNotEmpty)
-        (Icons.home_outlined, 'Address', job.detailedAddress.trim()),
+        (Icons.home_outlined, 'Address', job.detailedAddress.trim(), null),
       if (job.preferredTime.isNotEmpty)
-        (Icons.schedule_outlined, 'Preferred time', job.preferredTime),
+        (
+          Icons.schedule_rounded,
+          'Preferred time',
+          job.preferredTime,
+          Tone.info,
+        ),
       if (job.daysPerWeek.isNotEmpty)
-        (Icons.calendar_today_outlined, 'Days per week', job.daysPerWeek),
-      (Icons.cast_for_education_outlined, 'Mode', job.modeLabel),
+        (
+          Icons.calendar_today_rounded,
+          'Days per week',
+          job.daysPerWeek,
+          Tone.info,
+        ),
+      (
+        Icons.cast_for_education_rounded,
+        'Mode',
+        job.modeLabel,
+        Tone.accent,
+      ),
       if (job.tutorGenderPreference.isNotEmpty &&
           job.tutorGenderPreference.toLowerCase() != 'any')
         (
           Icons.person_outline_rounded,
           'Teacher preference',
-          '${job.tutorGenderPreference} teacher'
+          '${job.tutorGenderPreference} teacher',
+          null,
         ),
     ];
 
@@ -1328,6 +1362,7 @@ class _Requirement extends StatelessWidget {
                   icon: rows[i].$1,
                   label: rows[i].$2,
                   value: rows[i].$3,
+                  tone: rows[i].$4,
                 ),
               ],
             ],
@@ -1359,23 +1394,40 @@ class _DetailRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.tone,
   });
 
   final IconData icon;
   final String label;
   final String value;
 
+  /// Colours the icon, and its tinted disc. Null leaves the row quiet, which
+  /// is what keeps the coloured ones worth looking at.
+  final Tone? tone;
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final tint = tone?.foreground(brightness);
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.base),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 17, color: muted),
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: tone?.background(brightness) ??
+                  (isDark ? AppColors.slate800 : AppColors.slate100),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Icon(icon, size: 16, color: tint ?? muted),
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -1385,10 +1437,15 @@ class _DetailRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: tone == Tone.success
+                        ? FontWeight.w800
+                        : FontWeight.w600,
                     height: 1.4,
+                    // Only money is coloured. Tinting every value would be
+                    // decoration, and would cost the fee its emphasis.
+                    color: tone == Tone.success ? tint : null,
                   ),
                 ),
               ],
