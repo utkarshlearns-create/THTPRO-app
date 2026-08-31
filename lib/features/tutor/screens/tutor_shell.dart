@@ -20,14 +20,20 @@ class TutorShell extends StatelessWidget {
       // Unlocked leads belong to the Jobs tab — they are leads you took from
       // that feed, and it is the tab a teacher expects to be on.
       if (location.startsWith('/tutor-jobs') ||
-          location.startsWith('/tutor-leads')) {
+          location.startsWith('/tutor-leads') ||
+          location.startsWith('/tutor-applications')) {
         return 1;
       }
       // Score is reached from the header badge and from Profile, and belongs to
       // the teacher's own record — same fall-through trap as attendance below.
       if (location.startsWith('/tutor-score') ||
           location.startsWith('/tutor-education') ||
-          location.startsWith('/tutor-referrals')) {
+          location.startsWith('/tutor-referrals') ||
+          // Reached from the header bell and from Profile; both are
+          // account-level, so the bar points at Profile rather than falling
+          // through to Home and lying about where the teacher is.
+          location.startsWith('/tutor-kyc') ||
+          location.startsWith('/tutor-notifications')) {
         return 4;
       }
       // Attendance history belongs to Tuitions and is only reached from it.

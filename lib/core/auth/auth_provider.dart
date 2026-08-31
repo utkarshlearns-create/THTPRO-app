@@ -61,10 +61,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _init();
   }
 
+  /// How long the splash stays up at minimum.
+  ///
+  /// Not a wait bolted onto the launch — the auth check runs during it and
+  /// usually finishes in milliseconds, so this is the *floor*, not an
+  /// addition. Without one the splash was drawn and replaced inside a frame or
+  /// two, so its animation never played and the app appeared to snap straight
+  /// to a login form. Long enough for the mark to land, short enough that a
+  /// signed-in user does not notice it.
+  static const _minimumSplash = Duration(milliseconds: 1100);
+
+  final _bootedAt = DateTime.now();
+
+  /// Sets the resolved auth state, but never before the splash has had its
+  /// moment.
+  Future<void> _settle(AuthState resolved) async {
+    final elapsed = DateTime.now().difference(_bootedAt);
+    final remaining = _minimumSplash - elapsed;
+    if (remaining > Duration.zero) await Future.delayed(remaining);
+    state = resolved;
+  }
+
   Future<void> _init() async {
-    // No artificial delay here: the native splash already covers the launch,
-    // and holding a signed-in user on a second splash for two seconds is time
-    // taken from them, not polish.
 
     // Wire the force-logout callback from the Dio interceptor
     ApiClient.onForceLogout = logout;
@@ -81,12 +99,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
             if (preLeaderRole != null) {
               await TokenStorage.savePreLeaderRole(preLeaderRole);
             }
-            state = AuthState(
+            await _settle(AuthState(
               isAuthenticated: true,
               role: role,
               preLeaderRole: preLeaderRole,
               isLoading: false,
-            );
+            ));
             return;
           }
           // Access expired — try refresh
@@ -95,12 +113,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
             // Let the interceptor handle it on the next API call
             final storedRole = await TokenStorage.getRole();
             final storedPreLeader = await TokenStorage.getPreLeaderRole();
-            state = AuthState(
+            await _settle(AuthState(
               isAuthenticated: true,
               role: UserRole.fromString(storedRole),
               preLeaderRole: storedPreLeader,
               isLoading: false,
-            );
+            ));
             return;
           }
         } catch (e) {
@@ -109,12 +127,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       // No valid session
-      state = const AuthState(isAuthenticated: false, isLoading: false);
+      await _settle(const AuthState(isAuthenticated: false, isLoading: false));
     } catch (e) {
       // Safety net: if anything throws (e.g. SharedPreferences init on web),
       // always land on the login screen rather than staying on splash forever.
       debugPrint('Auth init fatal error: $e');
-      state = const AuthState(isAuthenticated: false, isLoading: false);
+      await _settle(const AuthState(isAuthenticated: false, isLoading: false));
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:tht_app/core/ui/exit_guard.dart';
 import 'package:tht_app/core/notifications/push_service.dart';
 
 // ── Screen imports ──
@@ -185,7 +186,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/parent-home',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: ParentHomeScreen(),
+              child: ExitGuard(child: ParentHomeScreen()),
             ),
           ),
           // Find-a-teacher inside the parent shell, so the bottom bar stays
@@ -239,7 +240,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/tutor-home',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorHomeScreen(),
+              child: ExitGuard(child: TutorHomeScreen()),
             ),
           ),
           GoRoute(
@@ -334,7 +335,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/inst-dashboard',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: InstitutionDashboardScreen(),
+              child: ExitGuard(child: InstitutionDashboardScreen()),
             ),
           ),
           GoRoute(
