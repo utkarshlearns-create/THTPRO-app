@@ -59,7 +59,7 @@ class _FindJobsScreenState extends ConsumerState<FindJobsScreen> {
         actions: [
           // The leads already paid for, one tap from the feed they came out of.
           IconButton(
-            onPressed: () => context.push('/tutor-leads'),
+            onPressed: () => context.go('/tutor-leads'),
             icon: const Icon(Icons.lock_open_rounded),
             tooltip: 'Unlocked leads',
           ),

@@ -452,7 +452,10 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
               ),
             ),
             TextButton(
-              onPressed: () => context.push('/tutor-applications'),
+              // go, not push: this page is on the root navigator and the target
+              // lives in the tutor shell. Pushing asks that shell to exist
+              // twice in one stack and it renders blank.
+              onPressed: () => context.go('/tutor-applications'),
               child: const Text('Track it'),
             ),
           ],
@@ -808,7 +811,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
         title: 'Approval needed to buy leads',
         body: 'Only approved teachers can buy a lead. Finish your profile and '
             'verification and this opens up. You can still apply below.',
-        action: ('Finish verification', () => context.push('/tutor-kyc')),
+        action: ('Finish verification', () => context.go('/tutor-kyc')),
       );
 
   // ── 4. Buyable ─────────────────────────────────────────────────────────────

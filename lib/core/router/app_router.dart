@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
-import 'package:tht_app/core/ui/exit_guard.dart';
+import 'package:tht_app/core/ui/shell_back_handler.dart';
 import 'package:tht_app/core/notifications/push_service.dart';
 
 // ── Screen imports ──
@@ -113,7 +113,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Logged in + on login/signup → redirect to role home
-      if (isLoggedIn && (path == '/login' || path == '/signup' || path == '/')) {
+      if (isLoggedIn &&
+          (path == '/login' || path == '/signup' || path == '/')) {
         return _homeForRole(authState.role);
       }
 
@@ -181,12 +182,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Parent shell (bottom navigation) ──
       ShellRoute(
         navigatorKey: _parentShellKey,
-        builder: (_, __, child) => ParentShell(child: child),
+        builder: (_, __, child) => ShellBackHandler(
+          home: '/parent-home',
+          child: ParentShell(child: child),
+        ),
         routes: [
           GoRoute(
             path: '/parent-home',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: ExitGuard(child: ParentHomeScreen()),
+              child: ParentHomeScreen(),
             ),
           ),
           // Find-a-teacher inside the parent shell, so the bottom bar stays
@@ -235,12 +239,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Tutor shell (bottom navigation) ──
       ShellRoute(
         navigatorKey: _tutorShellKey,
-        builder: (_, __, child) => TutorShell(child: child),
+        builder: (_, __, child) => ShellBackHandler(
+          home: '/tutor-home',
+          child: TutorShell(child: child),
+        ),
         routes: [
           GoRoute(
             path: '/tutor-home',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: ExitGuard(child: TutorHomeScreen()),
+              child: TutorHomeScreen(),
             ),
           ),
           GoRoute(
@@ -330,12 +337,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Institution shell (bottom navigation) ──
       ShellRoute(
         navigatorKey: _institutionShellKey,
-        builder: (_, __, child) => InstitutionShell(child: child),
+        builder: (_, __, child) => ShellBackHandler(
+          home: '/inst-dashboard',
+          child: InstitutionShell(child: child),
+        ),
         routes: [
           GoRoute(
             path: '/inst-dashboard',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: ExitGuard(child: InstitutionDashboardScreen()),
+              child: InstitutionDashboardScreen(),
             ),
           ),
           GoRoute(
@@ -446,8 +456,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   if (parked != null && authState.isAuthenticated) {
     PushService.instance.pendingRoute = null;
     // After the first frame: the Navigator does not exist during build.
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => router.push(parked));
+    WidgetsBinding.instance.addPostFrameCallback((_) => router.push(parked));
   }
 
   return router;
