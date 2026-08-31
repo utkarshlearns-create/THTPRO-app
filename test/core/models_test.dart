@@ -2,13 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/models/affiliate.dart';
 import 'package:tht_app/core/models/attendance_record.dart';
+import 'package:tht_app/core/models/chance_detail.dart';
 import 'package:tht_app/core/models/co_applicants.dart';
 import 'package:tht_app/core/models/payment_record.dart';
 import 'package:tht_app/core/models/upgrade_quote.dart';
 import 'package:tht_app/core/models/faculty_vacancy.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
+import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
+import 'package:tht_app/core/utils/api_error.dart';
+import 'package:tht_app/features/jobs/widgets/ineligible_notice.dart';
 import 'package:tht_app/core/models/tutor_score.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/models/wallet.dart';
@@ -502,6 +506,238 @@ void main() {
     });
   });
 
+  // Pay-per-lead decides whether a teacher sees a price, a lock, or a number.
+  // Reading the flags wrong either hides a buyable lead or offers a purchase
+  // the server will refuse — and money is involved either way.
+  group('Job pay-per-lead flags', () {
+    Job lead({bool contact = false, bool ppl = false, int? price}) =>
+        Job.fromJson({
+          'id': 1,
+          'allow_contact': contact,
+          'allow_pay_per_lead': ppl,
+          if (price != null) 'lead_price': price,
+        });
+
+    test('buyable needs contact, the opt-in, and a price together', () {
+      expect(lead(contact: true, ppl: true, price: 700).isBuyable, isTrue);
+      expect(lead(contact: true, ppl: true).isBuyable, isFalse,
+          reason: 'no price means the server did not offer it for sale');
+      expect(lead(contact: true, price: 700).isBuyable, isFalse);
+      expect(lead(ppl: true, price: 700).isBuyable, isFalse);
+    });
+
+    test('a zero price is not a free lead', () {
+      // The server sends null for "not for sale". A 0 would be a bug, and
+      // showing "Buy for Rs 0" is worse than showing nothing.
+      expect(lead(contact: true, ppl: true, price: 0).isBuyable, isFalse);
+    });
+
+    test('THT-managed is contact without the opt-in', () {
+      expect(lead(contact: true).isThtManaged, isTrue);
+      expect(lead(contact: true, ppl: true, price: 700).isThtManaged, isFalse);
+      expect(lead().isThtManaged, isFalse);
+    });
+
+    test('the price is never invented — absent means absent', () {
+      expect(Job.fromJson({'id': 1}).leadPrice, isNull);
+      expect(Job.fromJson({'id': 1, 'lead_price': null}).leadPrice, isNull);
+    });
+  });
+
+  group('UnlockStatus buying rules', () {
+    UnlockStatus at({
+      bool unlocked = false,
+      bool approved = true,
+      int count = 0,
+      int max = 0,
+      bool limit = false,
+    }) =>
+        UnlockStatus.fromJson({
+          'is_unlocked': unlocked,
+          'is_approved': approved,
+          'unlock_count': count,
+          'max_unlocks': max,
+          'limit_reached': limit,
+        });
+
+    test('an unapproved teacher cannot buy, however open the lead', () {
+      expect(at(approved: false).canBuy(leadIsBuyable: true), isFalse,
+          reason: 'the server refuses this, so the button must not appear');
+    });
+
+    test('a full lead cannot be bought', () {
+      expect(at(count: 3, max: 3).canBuy(leadIsBuyable: true), isFalse);
+      expect(at(limit: true).canBuy(leadIsBuyable: true), isFalse);
+      expect(at(count: 2, max: 3).canBuy(leadIsBuyable: true), isTrue);
+    });
+
+    test('an already-held lead is not for sale again', () {
+      expect(at(unlocked: true).canBuy(leadIsBuyable: true), isFalse);
+    });
+
+    test('a lead that is not for sale cannot be bought by anyone', () {
+      expect(at().canBuy(leadIsBuyable: false), isFalse);
+    });
+
+    test('credits do not gate a purchase', () {
+      // Pay-per-lead is real money through Razorpay. A zero credit balance is
+      // irrelevant, and gating on it would block every teacher who has never
+      // bought a package.
+      final broke =
+          UnlockStatus.fromJson({'is_approved': true, 'balance': 0});
+      expect(broke.canBuy(leadIsBuyable: true), isTrue);
+    });
+
+    test('spots line counts down against a cap', () {
+      expect(at(count: 2, max: 5).spotsLine, '2 of 5 taken — only 3 left');
+      expect(at(count: 5, max: 5).spotsLine, 'All places taken');
+    });
+
+    test('uncapped leads talk about interest, not scarcity', () {
+      expect(at().spotsLine, 'Be the first to buy this lead');
+      expect(at(count: 1).spotsLine, '1 teacher has bought this lead');
+    });
+  });
+
+  group('LeadOrder', () {
+    test('keeps paise and rupees apart', () {
+      final order = LeadOrder.fromJson({
+        'order_id': 'order_abc',
+        'amount': 70000,
+        'currency': 'INR',
+        'key_id': 'rzp_test_x',
+        'lead_price': 700,
+        'job_id': 42,
+      });
+      // Razorpay charges paise; the button shows rupees. Deriving one from the
+      // other in the app is how a 100x charge happens.
+      expect(order.amountPaise, 70000);
+      expect(order.leadPrice, 700);
+    });
+  });
+
+  // The chance breakdown is advice a teacher acts on, so the weighting has to
+  // survive parsing intact — a pillar worth 10 and one worth 2 are not the
+  // same miss.
+  group('ChanceDetail', () {
+    ChanceDetail parse(Map<String, dynamic> labels, {double? pct}) =>
+        ChanceDetail.fromJson({
+          if (pct != null) 'chance_percentage': pct,
+          'compatibility_labels': labels,
+        });
+
+    test('orders pillars by weight, heaviest first', () {
+      final d = parse({
+        'salary': {'label': 'Salary Fit', 'max': 2, 'score': 2},
+        'subject': {'label': 'Subject Match', 'max': 10, 'score': 7},
+        'location': {'label': 'Location', 'max': 5, 'score': 1},
+      });
+      expect(d.pillars.map((p) => p.label),
+          ['Subject Match', 'Location', 'Salary Fit']);
+    });
+
+    test('weakest is measured by points lost, not by score', () {
+      // 3/10 loses 7; 0/2 loses only 2. The low score is not the big problem.
+      final d = parse({
+        'subject': {'label': 'Subject Match', 'max': 10, 'score': 3},
+        'salary': {'label': 'Salary Fit', 'max': 2, 'score': 0},
+      });
+      expect(d.weakest?.label, 'Subject Match');
+    });
+
+    test('a perfect score has no weakest pillar to name', () {
+      final d = parse({
+        'subject': {'label': 'Subject Match', 'max': 10, 'score': 10},
+        'salary': {'label': 'Salary Fit', 'max': 2, 'score': 2},
+      });
+      expect(d.weakest, isNull);
+    });
+
+    test('a zero-weight pillar reads as complete, not as a divide by zero', () {
+      final p = ChancePillar.fromJson({'label': 'X', 'max': 0, 'score': 0});
+      expect(p.fraction, 1);
+      expect(p.isFull, isTrue);
+      expect(p.lost, 0);
+    });
+
+    test('survives a payload with no breakdown at all', () {
+      final d = ChanceDetail.fromJson({'chance_percentage': 62});
+      expect(d.percentage, 62);
+      expect(d.hasBreakdown, isFalse);
+      expect(d.weakest, isNull);
+    });
+  });
+
+  // Eligibility is a curation gate an admin sets. Getting the default wrong
+  // would bar every teacher on a server that does not send the field yet, so
+  // the absent case matters more than the present one.
+  group('TutorProfile eligibility', () {
+    test('only an explicit false bars anyone', () {
+      expect(
+        TutorProfile.fromJson({'id': 1, 'is_eligible': false}).isEligible,
+        isFalse,
+      );
+      expect(
+        TutorProfile.fromJson({'id': 1, 'is_eligible': true}).isEligible,
+        isTrue,
+      );
+    });
+
+    test('an older server that omits the field leaves everyone eligible', () {
+      expect(TutorProfile.fromJson({'id': 1}).isEligible, isTrue);
+      expect(
+        TutorProfile.fromJson({'id': 1, 'is_eligible': null}).isEligible,
+        isTrue,
+        reason: 'a null flag must never be read as barred',
+      );
+    });
+
+    test('carries the reason when one was recorded', () {
+      final p = TutorProfile.fromJson({
+        'id': 1,
+        'is_eligible': false,
+        'ineligible_reason': 'Not in the serviceable city',
+      });
+      expect(p.ineligibleReason, 'Not in the serviceable city');
+    });
+  });
+
+  group('IneligibleNotice copy', () {
+    test('falls back when no reason was stored', () {
+      // The server sends an empty string rather than null when the admin left
+      // the reason blank, so both have to fall through.
+      expect(IneligibleNotice.reasonOr(null), contains('THT coordinator'));
+      expect(IneligibleNotice.reasonOr(''), contains('THT coordinator'));
+      expect(IneligibleNotice.reasonOr('   '), contains('THT coordinator'));
+    });
+
+    test('uses the admin reason when there is one', () {
+      expect(
+        IneligibleNotice.reasonOr('Not in the serviceable city'),
+        'Not in the serviceable city',
+      );
+    });
+  });
+
+  group('ApiFailure raw body', () {
+    test('keeps boolean refusal flags that fieldErrors drops', () {
+      // fieldErrors only retains strings and lists, so `not_eligible: true`
+      // vanished before any screen could branch on it.
+      const f = ApiFailure(
+        'blocked',
+        statusCode: 403,
+        body: {'not_eligible': true, 'ineligible_reason': 'No service'},
+      );
+      expect(f.flag('not_eligible'), isTrue);
+      expect(f.flag('lead_full'), isFalse);
+      expect(f.body['ineligible_reason'], 'No service');
+    });
+
+    test('a missing flag is false, not an error', () {
+      expect(const ApiFailure('x').flag('not_eligible'), isFalse);
+    });
+  });
+
   group('Wallet', () {
     test('is only expired once validity has actually started', () {
       final notStarted = Wallet.fromJson({
@@ -549,33 +785,14 @@ void main() {
     });
   });
 
-  group('UnlockStatus', () {
-    test('needs a credit to unlock even though unlocking is free', () {
-      final broke = UnlockStatus.fromJson({'is_unlocked': false, 'balance': 0});
-      expect(broke.canUnlock, isFalse);
-      expect(broke.blockedReason, contains('at least one credit'));
-
-      final ok = UnlockStatus.fromJson({'is_unlocked': false, 'balance': 2});
-      expect(ok.canUnlock, isTrue);
-      expect(ok.blockedReason, isNull);
-    });
-
-    test('a capped lead blocks regardless of balance', () {
-      final capped = UnlockStatus.fromJson({
-        'is_unlocked': false,
-        'balance': 50,
-        'limit_reached': true,
-        'unlock_count': 3,
-        'max_unlocks': 3,
-      });
-      expect(capped.canUnlock, isFalse);
-      expect(capped.slotsLeft, 0);
-      expect(capped.blockedReason, contains('limit'));
-    });
-
+  group('UnlockStatus slots', () {
     test('reports no cap as null slots, not zero', () {
-      final uncapped = UnlockStatus.fromJson({'balance': 1, 'max_unlocks': 0});
-      expect(uncapped.slotsLeft, isNull);
+      // Null means unlimited; 0 would read as "sold out" and hide the button.
+      expect(UnlockStatus.fromJson({'max_unlocks': 0}).slotsLeft, isNull);
+      expect(
+        UnlockStatus.fromJson({'max_unlocks': 3, 'unlock_count': 3}).slotsLeft,
+        0,
+      );
     });
   });
 
