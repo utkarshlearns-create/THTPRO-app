@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/co_applicants.dart';
+import 'package:tht_app/core/models/chance_detail.dart';
 import 'package:tht_app/core/models/job.dart';
+import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
@@ -15,6 +17,7 @@ class JobFilters {
     this.query = '',
     this.subject,
     this.grade,
+    this.state,
     this.city,
     this.locality,
     this.mode,
@@ -26,6 +29,13 @@ class JobFilters {
   final String query;
   final String? subject;
   final String? grade;
+  /// Narrows the city dropdown only.
+  ///
+  /// Deliberately absent from [toQuery]: `/api/jobs/search/` accepts `city` and
+  /// `locality` but has no `state` parameter, and sending one it ignores would
+  /// look like a filter that quietly does nothing.
+  final String? state;
+
   final String? city;
   final String? locality;
   final String? mode;
@@ -61,6 +71,7 @@ class JobFilters {
     String? query,
     String? Function()? subject,
     String? Function()? grade,
+    String? Function()? state,
     String? Function()? city,
     String? Function()? locality,
     String? Function()? mode,
@@ -72,6 +83,7 @@ class JobFilters {
         query: query ?? this.query,
         subject: subject == null ? this.subject : subject(),
         grade: grade == null ? this.grade : grade(),
+        state: state == null ? this.state : state(),
         city: city == null ? this.city : city(),
         locality: locality == null ? this.locality : locality(),
         mode: mode == null ? this.mode : mode(),
@@ -258,4 +270,23 @@ final coApplicantsProvider =
 final unlockStatusProvider =
     FutureProvider.autoDispose.family<UnlockStatus, int>(
   (ref, jobId) => ref.watch(jobsRepositoryProvider).unlockStatus(jobId),
+);
+
+/// The teachers who already bought this lead.
+///
+/// Shown to someone deciding whether to buy: three people holding the number
+/// is a materially different proposition from none.
+final leadBuyersProvider =
+    FutureProvider.autoDispose.family<LeadBuyers, int>(
+  (ref, jobId) => ref.watch(jobsRepositoryProvider).leadBuyers(jobId),
+);
+
+/// The per-pillar breakdown behind a teacher's hiring chance on one lead.
+///
+/// Keyed by (job, tutor profile) because the server scopes it — a teacher may
+/// ask about themselves, staff may ask about anyone.
+final chanceDetailProvider =
+    FutureProvider.autoDispose.family<ChanceDetail, (int, int)>(
+  (ref, key) =>
+      ref.watch(jobsRepositoryProvider).chanceDetail(key.$1, key.$2),
 );

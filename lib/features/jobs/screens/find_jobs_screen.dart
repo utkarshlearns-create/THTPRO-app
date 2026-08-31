@@ -7,7 +7,7 @@ import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
 import 'package:tht_app/features/jobs/widgets/job_card.dart';
-import 'package:tht_app/features/jobs/widgets/job_filter_sheet.dart';
+import 'package:tht_app/features/jobs/widgets/job_filter_panel.dart';
 
 /// The teacher's job feed — every open requirement they can apply to.
 class FindJobsScreen extends ConsumerStatefulWidget {
@@ -66,7 +66,7 @@ class _FindJobsScreenState extends ConsumerState<FindJobsScreen> {
           _FilterButton(
             count: state.filters.activeCount,
             onPressed: () async {
-              final result = await JobFilterSheet.show(context, state.filters);
+              final result = await JobFilterPanel.show(context, state.filters);
               if (result != null) notifier.applyFilters(result);
             },
           ),

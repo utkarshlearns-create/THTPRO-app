@@ -683,7 +683,7 @@ class _RequirementRow extends StatelessWidget {
         job.subjects.isEmpty ? '📘' : SubjectGlyph.of(job.subjects.first);
 
     return InkWell(
-      onTap: () => context.go('/my-jobs/${job.id}'),
+      onTap: () => context.push('/my-jobs/${job.id}'),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(

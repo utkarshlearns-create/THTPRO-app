@@ -944,7 +944,7 @@ class _Account extends StatelessWidget {
               _AccountRow(
                 icon: Icons.notifications_none_rounded,
                 label: 'Notifications',
-                onTap: () => context.go('/tutor-notifications'),
+                onTap: () => context.push('/tutor-notifications'),
                 isDark: isDark,
               ),
               const Divider(height: 1),
@@ -1058,7 +1058,7 @@ class _Verification extends ConsumerWidget {
             : Tone.warning;
 
     return THTCard(
-      onTap: () => context.go('/tutor-kyc'),
+      onTap: () => context.push('/tutor-kyc'),
       child: Row(
         children: [
           Icon(

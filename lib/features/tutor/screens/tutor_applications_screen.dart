@@ -43,7 +43,9 @@ class TutorApplicationsScreen extends ConsumerWidget {
                     message: 'Unlock a lead from the job feed and your name goes '
                         'forward for that tuition. It will show up here.',
                     actionLabel: 'Find jobs',
-                    onAction: () => context.go('/find-jobs'),
+                    // The teacher's own feed tab, not the public route — this is
+                    // inside their shell.
+                    onAction: () => context.go('/tutor-jobs'),
                   ),
                 ],
               ),

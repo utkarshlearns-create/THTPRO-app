@@ -10,6 +10,7 @@ import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/institution/providers/institution_providers.dart';
+import 'package:tht_app/features/parent/widgets/contact_choice.dart';
 
 /// Post a teaching post the institute is hiring for.
 ///
@@ -34,10 +35,10 @@ class _PostVacancyScreenState extends ConsumerState<PostVacancyScreen> {
   String _jobType = 'FULL_TIME';
   DateTime? _startDate;
 
-  /// Off by default — an institute opts in to being contacted directly rather
-  /// than having its number handed out.
-  bool _allowContact = false;
-  int _maxUnlocks = 5;
+  /// Defaults to the open arrangement, same as a parent's requirement — it is
+  /// what fills a vacancy fastest, and the institute can narrow it.
+  ContactChoice _contact = ContactChoice.direct;
+  int _maxUnlocks = 0;
 
   bool _saving = false;
   String? _error;
@@ -174,27 +175,18 @@ class _PostVacancyScreenState extends ConsumerState<PostVacancyScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            SwitchListTile.adaptive(
-              value: _allowContact,
-              onChanged: (v) => setState(() => _allowContact = v),
-              contentPadding: EdgeInsets.zero,
-              title: const Text(
-                'Let teachers contact you directly',
-                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
-              ),
-              subtitle: const Text(
-                'Verified teachers can unlock your number instead of going '
-                'through our team.',
-                style: TextStyle(fontSize: 12.5, height: 1.4),
-              ),
+            ContactChoiceField(
+              value: _contact,
+              subjectNoun: 'your institute',
+              onChanged: (v) => setState(() => _contact = v),
             ),
-            if (_allowContact) ...[
+            if (_contact == ContactChoice.direct) ...[
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'How many teachers may unlock it',
+                      'How many teachers may reach you',
                       style: TextStyle(fontSize: 13.5, color: muted),
                     ),
                   ),
@@ -266,8 +258,10 @@ class _PostVacancyScreenState extends ConsumerState<PostVacancyScreen> {
         'job_type': _jobType,
         if (_startDate != null)
           'start_date': _startDate!.toIso8601String().split('T').first,
-        'allow_contact': _allowContact,
-        if (_allowContact) 'max_contact_unlocks': _maxUnlocks,
+        'allow_contact': _contact.allowContact,
+        'allow_pay_per_lead': _contact.allowPayPerLead,
+        if (_contact == ContactChoice.direct)
+          'max_contact_unlocks': _maxUnlocks,
       });
       if (!mounted) return;
       ref.invalidate(facultyVacanciesProvider);

@@ -207,49 +207,65 @@ class JobCard extends StatelessWidget {
                         icon: Icons.info_outline,
                         dense: true,
                       ),
-                    Pill(
-                      job.applicationCount == 0
-                          ? 'No applicants yet'
-                          : Fmt.plural(job.applicationCount, 'applicant'),
-                      tone: job.applicationCount == 0
-                          ? Tone.success
-                          : Tone.neutral,
-                      icon: job.applicationCount == 0
-                          ? Icons.bolt_rounded
-                          : Icons.people_alt_outlined,
-                      dense: true,
-                    ),
+                    // Under two applicants is a real opening, and saying so is
+                    // more useful to a teacher scanning a feed than the raw
+                    // count they would have to interpret themselves.
+                    if (job.applicationCount < 2)
+                      Pill(
+                        job.applicationCount == 0
+                            ? 'Be the first'
+                            : 'Only 1 applicant',
+                        tone: Tone.success,
+                        icon: Icons.bolt_rounded,
+                        dense: true,
+                      )
+                    else
+                      Pill(
+                        Fmt.plural(job.applicationCount, 'applicant'),
+                        icon: Icons.people_alt_outlined,
+                        dense: true,
+                      ),
                   ],
                 ),
-                if (job.postedAt != null || job.contactUnlockCount > 0) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      if (job.postedAt != null)
-                        Expanded(
-                          child: Text(
-                            'Posted ${Fmt.relative(job.postedAt).toLowerCase()}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 11.5, color: muted),
-                          ),
-                        )
-                      else
-                        const Spacer(),
-                      if (job.contactUnlockCount > 0) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Icon(Icons.lock_open_rounded, size: 12, color: muted),
-                        const SizedBox(width: 4),
-                        Text(
-                          // Deliberately not "paid": unlocking costs nothing up
-                          // front, so a count of unlocks is not a count of spends.
-                          '${job.contactUnlockCount} already have this contact',
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    // The reference a teacher quotes when they ring the
+                    // counsellor about this lead.
+                    Text(
+                      'JD-${job.id}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: muted,
+                      ),
+                    ),
+                    if (job.postedAt != null)
+                      Expanded(
+                        child: Text(
+                          ' · ${Fmt.relative(job.postedAt).toLowerCase()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(fontSize: 11.5, color: muted),
                         ),
-                      ],
+                      )
+                    else
+                      const Spacer(),
+                    if (job.contactUnlockCount > 0) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Icon(Icons.lock_open_rounded, size: 12, color: muted),
+                      const SizedBox(width: 4),
+                      Text(
+                        // Deliberately not "paid": some of these are older free
+                        // unlocks, so a count of unlocks is not a count of sales.
+                        '${job.contactUnlockCount} already have this contact',
+                        style: TextStyle(fontSize: 11.5, color: muted),
+                      ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),

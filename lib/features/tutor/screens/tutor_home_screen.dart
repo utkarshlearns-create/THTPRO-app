@@ -198,7 +198,7 @@ class _NotificationBell extends StatelessWidget {
           ? 'Notifications, $unread unread'
           : 'Notifications, none unread',
       child: InkWell(
-        onTap: () => context.go('/tutor-notifications'),
+        onTap: () => context.push('/tutor-notifications'),
         borderRadius: BorderRadius.circular(AppRadius.full),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -404,7 +404,7 @@ class _VerificationPrompt extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       child: THTCard(
-        onTap: () => context.go('/tutor-kyc'),
+        onTap: () => context.push('/tutor-kyc'),
         background: tone.background(brightness),
         borderColor: tone.border(brightness),
         child: Row(
@@ -672,48 +672,71 @@ class _NumbersSection extends ConsumerWidget {
           onRetry: () => ref.invalidate(tutorStatsProvider),
           loading: const SkeletonTiles(),
           compactError: true,
-          data: (s) => GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: AppSpacing.md,
-            crossAxisSpacing: AppSpacing.md,
-            childAspectRatio: 1.45,
+          // Two rows of two, sized by their content rather than a fixed
+          // aspect ratio. GridView decides height before the text is measured,
+          // so "Demos scheduled" and "Earned so far" were being clipped — and
+          // at larger text sizes the labels vanished entirely.
+          data: (s) => Column(
             children: [
-              StatTile(
-                label: 'Applications sent',
-                value: Fmt.number(s.totalApplications),
-                icon: Icons.send_outlined,
-                tone: Tone.info,
-                caption: s.pendingApplications > 0
-                    ? '${s.pendingApplications} awaiting reply'
-                    : null,
-                onTap: () => context.go('/tutor-applications'),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        label: 'Applications sent',
+                        value: Fmt.number(s.totalApplications),
+                        icon: Icons.send_outlined,
+                        tone: Tone.info,
+                        caption: s.pendingApplications > 0
+                            ? '${s.pendingApplications} awaiting reply'
+                            : null,
+                        onTap: () => context.push('/tutor-applications'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Tuitions won',
+                        value: Fmt.number(s.acceptedApplications),
+                        icon: Icons.handshake_outlined,
+                        tone: Tone.success,
+                        caption: s.hireRate == null
+                            ? null
+                            : '${(s.hireRate! * 100).round()}% success rate',
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              StatTile(
-                label: 'Tuitions won',
-                value: Fmt.number(s.acceptedApplications),
-                icon: Icons.handshake_outlined,
-                tone: Tone.success,
-                caption: s.hireRate == null
-                    ? null
-                    : '${(s.hireRate! * 100).round()}% success rate',
-              ),
-              StatTile(
-                label: 'Demos scheduled',
-                value: Fmt.number(s.demoScheduled),
-                icon: Icons.event_outlined,
-                tone: Tone.accent,
-                onTap: () => context.go('/tutor-schedule'),
-              ),
-              StatTile(
-                label: 'Earned so far',
-                value: Fmt.rupeesCompact(s.totalEarned),
-                icon: Icons.account_balance_wallet_outlined,
-                tone: Tone.success,
-                caption: s.completedTuitions > 0
-                    ? 'across ${Fmt.plural(s.completedTuitions, 'tuition')}'
-                    : null,
+              const SizedBox(height: AppSpacing.md),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        label: 'Demos scheduled',
+                        value: Fmt.number(s.demoScheduled),
+                        icon: Icons.event_outlined,
+                        tone: Tone.accent,
+                        onTap: () => context.go('/tutor-schedule'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Earned so far',
+                        value: Fmt.rupeesCompact(s.totalEarned),
+                        icon: Icons.account_balance_wallet_outlined,
+                        tone: Tone.success,
+                        caption: s.completedTuitions > 0
+                            ? 'across ${Fmt.plural(s.completedTuitions, 'tuition')}'
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
