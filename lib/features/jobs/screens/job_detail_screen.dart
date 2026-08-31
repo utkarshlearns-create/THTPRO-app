@@ -1305,45 +1305,52 @@ class _Requirement extends StatelessWidget {
     // Icons, not emoji: emoji are drawn by whatever font the device ships,
     // so they land at different sizes and weights on different phones and
     // ignore the theme entirely.
-    final rows = <(IconData, String, String, Tone?)>[
+    // Every row gets its own colour. They are not decoration — each one is a
+    // different kind of fact, and a teacher skimming six near-identical rows
+    // finds the one they want faster by hue than by reading the labels.
+    //
+    // Only the fee's *value* is coloured; the rest tint the icon alone. Colour
+    // the numbers everywhere and the fee stops being the thing the eye lands
+    // on first, which is the whole point of the section.
+    final rows = <(IconData, String, String, _RowTint)>[
       if (job.feeLabel != null)
-        (
-          Icons.payments_rounded,
-          'Fee offered',
-          job.feeLabel!,
-          Tone.success,
-        ),
+        (Icons.payments_rounded, 'Fee offered', job.feeLabel!, _RowTint.money),
       if (job.locality.isNotEmpty)
-        (Icons.location_on_rounded, 'Area', job.locality, Tone.critical),
+        (Icons.location_on_rounded, 'Area', job.locality, _RowTint.place),
       if (job.detailedAddress.trim().isNotEmpty)
-        (Icons.home_outlined, 'Address', job.detailedAddress.trim(), null),
+        (
+          Icons.home_rounded,
+          'Address',
+          job.detailedAddress.trim(),
+          _RowTint.home,
+        ),
       if (job.preferredTime.isNotEmpty)
         (
           Icons.schedule_rounded,
           'Preferred time',
           job.preferredTime,
-          Tone.info,
+          _RowTint.when,
         ),
       if (job.daysPerWeek.isNotEmpty)
         (
-          Icons.calendar_today_rounded,
+          Icons.event_repeat_rounded,
           'Days per week',
           job.daysPerWeek,
-          Tone.info,
+          _RowTint.days,
         ),
       (
         Icons.cast_for_education_rounded,
         'Mode',
         job.modeLabel,
-        Tone.accent,
+        _RowTint.mode,
       ),
       if (job.tutorGenderPreference.isNotEmpty &&
           job.tutorGenderPreference.toLowerCase() != 'any')
         (
-          Icons.person_outline_rounded,
+          Icons.person_rounded,
           'Teacher preference',
           '${job.tutorGenderPreference} teacher',
-          null,
+          _RowTint.who,
         ),
     ];
 
@@ -1389,28 +1396,57 @@ class _Requirement extends StatelessWidget {
       : 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(value)}';
 }
 
+/// A requirement row's colour, in both themes.
+///
+/// Not [Tone]: that enum has five members and they ran out at six rows, and it
+/// has no violet at all. These are the same colour families the app already
+/// uses — the light values are the darker end so they hold up on a white card,
+/// the dark values the lighter end for the same reason on slate.
+class _RowTint {
+  const _RowTint(this._light, this._dark);
+
+  final Color _light;
+  final Color _dark;
+
+  static const money = _RowTint(Color(0xFF047857), Color(0xFF34D399));
+  static const place = _RowTint(Color(0xFFB91C1C), Color(0xFFF87171));
+  // Rose, not amber: an address is the same kind of fact as the area, so
+  // it belongs to that family — and amber sat too close to the orange
+  // three rows below it to tell apart at a glance.
+  static const home = _RowTint(Color(0xFF9F1239), Color(0xFFFDA4AF));
+  static const when = _RowTint(Color(0xFF1D4ED8), Color(0xFF60A5FA));
+  static const days = _RowTint(Color(0xFF0F766E), Color(0xFF2DD4BF));
+  static const mode = _RowTint(Color(0xFFC2410C), Color(0xFFFB923C));
+  static const who = _RowTint(Color(0xFF6D28D9), Color(0xFFA78BFA));
+
+  Color foreground(Brightness b) => b == Brightness.dark ? _dark : _light;
+
+  /// The disc behind the icon — the same hue, barely there.
+  Color background(Brightness b) =>
+      foreground(b).withValues(alpha: b == Brightness.dark ? 0.20 : 0.11);
+}
+
 class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.icon,
     required this.label,
     required this.value,
-    this.tone,
+    required this.tone,
   });
 
   final IconData icon;
   final String label;
   final String value;
 
-  /// Colours the icon, and its tinted disc. Null leaves the row quiet, which
-  /// is what keeps the coloured ones worth looking at.
-  final Tone? tone;
+  /// Colours the icon and its disc, and — for the fee alone — the value.
+  final _RowTint tone;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
-    final tint = tone?.foreground(brightness);
+    final tint = tone.foreground(brightness);
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.base),
@@ -1422,11 +1458,10 @@ class _DetailRow extends StatelessWidget {
             height: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: tone?.background(brightness) ??
-                  (isDark ? AppColors.slate800 : AppColors.slate100),
+              color: tone.background(brightness),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(icon, size: 16, color: tint ?? muted),
+            child: Icon(icon, size: 16, color: tint),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -1439,13 +1474,11 @@ class _DetailRow extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: tone == Tone.success
+                    fontWeight: tone == _RowTint.money
                         ? FontWeight.w800
                         : FontWeight.w600,
                     height: 1.4,
-                    // Only money is coloured. Tinting every value would be
-                    // decoration, and would cost the fee its emphasis.
-                    color: tone == Tone.success ? tint : null,
+                    color: tone == _RowTint.money ? tint : null,
                   ),
                 ),
               ],
