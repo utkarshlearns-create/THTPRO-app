@@ -820,14 +820,29 @@ void main() {
     });
 
     test('an accepted demo takes precedence over "awaiting reply"', () {
+      // The date is part of the fixture because it is part of reality: a
+      // parent can only accept a slot that has one, and demo_status alone is
+      // 'PENDING' on every application the server creates.
       final demo = Application.fromJson({
         'id': 1,
         'job': 9,
         'status': 'APPLIED',
         'demo_status': 'ACCEPTED',
+        'demo_date': '2026-09-10T15:00:00Z',
       });
       expect(demo.hasUpcomingDemo, isTrue);
       expect(demo.stageLabel, 'Demo booked');
+    });
+
+    test('a demo status with no date is not a demo', () {
+      final justApplied = Application.fromJson({
+        'id': 1,
+        'job': 9,
+        'status': 'APPLIED',
+        'demo_status': 'ACCEPTED',
+      });
+      expect(justApplied.hasUpcomingDemo, isFalse);
+      expect(justApplied.stageLabel, 'Awaiting reply');
     });
 
     test('reads the job id out of the embedded details when present', () {
