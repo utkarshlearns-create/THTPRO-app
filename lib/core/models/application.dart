@@ -124,7 +124,14 @@ class Application {
   bool get isCompleted => completionStatus.toUpperCase() == 'COMPLETED';
 
   /// A demo the teacher still has to take.
+  ///
+  /// **The date is what makes it a demo.** `demo_status` defaults to `PENDING`
+  /// on the server for every application the moment it is created, so status
+  /// alone is true of a teacher who has merely applied — it was putting every
+  /// fresh application under the Demos tab and taking it out of Applied.
+  /// Nothing is scheduled until somebody puts a slot on the calendar.
   bool get hasUpcomingDemo =>
+      demoDate != null &&
       const {'PENDING', 'ACCEPTED'}.contains(demoStatus.toUpperCase()) &&
       !isCompleted;
 
@@ -135,7 +142,8 @@ class Application {
       demoStatus.toUpperCase() == 'PENDING' && demoDate != null;
 
   /// The parent has agreed to the slot; the demo has not happened yet.
-  bool get isDemoBooked => demoStatus.toUpperCase() == 'ACCEPTED';
+  bool get isDemoBooked =>
+      demoDate != null && demoStatus.toUpperCase() == 'ACCEPTED';
 
   /// The demo has been taken. This is the only state in which the server will
   /// accept the parent's approval — and only with a review attached.
@@ -148,8 +156,11 @@ class Application {
     if (isRunning) return 'Teaching';
     if (isHired) return 'Hired';
     if (isClosed) return status.toUpperCase() == 'REJECTED' ? 'Declined' : 'Not selected';
-    if (demoStatus.toUpperCase() == 'ACCEPTED') return 'Demo booked';
-    if (demoStatus.toUpperCase() == 'PENDING') return 'Demo proposed';
+    // Both demo labels need the date. Without it `demo_status` is only its
+    // server-side default and every new application would read "Demo
+    // proposed" the moment it was sent.
+    if (isDemoBooked) return 'Demo booked';
+    if (isDemoAwaitingParent) return 'Demo proposed';
     if (isShortlisted) return 'Shortlisted';
     return 'Awaiting reply';
   }
@@ -159,8 +170,8 @@ class Application {
     if (isCompleted) return 'COMPLETED';
     if (isRunning || isHired) return 'HIRED';
     if (isClosed) return status;
-    if (demoStatus.toUpperCase() == 'ACCEPTED') return 'ACCEPTED';
-    if (demoStatus.toUpperCase() == 'PENDING') return 'PENDING';
+    if (isDemoBooked) return 'ACCEPTED';
+    if (isDemoAwaitingParent) return 'PENDING';
     return 'APPLIED';
   }
 
