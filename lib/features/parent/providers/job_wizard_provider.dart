@@ -22,6 +22,9 @@ class JobWizardState {
     this.hourlyRate = '',
     this.requirements = '',
     this.parentWhatsappNumber = '',
+    this.allowContact = true,
+    this.allowPayPerLead = true,
+    this.maxContactUnlocks = 0,
     
     // Master data
     this.masterSubjects = const [],
@@ -49,6 +52,24 @@ class JobWizardState {
   final String requirements;
   final String parentWhatsappNumber;
 
+  // ── How teachers reach this family ────────────────────────────────────────
+  //
+  // Three arrangements, one choice on the form:
+  //
+  //   direct    allowContact + allowPayPerLead  — teachers buy the contact and
+  //                                               come to you; no commission
+  //   screened  allowContact only               — THT screens and introduces
+  //   private   neither                         — apply only, we handle it all
+  //
+  // The parent never sees what a teacher pays; the server strips that field on
+  // their side entirely.
+
+  final bool allowContact;
+  final bool allowPayPerLead;
+
+  /// How many teachers may buy this contact. 0 is unlimited.
+  final int maxContactUnlocks;
+
   final List<dynamic> masterSubjects;
   final List<dynamic> masterBoards;
   final List<dynamic> masterClasses;
@@ -73,6 +94,9 @@ class JobWizardState {
     String? hourlyRate,
     String? requirements,
     String? parentWhatsappNumber,
+    bool? allowContact,
+    bool? allowPayPerLead,
+    int? maxContactUnlocks,
     List<dynamic>? masterSubjects,
     List<dynamic>? masterBoards,
     List<dynamic>? masterClasses,
@@ -97,6 +121,9 @@ class JobWizardState {
       hourlyRate: hourlyRate ?? this.hourlyRate,
       requirements: requirements ?? this.requirements,
       parentWhatsappNumber: parentWhatsappNumber ?? this.parentWhatsappNumber,
+      allowContact: allowContact ?? this.allowContact,
+      allowPayPerLead: allowPayPerLead ?? this.allowPayPerLead,
+      maxContactUnlocks: maxContactUnlocks ?? this.maxContactUnlocks,
       masterSubjects: masterSubjects ?? this.masterSubjects,
       masterBoards: masterBoards ?? this.masterBoards,
       masterClasses: masterClasses ?? this.masterClasses,
@@ -153,8 +180,12 @@ class JobWizardState {
       'hourly_rate': hourlyRate,
       'requirements': requirements,
       'parent_whatsapp_number': parentWhatsappNumber,
-      'allow_contact': false,
-      'max_contact_unlocks': 2,
+      // How teachers may reach this family. Defaults to the open arrangement
+      // so a requirement posted from the app is buyable — that is what gets it
+      // in front of teachers fastest, and the parent can narrow it.
+      'allow_contact': allowContact,
+      'allow_pay_per_lead': allowPayPerLead,
+      'max_contact_unlocks': maxContactUnlocks,
     };
   }
 }
@@ -219,6 +250,9 @@ class JobWizardNotifier extends StateNotifier<JobWizardState> {
     String? hourlyRate,
     String? requirements,
     String? parentWhatsappNumber,
+    bool? allowContact,
+    bool? allowPayPerLead,
+    int? maxContactUnlocks,
   }) {
     state = state.copyWith(
       studentName: studentName,
@@ -237,6 +271,9 @@ class JobWizardNotifier extends StateNotifier<JobWizardState> {
       hourlyRate: hourlyRate,
       requirements: requirements,
       parentWhatsappNumber: parentWhatsappNumber,
+      allowContact: allowContact,
+      allowPayPerLead: allowPayPerLead,
+      maxContactUnlocks: maxContactUnlocks,
     );
 
     // Dynamic pricing check

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/board_logo.dart';
+import 'package:tht_app/features/parent/widgets/contact_choice.dart';
 import 'package:tht_app/features/shared/widgets/tht_button.dart';
 import 'package:tht_app/features/shared/widgets/tht_text_field.dart';
 import 'package:tht_app/features/parent/providers/job_wizard_provider.dart';
@@ -32,6 +33,14 @@ class _JobWizardScreenState extends ConsumerState<JobWizardScreen> {
     _addressController.dispose();
     _requirementsController.dispose();
     super.dispose();
+  }
+
+  /// The wizard stores two booleans; the picker offers three named choices.
+  ContactChoice _contactChoice(JobWizardState state) {
+    if (!state.allowContact) return ContactChoice.private;
+    return state.allowPayPerLead
+        ? ContactChoice.direct
+        : ContactChoice.screened;
   }
 
   void _nextStep() {
@@ -390,6 +399,18 @@ class _JobWizardScreenState extends ConsumerState<JobWizardScreen> {
                     label: 'Specific Requirements (Optional)',
                     hint: 'Any other details for the tutor...',
                     maxLines: 3,
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  ContactChoiceField(
+                    value: _contactChoice(state),
+                    onChanged: (choice) => ref
+                        .read(jobWizardProvider.notifier)
+                        .updateField(
+                          allowContact: choice.allowContact,
+                          allowPayPerLead: choice.allowPayPerLead,
+                        ),
                   ),
                 ],
               ),

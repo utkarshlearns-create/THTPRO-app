@@ -36,6 +36,12 @@ class Job {
     this.parentName = 'Parent',
     this.parentPhone,
     this.parentWhatsapp,
+    this.allowContact = false,
+    this.allowPayPerLead = false,
+    this.leadPrice,
+    this.maxContactUnlocks = 0,
+    this.parentQuotedFee = '',
+    this.counsellor,
   });
 
   final int id;
@@ -94,6 +100,51 @@ class Job {
   /// Null until this teacher unlocks the contact.
   final String? parentPhone;
   final String? parentWhatsapp;
+
+  // ── Pay-per-lead ──────────────────────────────────────────────────────────
+  //
+  // How a teacher can reach the family behind this lead. Three arrangements,
+  // chosen by whoever posted it:
+  //
+  //   allowContact false                      → apply only, no contact ever
+  //   allowContact + !allowPayPerLead         → THT shares it if you are picked
+  //   allowContact + allowPayPerLead + price  → buy it and deal with them direct
+
+  final bool allowContact;
+  final bool allowPayPerLead;
+
+  /// What the server charges for this lead, in whole rupees.
+  ///
+  /// **Never computed here.** The server derives it from the budget and returns
+  /// null when the lead is not buyable — a null price means hide the buy
+  /// button, not fall back to a guess. It is also stripped from the payload
+  /// entirely on the parent and institute side, who must never see it.
+  final int? leadPrice;
+
+  /// How many teachers may buy this lead. `0` means unlimited.
+  final int maxContactUnlocks;
+
+  /// What the family was quoted, which is a different number from the teacher's
+  /// [budgetRange] and is only ever sent to the family's own side.
+  final String parentQuotedFee;
+
+  /// Buyable right now, as far as the lead itself is concerned.
+  ///
+  /// Says nothing about *this* teacher — approval and the sold-out cap are on
+  /// the unlock-status payload, not here.
+  bool get isBuyable =>
+      allowContact && allowPayPerLead && (leadPrice ?? 0) > 0;
+
+  /// The family screens teachers through THT rather than selling the contact.
+  bool get isThtManaged => allowContact && !allowPayPerLead;
+
+  /// The THT counsellor who owns this lead, when one is assigned.
+  ///
+  /// Deliberately *not* the family's contact — this is our own staff, reachable
+  /// before a teacher has bought anything, for the questions that come up
+  /// before committing: is this still live, how far is the address really,
+  /// what did they actually mean by "flexible".
+  final Counsellor? counsellor;
 
   /// Whether this teacher has already paid to see the parent behind this lead.
   bool get isContactUnlocked => parentPhone != null || parentWhatsapp != null;
@@ -225,5 +276,46 @@ class Job {
         parentName: asString(json, 'parent_name', fallback: 'Parent'),
         parentPhone: asStringOrNull(json, 'parent_phone'),
         parentWhatsapp: asStringOrNull(json, 'parent_whatsapp_number'),
+        allowContact: asBool(json, 'allow_contact'),
+        allowPayPerLead: asBool(json, 'allow_pay_per_lead'),
+        leadPrice: asIntOrNull(json, 'lead_price'),
+        maxContactUnlocks: asInt(json, 'max_contact_unlocks'),
+        parentQuotedFee: asString(json, 'parent_quoted_fee'),
+        counsellor: Counsellor.fromJsonOrNull(
+          asMapOrNull(json, 'assigned_admin_detail'),
+        ),
       );
+}
+
+/// A THT staff member who owns a lead.
+class Counsellor {
+  const Counsellor({required this.name, this.phone, this.photo});
+
+  final String name;
+
+  /// Null when the payload withholds it; the strip then offers WhatsApp only
+  /// if it has something to dial, and hides itself otherwise.
+  final String? phone;
+
+  final String? photo;
+
+  bool get isReachable => (phone ?? '').trim().isNotEmpty;
+
+  /// wa.me wants a country code; numbers are stored as 10 local digits.
+  String? get whatsappNumber {
+    final digits = (phone ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return null;
+    return digits.length == 10 ? '91$digits' : digits;
+  }
+
+  static Counsellor? fromJsonOrNull(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final name = asString(json, 'name').trim();
+    if (name.isEmpty) return null;
+    return Counsellor(
+      name: name,
+      phone: asStringOrNull(json, 'phone'),
+      photo: asStringOrNull(json, 'profile_picture'),
+    );
+  }
 }

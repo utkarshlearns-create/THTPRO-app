@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/co_applicants.dart';
 import 'package:tht_app/core/models/job.dart';
+import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
@@ -16,7 +17,16 @@ import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/utils/formatters.dart';
+import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
+import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
+import 'package:tht_app/features/jobs/widgets/chance_sheet.dart';
+import 'package:tht_app/features/jobs/widgets/counsellor_strip.dart';
+import 'package:tht_app/features/jobs/widgets/two_ways_card.dart';
+import 'package:tht_app/features/jobs/widgets/ineligible_notice.dart';
+import 'package:tht_app/features/jobs/widgets/job_share.dart';
+import 'package:tht_app/features/jobs/widgets/lead_terms_sheet.dart';
+import 'package:tht_app/features/wallet/services/checkout_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// One tuition requirement in full, and the decision a teacher makes about it.
@@ -33,7 +43,14 @@ class JobDetailScreen extends ConsumerWidget {
     final job = ref.watch(jobProvider(jobId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Job details')),
+      appBar: AppBar(
+        title: const Text('Job details'),
+        actions: [
+          // Only once the job has loaded — sharing a lead we do not have the
+          // details of would share an empty block.
+          if (job.valueOrNull case final j?) JobShareActions(job: j),
+        ],
+      ),
       body: AsyncView<Job>(
         value: job,
         onRetry: () => ref.invalidate(jobProvider(jobId)),
@@ -57,9 +74,21 @@ class JobDetailScreen extends ConsumerWidget {
             children: [
               _Summary(job: j),
               const SizedBox(height: AppSpacing.lg),
-              _ApplyCard(jobId: jobId, job: j),
-              const SizedBox(height: AppSpacing.md),
+              // The trade-off, stated once before either card asks for a
+              // decision. Renders nothing unless both routes are really open.
+              if (j.isBuyable) ...[
+                TwoWaysCard(job: j),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+              // The paid route leads, because on a buyable lead it is the one
+              // that gets a teacher the family today. Applying stays below it
+              // as the free alternative, never removed.
               _ContactCard(jobId: jobId, job: j),
+              // Who already holds this contact. Only on a lead that is sold —
+              // on any other kind there is nothing to have bought.
+              if (j.isBuyable) _LeadBuyers(jobId: jobId),
+              const _OrDivider(),
+              _ApplyCard(jobId: jobId, job: j),
               const SizedBox(height: AppSpacing.xl),
               _Requirement(job: j),
               if (j.allStudents.length > 1) ...[
@@ -77,12 +106,17 @@ class JobDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-              // Only once applied — the endpoint refuses anyone who hasn't, so
-              // asking would surface a 403 as an error card.
-              if (j.hasApplied) ...[
-                const SizedBox(height: AppSpacing.xl),
-                _CoApplicants(jobId: jobId),
-              ],
+              const SizedBox(height: AppSpacing.xl),
+              CounsellorStrip(job: j),
+              const SizedBox(height: AppSpacing.xl),
+              // Always present, but only *fetched* once applied — the endpoint
+              // 403s otherwise. Rendering nothing at all was the wrong answer:
+              // a teacher could not tell whether there were no applicants, or
+              // whether the section had failed to load.
+              if (j.hasApplied)
+                _CoApplicants(jobId: jobId)
+              else
+                const _ApplicantsLocked(),
             ],
           ),
         ),
@@ -107,7 +141,9 @@ class _Summary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          job.subjects.isEmpty ? 'Tuition required' : Fmt.list(job.subjects, max: 4),
+          job.subjects.isEmpty
+              ? 'Tuition required'
+              : Fmt.list(job.subjects, max: 4),
           style: TextStyle(
             fontSize: 23,
             fontWeight: FontWeight.w800,
@@ -130,7 +166,8 @@ class _Summary extends StatelessWidget {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: [
-            if (job.isInstituteJob) const Pill('Institute lead', tone: Tone.accent),
+            if (job.isInstituteJob)
+              const Pill('Institute lead', tone: Tone.accent),
             if (job.hasApplied)
               const Pill('Applied', tone: Tone.info, icon: Icons.check_rounded),
             Pill(
@@ -193,6 +230,20 @@ class _CoApplicants extends ConsumerWidget {
               subtitle: _subtitle(co),
             ),
             const SizedBox(height: AppSpacing.md),
+            // The teacher's own standing, before the list of everyone else.
+            // A percentage on its own is a verdict with no recourse, so it is
+            // tappable through to what drove it.
+            if (co.me?.chancePercentage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: _ChanceBadge(
+                  jobId: jobId,
+                  tutorProfileId: co.me!.tutorId,
+                  percentage: co.me!.chancePercentage!,
+                  rank: co.myRank,
+                  total: co.totalCount,
+                ),
+              ),
             if (co.hired != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -371,6 +422,12 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
     final job = widget.job;
     final brightness = Theme.of(context).brightness;
 
+    // The teacher's own curation state, read ahead of the tap so the button
+    // can say so rather than letting them find out from a 403. Absent profile
+    // means eligible — never block on a flag that has not loaded.
+    final profile = ref.watch(tutorProfileProvider).valueOrNull;
+    final ineligible = profile != null && !profile.isEligible;
+
     // Already in. The applications screen is where the state lives from here.
     if (job.hasApplied) {
       return THTCard(
@@ -395,7 +452,7 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
               ),
             ),
             TextButton(
-              onPressed: () => context.go('/tutor-applications'),
+              onPressed: () => context.push('/tutor-applications'),
               child: const Text('Track it'),
             ),
           ],
@@ -441,11 +498,18 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           const Text(
-            'Applying is free and costs no credit. The family sees you on '
+            'Applying is free. The family sees you on '
             'their list of interested teachers, and our team may line up a '
-            'demo. You do not see their number until you unlock it.',
+            'demo. Their number stays private unless you are chosen.',
             style: TextStyle(fontSize: 13.5, height: 1.55),
           ),
+          if (ineligible) ...[
+            const SizedBox(height: AppSpacing.base),
+            IneligibleNotice.strip(
+              context,
+              reason: profile.ineligibleReason,
+            ),
+          ],
           if (_refusal != null) ...[
             const SizedBox(height: AppSpacing.base),
             NoteBox(message: _refusal!),
@@ -453,20 +517,41 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
           const SizedBox(height: AppSpacing.base),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _working ? null : _apply,
-              icon: _working
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+            // Outlined while ineligible: a full-primary button reads as "go",
+            // which is the opposite of what it says. Still tappable, because
+            // it opens the explanation — a dead button teaches nobody why.
+            child: ineligible
+                ? OutlinedButton.icon(
+                    onPressed: _working
+                        ? null
+                        : () => IneligibleNotice.show(
+                              context,
+                              reason: profile.ineligibleReason,
+                            ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Tone.warning.foreground(brightness),
+                      side: BorderSide(
+                        color: Tone.warning.border(brightness),
                       ),
-                    )
-                  : const Icon(Icons.send_rounded, size: 18),
-              label: Text(_working ? 'Applying…' : 'Apply for this tuition'),
-            ),
+                    ),
+                    icon: const Icon(Icons.info_outline_rounded, size: 18),
+                    label: const Text('Not eligible to apply'),
+                  )
+                : FilledButton.icon(
+                    onPressed: _working ? null : _apply,
+                    icon: _working
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.send_rounded, size: 18),
+                    label:
+                        Text(_working ? 'Applying…' : 'Apply for this tuition'),
+                  ),
           ),
         ],
       ),
@@ -502,10 +587,27 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
       }
     } catch (e) {
       if (!mounted) return;
-      // The backend writes these refusals itself, and they are specific —
+      final failure = ApiFailure.from(e);
+
+      // The authoritative eligibility gate. The profile flag read above can be
+      // stale — an admin may have marked this teacher since it loaded — so the
+      // 403 is what actually decides, and it gets the full explanation rather
+      // than a line of red text among the other refusals.
+      if (failure.statusCode == 403 && failure.flag('not_eligible')) {
+        // Re-read the profile so the button relabels itself and the strip
+        // appears without the teacher having to reopen the screen.
+        ref.invalidate(tutorProfileProvider);
+        await IneligibleNotice.show(
+          context,
+          reason: failure.body['ineligible_reason'] as String?,
+        );
+        return;
+      }
+
+      // The backend writes its other refusals itself, and they are specific —
       // which gender it wants, how many tuitions you are already running.
       // Showing its words beats paraphrasing them.
-      setState(() => _refusal = ApiFailure.from(e).message);
+      setState(() => _refusal = failure.message);
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -549,8 +651,26 @@ class _ContactCard extends ConsumerStatefulWidget {
   ConsumerState<_ContactCard> createState() => _ContactCardState();
 }
 
+/// How a teacher gets the family behind this lead.
+///
+/// Six states, in priority order. Which one shows is decided by the lead's own
+/// flags plus this teacher's status — the lead says whether it is for sale, the
+/// status says whether this teacher may buy it.
+///
+///   held        → the number, and a WhatsApp button
+///   sold out    → every place taken
+///   unapproved  → profile not approved, so the server would refuse
+///   buyable     → the price, and a way to pay it
+///   THT-managed → contact shared by us if selected
+///   private     → no contact, apply only
+///
+/// Applying is free and always available underneath, whatever this card says.
 class _ContactCardState extends ConsumerState<_ContactCard> {
   bool _working = false;
+
+  /// Revealed by a verified purchase in this session, before the status
+  /// provider has refetched.
+  String? _justBought;
 
   @override
   Widget build(BuildContext context) {
@@ -561,18 +681,31 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
       onRetry: () => ref.invalidate(unlockStatusProvider(widget.jobId)),
       loading: const SkeletonBox(height: 150, radius: AppRadius.lg),
       compactError: true,
-      data: (s) => s.isUnlocked || widget.job.isContactUnlocked
-          ? _unlocked(s)
-          : _locked(s),
+      data: _card,
     );
   }
 
-  // ── Unlocked: the contact, and the two ways to use it ──
+  Widget _card(UnlockStatus s) {
+    final job = widget.job;
 
-  Widget _unlocked(UnlockStatus status) {
-    final phone = widget.job.parentPhone;
-    final whatsapp = status.whatsapp ?? widget.job.parentWhatsapp ?? phone;
+    if (s.isUnlocked || job.isContactUnlocked || _justBought != null) {
+      return _held(s);
+    }
+    if (job.isBuyable && s.isSoldOut) return _soldOut();
+    if (job.isBuyable && !s.isApproved) return _notApproved();
+    if (s.canBuy(leadIsBuyable: job.isBuyable)) return _buyable(s);
+    if (job.isThtManaged) return _thtManaged();
+    return _private();
+  }
+
+  // ── 1. Held ────────────────────────────────────────────────────────────────
+
+  Widget _held(UnlockStatus status) {
+    final job = widget.job;
+    final whatsapp =
+        _justBought ?? status.whatsapp ?? job.parentWhatsapp ?? job.parentPhone;
     final brightness = Theme.of(context).brightness;
+    final bought = status.isPaid || _justBought != null;
 
     return THTCard(
       borderColor: Tone.success.border(brightness),
@@ -583,13 +716,13 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
           Row(
             children: [
               Icon(
-                Icons.lock_open_rounded,
+                Icons.verified_rounded,
                 size: 18,
                 color: Tone.success.foreground(brightness),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Contact unlocked',
+                bought ? 'Lead purchased' : 'Contact unlocked',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -600,13 +733,13 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            widget.job.parentName,
+            job.parentName,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
-          if (phone != null) ...[
+          if (whatsapp != null) ...[
             const SizedBox(height: 2),
             Text(
-              Fmt.phone(phone),
+              Fmt.phone(whatsapp),
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -617,37 +750,39 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
           const SizedBox(height: AppSpacing.base),
           Row(
             children: [
-              if (phone != null)
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => _open('tel:$phone', 'phone app'),
-                    icon: const Icon(Icons.call_rounded, size: 18),
-                    label: const Text('Call'),
-                  ),
-                ),
-              if (phone != null && whatsapp != null)
-                const SizedBox(width: AppSpacing.sm),
               if (whatsapp != null)
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _open(
-                      'https://wa.me/${_intl(whatsapp)}',
-                      'WhatsApp',
-                    ),
-                    icon: const Icon(Icons.chat_outlined, size: 18),
+                  child: FilledButton.icon(
+                    onPressed: () =>
+                        _open('https://wa.me/${_intl(whatsapp)}', 'WhatsApp'),
+                    icon: const Icon(Icons.chat_rounded, size: 18),
                     label: const Text('WhatsApp'),
+                  ),
+                ),
+              if (whatsapp != null && job.parentPhone != null)
+                const SizedBox(width: AppSpacing.sm),
+              if (job.parentPhone != null)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        _open('tel:${job.parentPhone}', 'phone app'),
+                    icon: const Icon(Icons.call_rounded, size: 18),
+                    label: const Text('Call'),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Please reach out and schedule your demo visit soon. A credit is '
-            'deducted only if you never visit the family.',
+            bought
+                ? 'This lead is yours to manage directly with the family. THT '
+                    'takes no commission on the tuition fee.'
+                : 'Please reach out and arrange your demo visit soon.',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
-              color: Tone.success.foreground(brightness).withValues(alpha: 0.95),
+              color:
+                  Tone.success.foreground(brightness).withValues(alpha: 0.95),
             ),
           ),
         ],
@@ -655,137 +790,251 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
     );
   }
 
-  // ── Locked: what it costs, what it commits them to ──
+  // ── 2. Sold out ────────────────────────────────────────────────────────────
 
-  Widget _locked(UnlockStatus status) {
-    final blocked = status.blockedReason;
-    final slots = status.slotsLeft;
+  Widget _soldOut() => _lockedCard(
+        icon: Icons.do_not_disturb_on_outlined,
+        tone: Tone.neutral,
+        title: 'Sold out',
+        body: 'The most teachers this family wanted have already bought this '
+            'lead. You can still apply below and be considered.',
+      );
+
+  // ── 3. Not approved ────────────────────────────────────────────────────────
+
+  Widget _notApproved() => _lockedCard(
+        icon: Icons.gpp_maybe_outlined,
+        tone: Tone.warning,
+        title: 'Approval needed to buy leads',
+        body: 'Only approved teachers can buy a lead. Finish your profile and '
+            'verification and this opens up. You can still apply below.',
+        action: ('Finish verification', () => context.push('/tutor-kyc')),
+      );
+
+  // ── 4. Buyable ─────────────────────────────────────────────────────────────
+
+  Widget _buyable(UnlockStatus status) {
+    final brightness = Theme.of(context).brightness;
+    final price = widget.job.leadPrice!;
+    final spots = status.spotsLine;
 
     return THTCard(
+      borderColor: Tone.accent.border(brightness),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.lock_outline_rounded, size: 18),
-              SizedBox(width: AppSpacing.sm),
-              Text(
-                'Parent contact is hidden',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              Icon(
+                Icons.workspace_premium_outlined,
+                size: 18,
+                color: Tone.accent.foreground(brightness),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Buy this lead',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Tone.accent.foreground(brightness),
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           const Text(
-            'Unlocking is free and shows you the family’s phone and WhatsApp. '
-            'It also puts your name forward for this tuition — and it is a '
-            'commitment to visit and take the demo. One credit is deducted only '
-            'if you don’t go.',
+            "Get the family's WhatsApp number straight away and arrange the "
+            'tuition with them yourself. THT takes no commission — the fee you '
+            'agree is yours.',
             style: TextStyle(fontSize: 13.5, height: 1.55),
           ),
-          const SizedBox(height: AppSpacing.base),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              Pill(
-                '${status.balance.toStringAsFixed(0)} credits in your wallet',
-                tone: status.hasCredits ? Tone.neutral : Tone.critical,
-                icon: Icons.account_balance_wallet_outlined,
-                dense: true,
-              ),
-              if (slots != null)
-                Pill(
-                  slots == 0 ? 'No slots left' : '$slots of ${status.maxUnlocks} slots left',
-                  tone: slots == 0
-                      ? Tone.critical
-                      : slots <= 2
-                          ? Tone.warning
-                          : Tone.neutral,
-                  icon: Icons.group_outlined,
-                  dense: true,
-                ),
-            ],
-          ),
-          if (blocked != null) ...[
+          if (spots != null) ...[
             const SizedBox(height: AppSpacing.base),
-            _Notice(
-              tone: status.limitReached ? Tone.critical : Tone.warning,
-              icon: Icons.info_outline_rounded,
-              title: status.limitReached ? 'Limit reached' : 'Not enough credits',
-              message: blocked,
+            Row(
+              children: [
+                Icon(
+                  Icons.people_outline_rounded,
+                  size: 15,
+                  color: Tone.warning.foreground(brightness),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    spots,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: Tone.warning.foreground(brightness),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: AppSpacing.base),
           SizedBox(
             width: double.infinity,
-            child: status.hasCredits || status.limitReached
-                ? FilledButton.icon(
-                    onPressed:
-                        _working || !status.canUnlock ? null : () => _unlock(status),
-                    icon: _working
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.lock_open_rounded, size: 18),
-                    label: Text(_working ? 'Unlocking…' : 'Unlock contact'),
-                  )
-                : FilledButton.icon(
-                    onPressed: () => context.push('/packages'),
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add credits'),
-                  ),
+            child: FilledButton.icon(
+              onPressed: _working ? null : _buy,
+              icon: _working
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.lock_open_rounded, size: 18),
+              label: Text(
+                _working ? 'Opening payment…' : 'Buy this lead — ₹$price',
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _unlock(UnlockStatus status) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Unlock this contact?'),
-        content: const Text(
-          'You’ll see the family’s phone and WhatsApp, and your name goes '
-          'forward for this tuition.\n\n'
-          'Please visit them and take the demo. If you don’t, one credit is '
-          'deducted from your wallet.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Not now'),
+  // ── 5. THT-managed ─────────────────────────────────────────────────────────
+
+  Widget _thtManaged() => _lockedCard(
+        icon: Icons.shield_outlined,
+        tone: Tone.info,
+        title: 'THT shares this contact',
+        body: 'This family asked us to screen teachers for them. Apply below '
+            'and we will pass on your profile — we share the contact once you '
+            'are selected.',
+      );
+
+  // ── 6. Private ─────────────────────────────────────────────────────────────
+
+  Widget _private() => _lockedCard(
+        icon: Icons.lock_outline_rounded,
+        tone: Tone.neutral,
+        title: 'Contact kept private',
+        body: 'This family is not sharing their number directly. Apply below '
+            'and our team will take it from there.',
+      );
+
+  /// The shared shape of every state that is not a purchase.
+  Widget _lockedCard({
+    required IconData icon,
+    required Tone tone,
+    required String title,
+    required String body,
+    (String, VoidCallback)? action,
+  }) {
+    final brightness = Theme.of(context).brightness;
+    final isNeutral = tone == Tone.neutral;
+
+    return THTCard(
+      borderColor: isNeutral ? null : tone.border(brightness),
+      background: isNeutral ? null : tone.background(brightness),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: tone.foreground(brightness)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: tone.foreground(brightness),
+                  ),
+                ),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Unlock'),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            body,
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.55,
+              color: isNeutral
+                  ? null
+                  : tone.foreground(brightness).withValues(alpha: 0.95),
+            ),
           ),
+          if (action != null) ...[
+            const SizedBox(height: AppSpacing.base),
+            SizedBox(
+              width: double.infinity,
+              child:
+                  OutlinedButton(onPressed: action.$2, child: Text(action.$1)),
+            ),
+          ],
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+  }
+
+  // ── Buying ─────────────────────────────────────────────────────────────────
+
+  Future<void> _buy() async {
+    final price = widget.job.leadPrice;
+    if (price == null) return;
+
+    // Terms first, and not as a formality: this is money, it is
+    // non-refundable, and buying does not win the tuition.
+    final agreed = await LeadTermsSheet.show(context, price: price);
+    if (agreed != true || !mounted) return;
 
     setState(() => _working = true);
     try {
-      await ref.read(jobsRepositoryProvider).unlockJobContact(widget.jobId);
+      final order =
+          await ref.read(jobsRepositoryProvider).createLeadOrder(widget.jobId);
       if (!mounted) return;
-      // The job itself now carries the contact, and the feed's "Applied" state
-      // changed, so both have to be re-read.
-      ref.invalidate(unlockStatusProvider(widget.jobId));
-      ref.invalidate(jobProvider(widget.jobId));
-      ref.read(jobFeedProvider.notifier).refresh();
-      context.showMessage('Contact unlocked — please visit and take the demo.');
+
+      final result = await CheckoutService().openForLead(
+        order: order,
+        user: ref.read(currentUserProvider).valueOrNull,
+      );
+      if (!mounted) return;
+
+      switch (result) {
+        case CheckoutCancelled():
+          setState(() => _working = false);
+        case CheckoutFailed(:final message):
+          setState(() => _working = false);
+          context.showMessage(message);
+        case CheckoutPaid(:final paymentId, :final orderId, :final signature):
+          // The device saying "paid" is not proof. Nothing is revealed until
+          // the server has checked the signature.
+          final purchase =
+              await ref.read(jobsRepositoryProvider).verifyLeadPurchase(
+                    widget.jobId,
+                    orderId: orderId,
+                    paymentId: paymentId,
+                    signature: signature,
+                  );
+          if (!mounted) return;
+          setState(() {
+            _justBought = purchase.whatsapp;
+            _working = false;
+          });
+          ref
+            ..invalidate(unlockStatusProvider(widget.jobId))
+            ..invalidate(jobProvider(widget.jobId))
+            ..invalidate(leadBuyersProvider(widget.jobId));
+          context.showMessage(
+            'Lead purchased. Message the family and set up your demo.',
+          );
+      }
     } catch (e) {
       if (!mounted) return;
-      context.showFailure(e);
-    } finally {
-      if (mounted) setState(() => _working = false);
+      setState(() => _working = false);
+      // The server writes these refusals itself and they are specific — not
+      // approved, lead full, already owned. Its words beat a paraphrase.
+      context.showMessage(ApiFailure.from(e).message);
+      ref.invalidate(unlockStatusProvider(widget.jobId));
     }
   }
 
@@ -803,6 +1052,231 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
     if (!ok && mounted) {
       context.showMessage("Couldn't open your $what.");
     }
+  }
+}
+
+/// The teachers who have already bought this lead.
+///
+/// Renders nothing at all when nobody has — an empty "0 buyers" line would
+/// discourage the first buyer for no reason.
+class _LeadBuyers extends ConsumerWidget {
+  const _LeadBuyers({required this.jobId});
+
+  final int jobId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = ref.watch(leadBuyersProvider(jobId));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+
+    return AsyncView<LeadBuyers>(
+      value: data,
+      compactError: true,
+      loading: const SizedBox.shrink(),
+      onRetry: () => ref.invalidate(leadBuyersProvider(jobId)),
+      data: (b) {
+        if (b.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: Row(
+            children: [
+              // Overlapping avatars, so a crowded lead reads as crowded at a
+              // glance rather than as a list to count.
+              SizedBox(
+                height: 28,
+                width: 28.0 + (b.buyers.take(4).length - 1).clamp(0, 3) * 18,
+                child: Stack(
+                  children: [
+                    for (var i = 0; i < b.buyers.take(4).length; i++)
+                      Positioned(
+                        left: i * 18.0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark ? AppColors.darkCard : Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: THTAvatar(
+                            name: b.buyers[i].name,
+                            imageUrl: b.buyers[i].photo,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  b.totalCount == 1
+                      ? '1 teacher has bought this lead'
+                      : '${b.totalCount} teachers have bought this lead',
+                  style: TextStyle(fontSize: 12.5, color: muted),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Why the applicant list is not here yet.
+///
+/// The server refuses this list to anyone who has not applied, which is a
+/// reasonable rule and a terrible silence — the section simply did not exist,
+/// so it read as broken. Saying what is behind it turns that into a reason to
+/// apply.
+class _ApplicantsLocked extends StatelessWidget {
+  const _ApplicantsLocked();
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          'Who else applied',
+          icon: Icons.groups_outlined,
+          iconTone: Tone.neutral,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        THTCard(
+          child: Row(
+            children: [
+              Icon(Icons.lock_outline_rounded, size: 19, color: muted),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  'Apply and you will see everyone else in the running here — '
+                  'their experience, their ranking, and where you sit against '
+                  'them.',
+                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The teacher's hiring chance on this lead, and their place in the queue.
+///
+/// Tappable: the number alone tells someone they are losing without telling
+/// them why, and the six-pillar breakdown behind it is actionable.
+class _ChanceBadge extends StatelessWidget {
+  const _ChanceBadge({
+    required this.jobId,
+    required this.tutorProfileId,
+    required this.percentage,
+    required this.rank,
+    required this.total,
+  });
+
+  final int jobId;
+  final int tutorProfileId;
+  final double percentage;
+  final int? rank;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final tone = toneForChance(percentage);
+
+    return THTCard(
+      onTap: () => ChanceSheet.show(
+        context,
+        jobId: jobId,
+        tutorProfileId: tutorProfileId,
+      ),
+      borderColor: tone.border(brightness),
+      background: tone.background(brightness),
+      child: Row(
+        children: [
+          Text(
+            '🎯',
+            style: TextStyle(fontSize: 20, color: tone.foreground(brightness)),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${percentage.round()}% chance on this lead',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: tone.foreground(brightness),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  rank == null
+                      ? 'Tap to see what this is based on'
+                      : total > 0
+                          ? 'You are #$rank of $total applicants · tap for why'
+                          : 'You are #$rank · tap for why',
+                  style: TextStyle(fontSize: 12.5, color: muted),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: muted),
+        ],
+      ),
+    );
+  }
+}
+
+/// The seam between paying for the contact and applying for free.
+///
+/// Both routes stay open on every lead, so the divider says "or" rather than
+/// implying the one above is required.
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final line = isDark ? AppColors.darkBorder : AppColors.slate200;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: line)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Text(
+              'or',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: muted,
+              ),
+            ),
+          ),
+          Expanded(child: Divider(color: line)),
+        ],
+      ),
+    );
   }
 }
 

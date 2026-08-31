@@ -4,8 +4,10 @@ import 'package:tht_app/core/models/app_notification.dart';
 import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/models/attendance_record.dart';
 import 'package:tht_app/core/models/faculty_vacancy.dart';
+import 'package:tht_app/core/models/chance_detail.dart';
 import 'package:tht_app/core/models/co_applicants.dart';
 import 'package:tht_app/core/models/job.dart';
+import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/paginated.dart';
 import 'package:tht_app/core/models/parent_stats.dart';
 import 'package:tht_app/core/models/tuition.dart';
@@ -144,8 +146,10 @@ class JobsRepository extends Repository {
   /// Why the server rates this teacher's chances on a lead, pillar by pillar.
   ///
   /// A teacher may ask only about themselves; staff may ask about anyone.
-  Future<Map<String, dynamic>> chanceDetail(int jobId, int tutorProfileId) =>
-      getMap('/api/jobs/$jobId/applicants/$tutorProfileId/chance-detail/');
+  Future<ChanceDetail> chanceDetail(int jobId, int tutorProfileId) async =>
+      ChanceDetail.fromJson(
+        await getMap('/api/jobs/$jobId/applicants/$tutorProfileId/chance-detail/'),
+      );
 
   /// Attendance for one of the parent's requirements, newest first.
   ///
@@ -307,12 +311,46 @@ class JobsRepository extends Repository {
   Future<UnlockStatus> unlockStatus(int jobId) async =>
       UnlockStatus.fromJson(await getMap('/api/users/jobs/$jobId/unlock-contact/'));
 
-  /// Reveals the parent's contact behind a lead.
+  // The free unlock that used to live here is gone. `POST` to
+  // `/api/users/jobs/<id>/unlock-contact/` now answers 403 with
+  // `{"pay_per_lead": true}` — contact is bought, not revealed. The GET above
+  // stays, because teachers who unlocked before the change keep their number.
+
+  /// Starts a lead purchase: creates the Razorpay order to pay for it.
   ///
-  /// Free, but not free of consequence: it also registers the teacher as an
-  /// applicant, and a credit is deducted later if they never visit the family.
-  Future<UnlockStatus> unlockJobContact(int jobId) async =>
-      UnlockStatus.fromJson(await postMap('/api/users/jobs/$jobId/unlock-contact/'));
+  /// Returns `{order_id, amount (paise), currency, key_id, lead_price
+  /// (rupees), job_id}`. The price comes from the server and is recomputed
+  /// there at verification — the amount this client sees is never trusted.
+  ///
+  /// Refuses, before charging anything, when the teacher is not approved
+  /// (403 `not_approved`), the lead is full (409 `lead_full`), it is already
+  /// held (400 `is_unlocked`), or the lead is not for sale (403).
+  Future<LeadOrder> createLeadOrder(int jobId) async => LeadOrder.fromJson(
+        await postMap('/api/users/jobs/$jobId/lead-purchase/order/'),
+      );
+
+  /// Finalises a lead purchase against the Razorpay result.
+  ///
+  /// Idempotent, and the only thing that may reveal the contact — a client-side
+  /// payment callback is not proof of payment, so nothing is unlocked until
+  /// this returns 200.
+  Future<LeadPurchase> verifyLeadPurchase(
+    int jobId, {
+    required String orderId,
+    required String paymentId,
+    required String signature,
+  }) async =>
+      LeadPurchase.fromJson(
+        await postMap('/api/users/jobs/$jobId/lead-purchase/verify/', body: {
+          'razorpay_order_id': orderId,
+          'razorpay_payment_id': paymentId,
+          'razorpay_signature': signature,
+        }),
+      );
+
+  /// The teachers who have already bought this lead.
+  Future<LeadBuyers> leadBuyers(int jobId) async =>
+      LeadBuyers.fromJson(await getMap('/api/jobs/$jobId/lead-buyers/'));
 
   /// Marks a demo as taken.
   /// Records that the teacher has taken the demo.

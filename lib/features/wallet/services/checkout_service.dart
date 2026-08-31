@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:tht_app/core/models/app_user.dart';
+import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/payment_order.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 
@@ -51,16 +52,55 @@ class CheckoutService {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
+  /// Buying credits.
   Future<CheckoutResult> open({
     required PaymentOrder order,
     AppUser? user,
-  }) async {
-    if (!isSupported) {
-      return const CheckoutFailed(
-        'Payments work in the Android and iOS app. Open The Home Tuitions on '
-        'your phone to add credits.',
+  }) =>
+      _open(
+        orderId: order.orderId,
+        amountPaise: order.amountPaise,
+        keyId: order.keyId,
+        currency: order.currency,
+        description:
+            order.packageName.isEmpty ? 'Lead credits' : order.packageName,
+        user: user,
+        unsupportedMessage:
+            'Payments work in the Android and iOS app. Open The Home Tuitions '
+            'on your phone to add credits.',
       );
-    }
+
+  /// Buying one lead outright — pay-per-lead.
+  ///
+  /// Same sheet, different money: this buys a single family's contact rather
+  /// than topping up a balance, so the description Razorpay shows and the
+  /// message on an unsupported platform both differ.
+  Future<CheckoutResult> openForLead({
+    required LeadOrder order,
+    AppUser? user,
+  }) =>
+      _open(
+        orderId: order.orderId,
+        amountPaise: order.amountPaise,
+        keyId: order.keyId,
+        currency: order.currency,
+        description: 'Buy this lead — family contact',
+        user: user,
+        unsupportedMessage:
+            'Buying a lead works in the Android and iOS app. Open The Home '
+            'Tuitions on your phone to buy this one.',
+      );
+
+  Future<CheckoutResult> _open({
+    required String orderId,
+    required int amountPaise,
+    required String keyId,
+    required String currency,
+    required String description,
+    required String unsupportedMessage,
+    AppUser? user,
+  }) async {
+    if (!isSupported) return CheckoutFailed(unsupportedMessage);
 
     final completer = Completer<CheckoutResult>();
     final razorpay = Razorpay();
@@ -72,7 +112,7 @@ class CheckoutService {
 
     razorpay
       ..on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse r) {
-        final orderId = r.orderId ?? order.orderId;
+        final resolvedOrderId = r.orderId ?? orderId;
         final paymentId = r.paymentId;
         final signature = r.signature;
         if (paymentId == null || signature == null) {
@@ -85,7 +125,7 @@ class CheckoutService {
           return;
         }
         finish(CheckoutPaid(
-          orderId: orderId,
+          orderId: resolvedOrderId,
           paymentId: paymentId,
           signature: signature,
         ));
@@ -110,14 +150,12 @@ class CheckoutService {
 
     try {
       razorpay.open({
-        'key': order.keyId,
-        'order_id': order.orderId,
-        'amount': order.amountPaise,
-        'currency': order.currency,
+        'key': keyId,
+        'order_id': orderId,
+        'amount': amountPaise,
+        'currency': currency,
         'name': 'The Home Tuitions',
-        'description': order.packageName.isEmpty
-            ? 'Lead credits'
-            : order.packageName,
+        'description': description,
         'timeout': 300,
         'prefill': {
           if (user?.phone != null) 'contact': user!.phone,
