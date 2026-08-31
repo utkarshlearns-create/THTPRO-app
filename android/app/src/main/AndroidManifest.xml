@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
-        android:label="The Home Tuitions"
+        android:label="THTPRO"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

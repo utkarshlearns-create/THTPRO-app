@@ -1,6 +1,6 @@
 {
-    "name": "tht_app",
-    "short_name": "tht_app",
+    "name": "THTPRO",
+    "short_name": "THTPRO",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
