@@ -26,7 +26,9 @@ class WalletScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(walletProvider);
     // Institutes have a read-only wallet — balance and history, no top-up.
-    final canBuy = ref.watch(authProvider).role != UserRole.institution;
+    final role = ref.watch(authProvider).role;
+    final canBuy = role != UserRole.institution;
+    final isParent = role == UserRole.parent;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Wallet')),
@@ -57,7 +59,11 @@ class WalletScreen extends ConsumerWidget {
               AppSpacing.xxxl,
             ),
             children: [
-              _BalanceCard(wallet: w, canBuy: canBuy),
+              _BalanceCard(
+                wallet: w,
+                canBuy: canBuy,
+                isParent: isParent,
+              ),
               if (canBuy && (w.isExpired || w.isExpiringSoon)) ...[
                 const SizedBox(height: AppSpacing.base),
                 _RenewalNotice(wallet: w),
@@ -87,9 +93,17 @@ class WalletScreen extends ConsumerWidget {
 // ── Balance ──────────────────────────────────────────────────────────────────
 
 class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({required this.wallet, required this.canBuy});
+  const _BalanceCard({
+    required this.wallet,
+    required this.canBuy,
+    required this.isParent,
+  });
 
   final Wallet wallet;
+
+  /// Parents and teachers spend credits on opposite things, so the copy
+  /// on this card cannot be shared.
+  final bool isParent;
 
   /// False for institutes: no institute credit packages exist, so a checkout
   /// entrance would open an empty list.
@@ -159,7 +173,8 @@ class _BalanceCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.schedule_rounded, size: 15, color: Colors.white70),
+              const Icon(Icons.schedule_rounded,
+                  size: 15, color: Colors.white70),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -206,7 +221,11 @@ class _BalanceCard extends StatelessWidget {
     if (days != null) return 'Valid for another ${Fmt.plural(days, 'day')}.';
     return wallet.hasCredits
         ? 'No expiry on your credits.'
-        : 'Buy a plan to start unlocking leads.';
+        : isParent
+            // A parent unlocks teachers, not leads. "Leads" is the teacher's
+            // word for a family, and reads as jargon on this side.
+            ? 'Buy a plan to unlock a teacher\u2019s number.'
+            : 'Buy a plan to start unlocking leads.';
   }
 }
 
@@ -364,8 +383,89 @@ class _GlanceDivider extends StatelessWidget {
 /// commitment, not a purchase. Copy that says "one credit reveals the number"
 /// would be wrong, and would have teachers hoarding credits they never needed
 /// to spend.
-class _HowCreditsWork extends StatelessWidget {
+/// How credits work — which is a different answer depending on who is asking.
+///
+/// The two sides spend credits on opposite things. A teacher unlocks a
+/// *family's* number and is only charged if they never turn up; a parent
+/// spends one credit outright for a *teacher's* number, and their credits
+/// never expire at all (the server forces `valid_until = null` for parents).
+///
+/// One shared explainer cannot be true for both, and the teacher version was
+/// being shown to parents — telling them a credit is refunded if they attend
+/// the demo, which is not a thing a parent does.
+class _HowCreditsWork extends ConsumerWidget {
   const _HowCreditsWork();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(authProvider).role == UserRole.parent) {
+      return const _HowCreditsWorkParent();
+    }
+    return const _HowCreditsWorkTutor();
+  }
+}
+
+/// What a parent spends a credit on: one teacher's number, once.
+class _HowCreditsWorkParent extends StatelessWidget {
+  const _HowCreditsWorkParent();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          'How your credits work',
+          subtitle: 'Three things worth knowing before you spend one.',
+          icon: Icons.school_rounded,
+          iconTone: Tone.accent,
+        ),
+        SizedBox(height: AppSpacing.md),
+        THTCard(
+          child: Column(
+            children: [
+              _Step(
+                emoji: '💳',
+                title: 'Buy a plan',
+                body: 'Credits land in your wallet as soon as the payment '
+                    'clears. Nothing is held back.',
+              ),
+              _StepGap(),
+              _Step(
+                emoji: '🔓',
+                title: 'One credit, one teacher',
+                body: 'Spend a credit on a teacher you like and their phone '
+                    'and WhatsApp number are yours to keep. Opening that '
+                    'profile again later costs nothing.',
+              ),
+              _StepGap(),
+              _Step(
+                emoji: '♾️',
+                title: 'Your credits never expire',
+                body: 'There is no clock on them. Buy now, use one months '
+                    'later, and nothing is lost in between.',
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: AppSpacing.md),
+        THTCard(
+          child: _Step(
+            emoji: '🆓',
+            title: 'You never have to spend anything',
+            body: 'Posting what you need is free, and teachers come to you. '
+                'Credits are only a shortcut when you have already found '
+                'someone you want to call yourself.',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// What a teacher spends a credit on: a family's lead, refunded if they show up.
+class _HowCreditsWorkTutor extends StatelessWidget {
+  const _HowCreditsWorkTutor();
 
   @override
   Widget build(BuildContext context) {
@@ -482,12 +582,18 @@ class _StepGap extends StatelessWidget {
 }
 
 /// The edge cases that otherwise arrive as a surprise.
-class _GoodToKnow extends StatelessWidget {
+///
+/// Every note here was written for teachers, and all three are false on the
+/// parent side: parents have no validity to lapse, nothing to renew, and lead
+/// unlock caps are not their concern. So the notes are chosen by role and the
+/// shell is shared.
+class _GoodToKnow extends ConsumerWidget {
   const _GoodToKnow();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final brightness = Theme.of(context).brightness;
+    final isParent = ref.watch(authProvider).role == UserRole.parent;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,28 +607,57 @@ class _GoodToKnow extends StatelessWidget {
         THTCard(
           background: Tone.info.background(brightness),
           borderColor: Tone.info.border(brightness),
-          child: const Column(
-            children: [
-              _Note(
-                icon: Icons.groups_rounded,
-                text: 'Some leads cap how many teachers can unlock them. Once '
-                    'that cap is full, nobody else can see that parent — so a '
-                    'fresh lead is worth moving on.',
-              ),
-              SizedBox(height: AppSpacing.md),
-              _Note(
-                icon: Icons.more_time_rounded,
-                text: 'Validity-only plans add days to credits you already '
-                    'hold. They do not add new credits.',
-              ),
-              SizedBox(height: AppSpacing.md),
-              _Note(
-                icon: Icons.autorenew_rounded,
-                text: 'Renew before your validity lapses and whatever you have '
-                    'not spent carries over.',
-              ),
-            ],
-          ),
+          child: isParent
+              ? const Column(
+                  children: [
+                    // The one refusal a parent can actually hit. The public
+                    // profile does not carry the teacher's opt-out flag, so
+                    // there is no way to warn them on the profile itself.
+                    _Note(
+                      icon: Icons.lock_person_rounded,
+                      text: 'A few teachers choose not to share their number '
+                          'directly. If one of them is locked, nothing is '
+                          'charged — post a requirement and they can apply.',
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    _Note(
+                      icon: Icons.check_circle_outline_rounded,
+                      text: 'Unlocking the same teacher again is free. Once '
+                          'their number is yours, it stays yours.',
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    _Note(
+                      icon: Icons.campaign_outlined,
+                      text: 'Posting a requirement costs nothing and reaches '
+                          'far more teachers than unlocking one at a time.',
+                    ),
+                  ],
+                )
+              : const Column(
+                  children: [
+                    _Note(
+                      icon: Icons.groups_rounded,
+                      text:
+                          'Some leads cap how many teachers can unlock them. Once '
+                          'that cap is full, nobody else can see that parent — so a '
+                          'fresh lead is worth moving on.',
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    _Note(
+                      icon: Icons.more_time_rounded,
+                      text:
+                          'Validity-only plans add days to credits you already '
+                          'hold. They do not add new credits.',
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    _Note(
+                      icon: Icons.autorenew_rounded,
+                      text:
+                          'Renew before your validity lapses and whatever you have '
+                          'not spent carries over.',
+                    ),
+                  ],
+                ),
         ),
       ],
     );
@@ -878,8 +1013,7 @@ class _TransactionRow extends StatelessWidget {
   /// A top-up, an unlock and an admin correction all move credits, but they are
   /// not the same event — give each its own mark so the history is scannable.
   (IconData, Tone) get _mark {
-    final text =
-        '${transaction.type} ${transaction.description}'.toLowerCase();
+    final text = '${transaction.type} ${transaction.description}'.toLowerCase();
 
     if (transaction.isCredit) {
       if (text.contains('refund') || text.contains('revert')) {

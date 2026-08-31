@@ -13,6 +13,7 @@ import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
+import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/explore/providers/tutor_search_provider.dart';
 import 'package:tht_app/features/wallet/providers/wallet_providers.dart';
@@ -35,7 +36,8 @@ class TutorDetailScreen extends ConsumerWidget {
           tutor.maybeWhen(
             data: (t) => IconButton(
               onPressed: () => _toggleFavourite(context, ref),
-              tooltip: t.isFavourite ? 'Remove from saved' : 'Save this teacher',
+              tooltip:
+                  t.isFavourite ? 'Remove from saved' : 'Save this teacher',
               icon: Icon(
                 t.isFavourite
                     ? Icons.favorite_rounded
@@ -562,8 +564,19 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
     );
   }
 
+  /// Unlocking is back on this side.
+  ///
+  /// Both directions of contact now exist and they are not the same product:
+  /// a teacher buys a *family's* number on a job, and a parent spends a credit
+  /// here for a *teacher's* number. Neither replaces the other, so this card
+  /// keeps offering "post a requirement" underneath as the free route.
+  ///
+  /// The teacher's opt-out is invisible to us — `allow_direct_contact_unlock`
+  /// is not on the public profile — so the button is always offered and the
+  /// 403 is caught and explained rather than thrown at the parent as an error.
   Widget _locked() {
     final signedIn = ref.watch(authProvider).isAuthenticated;
+    final brightness = Theme.of(context).brightness;
     final wallet = signedIn ? ref.watch(walletProvider).valueOrNull : null;
     final hasCredits = (wallet?.balance ?? 0) > 0;
 
@@ -571,22 +584,37 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
+            // Top-aligned: the heading wraps to three lines at large text
+            // scales, and a vertically centred icon floats away from it.
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lock_outline_rounded, size: 18),
-              SizedBox(width: AppSpacing.sm),
-              Text(
-                'Contact details are hidden',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: Tone.info.foreground(brightness),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              // Expanded, not bare: the heading has to wrap at large text
+              // scales rather than run off the side of the card.
+              Expanded(
+                child: Text(
+                  'Contact details are hidden',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Tone.info.foreground(brightness),
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             signedIn
-                ? 'Unlock to see this teacher’s phone and WhatsApp number. One '
-                    'credit is used, and the contact stays unlocked for you.'
-                : 'Sign in to unlock this teacher’s phone and WhatsApp number.',
+                ? 'Unlock to see this teacher’s phone and WhatsApp number. '
+                    'One credit is used, and the contact stays unlocked for you.'
+                : 'Sign in to see this teacher’s phone and WhatsApp number.',
             style: const TextStyle(fontSize: 13.5, height: 1.55),
           ),
           if (wallet != null) ...[
@@ -630,6 +658,18 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                         label: const Text('Add credits to unlock'),
                       ),
           ),
+
+          // The free route, always underneath. A parent who does not want to
+          // spend anything still has a way to reach this teacher.
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () =>
+                  context.push(signedIn ? '/post-requirement' : '/login'),
+              child: const Text('Or post a requirement — it is free'),
+            ),
+          ),
         ],
       ),
     );
@@ -641,8 +681,8 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Use one credit?'),
         content: Text(
-          'You’ll see ${Fmt.titleCase(widget.tutor.name)}’s phone and WhatsApp '
-          'number, and it stays unlocked for you.',
+          'You’ll see ${Fmt.titleCase(widget.tutor.name)}’s phone and '
+          'WhatsApp number, and it stays unlocked for you.',
         ),
         actions: [
           TextButton(
@@ -660,18 +700,88 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
 
     setState(() => _working = true);
     try {
-      await ref.read(usersRepositoryProvider).unlockTutorContact(widget.tutor.id);
+      await ref
+          .read(usersRepositoryProvider)
+          .unlockTutorContact(widget.tutor.id);
       if (!mounted) return;
       ref.invalidate(tutorProvider(widget.tutor.id));
       // A credit was spent, so any balance shown elsewhere is now stale.
       ref.invalidate(walletProvider);
       context.showMessage('Contact unlocked.');
+    } on ApiFailure catch (f) {
+      if (!mounted) return;
+      // 403 is the teacher’s own opt-out. Nothing was charged, and it is not
+      // the parent’s mistake, so it gets an explanation with a way forward
+      // rather than a red toast reading like a failure.
+      if (f.statusCode == 403) {
+        await _showOptedOut();
+      } else if (f.statusCode == 402) {
+        // The balance moved between our check and the tap.
+        ref.invalidate(walletProvider);
+        context.showMessage('Not enough credits. Add some and try again.');
+      } else {
+        context.showFailure(f);
+      }
     } catch (e) {
       if (mounted) context.showFailure(e);
     } finally {
       if (mounted) setState(() => _working = false);
     }
   }
+
+  /// What a parent sees when the teacher has switched direct unlocks off.
+  Future<void> _showOptedOut() => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${Fmt.titleCase(widget.tutor.name)} is not sharing their '
+                  'number directly',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                const Text(
+                  'Some teachers prefer to be approached through a posted '
+                  'requirement. Nothing has been charged — your credits are '
+                  'untouched.',
+                  style: TextStyle(fontSize: 14, height: 1.55),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      context.push('/post-requirement');
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Post a requirement instead'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 
   String _intl(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
@@ -731,14 +841,20 @@ class _Teaches extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(label, style: TextStyle(fontSize: 13, color: muted)),
+                child:
+                    Text(label, style: TextStyle(fontSize: 13, color: muted)),
               ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: emphasise ? FontWeight.w700 : FontWeight.w600,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              // Flexible so a long value wraps under itself instead of
+              // running off the card at large text scales.
+              Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: emphasise ? FontWeight.w700 : FontWeight.w600,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ],

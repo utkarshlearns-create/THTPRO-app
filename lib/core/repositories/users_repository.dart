@@ -255,8 +255,21 @@ class UsersRepository extends Repository {
           .toList();
 
   /// Spends a credit to reveal a teacher's phone and WhatsApp number.
-  Future<Map<String, dynamic>> unlockTutorContact(int tutorId) =>
-      postMap('/api/users/tutor/$tutorId/unlock/');
+
+  /// Spends a credit to reveal a teacher's phone and email.
+  ///
+  /// `POST /api/users/tutor/{tutorProfileId}/unlock/`, parents only. Three
+  /// refusals matter and each needs a different answer from the UI:
+  ///
+  /// * **403** — the teacher has switched direct unlocks off. Nothing is
+  ///   charged. The public profile does not carry that flag, so this is the
+  ///   only way to find out.
+  /// * **402** — not enough credits. Carries `required` and `current`.
+  /// * **200 with "Already unlocked"** — a repeat tap. Also not charged.
+  ///
+  /// Takes the **TutorProfile** id, not the user id.
+  Future<Map<String, dynamic>> unlockTutorContact(int tutorProfileId) =>
+      postMap('/api/users/tutor/$tutorProfileId/unlock/');
 
   Future<List<PublicTutor>> favouriteTutors() async =>
       (await getList('/api/users/dashboard/favourite-tutors/'))
