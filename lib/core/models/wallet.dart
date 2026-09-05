@@ -156,6 +156,106 @@ class CreditPackage {
       );
 }
 
+/// The single discount the page should quote.
+///
+/// A teacher can hold a personal renewal offer while a site-wide sale is also
+/// running. **The server never stacks them — it charges whichever is larger.**
+/// So the app has to choose the same one, or the price on the card will not be
+/// the price on the payment sheet.
+///
+/// Display only. The code sent at checkout is still the offer's own; a sale has
+/// no code, because it is not something the buyer presents.
+class Discount {
+  const Discount({this.percentOff = 0, this.label = '', this.endsOn});
+
+  final double percentOff;
+
+  /// The sale's name, or empty for a personal offer.
+  final String label;
+
+  final DateTime? endsOn;
+
+  static const none = Discount();
+
+  bool get isReal => percentOff > 0;
+
+  /// A sale is announced by name; a personal offer just by its size.
+  bool get isSale => label.trim().isNotEmpty;
+
+  double applyTo(double price) {
+    final off = price * (100 - percentOff) / 100;
+    return off < 1 ? 1 : off;
+  }
+
+  /// Whole numbers read as "20% OFF", not "20.0% OFF".
+  String get percentLabel => percentOff == percentOff.roundToDouble()
+      ? percentOff.toStringAsFixed(0)
+      : percentOff.toStringAsFixed(1);
+
+  /// Whichever of the two is worth more, matching what the server will charge.
+  static Discount better(RenewalOffer offer, PlatformPromo promo) {
+    final fromOffer = offer.isLive
+        ? Discount(percentOff: offer.percentOff, endsOn: offer.expiresAt)
+        : none;
+    final fromPromo = promo.isRunning
+        ? Discount(
+            percentOff: promo.percentOff,
+            label: promo.label,
+            endsOn: promo.endsOn,
+          )
+        : none;
+    return fromPromo.percentOff > fromOffer.percentOff ? fromPromo : fromOffer;
+  }
+}
+
+/// A site-wide sale running right now, from `GET /api/wallet/promo/`.
+///
+/// Different from [RenewalOffer] in the way that matters: an offer belongs to
+/// one teacher, this belongs to a date window and applies to every teacher
+/// plan while it is open. Neither is entered by the buyer and neither is
+/// decided here — the server applies whichever is larger at order creation,
+/// and this type exists only so the app can say so.
+///
+/// Reading it is what makes a sale automatic. The window and the percentage
+/// live on the server, so a promo started, changed or ended there shows up in
+/// the app on the next load with nothing to release.
+class PlatformPromo {
+  const PlatformPromo({
+    this.active = false,
+    this.label = '',
+    this.percentOff = 0,
+    this.endsOn,
+  });
+
+  final bool active;
+
+  /// What the sale is called, e.g. `Teachers' Day`. Shown to the buyer, so it
+  /// is taken from the server rather than named in the app.
+  final String label;
+
+  final double percentOff;
+
+  /// Last day of the window, inclusive.
+  final DateTime? endsOn;
+
+  static const none = PlatformPromo();
+
+  /// Live, and worth telling anyone about.
+  bool get isRunning => active && percentOff > 0;
+
+  double discounted(double price) {
+    final off = price * (100 - percentOff) / 100;
+    return off < 1 ? 1 : off;
+  }
+
+  factory PlatformPromo.fromJson(Map<String, dynamic> json) => PlatformPromo(
+        active: asBool(json, 'active'),
+        label: asString(json, 'label'),
+        percentOff: asDoubleOrNull(json, 'percent_off') ?? 0,
+        endsOn: asDateOrNull(json, 'ends'),
+      );
+}
+
 /// A renewal discount being held for one user, from `GET /api/wallet/offer/`.
 ///
 /// The server resolves this from the signed-in user and applies it at order

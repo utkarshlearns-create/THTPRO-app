@@ -34,9 +34,16 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
 
     // Both fall back to safe defaults on failure, so neither can strand the
     // page — read them without an AsyncView.
-    final offer = ref.watch(walletOfferProvider).valueOrNull ?? RenewalOffer.none;
-    final expiry =
-        ref.watch(walletExpiryProvider).valueOrNull ?? WalletExpiryStatus.unknown;
+    // Two discounts can be live at once: a renewal offer held by this teacher,
+    // and a sale running for everyone. They never stack — the server charges
+    // whichever is larger — so the page quotes the same one.
+    final offer =
+        ref.watch(walletOfferProvider).valueOrNull ?? RenewalOffer.none;
+    final promo =
+        ref.watch(platformPromoProvider).valueOrNull ?? PlatformPromo.none;
+    final best = Discount.better(offer, promo);
+    final expiry = ref.watch(walletExpiryProvider).valueOrNull ??
+        WalletExpiryStatus.unknown;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add credits')),
@@ -65,6 +72,7 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
               ref.invalidate(creditPackagesProvider);
               ref.invalidate(walletProvider);
               ref.invalidate(walletOfferProvider);
+              ref.invalidate(platformPromoProvider);
               ref.invalidate(walletExpiryProvider);
               await ref.read(creditPackagesProvider.future);
             },
@@ -80,8 +88,8 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                   _CurrentPlan(wallet: wallet),
                   const SizedBox(height: AppSpacing.base),
                 ],
-                if (offer.isLive) ...[
-                  _OfferBanner(offer: offer),
+                if (best.isReal) ...[
+                  _OfferBanner(discount: best),
                   const SizedBox(height: AppSpacing.base),
                 ],
                 if (!CheckoutService.isSupported) ...[
@@ -99,7 +107,7 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                 for (final p in credit) ...[
                   _PlanCard(
                     package: p,
-                    offer: offer,
+                    discount: best,
                     busy: _busyPackageId == p.id,
                     disabled: _busyPackageId != null,
                     // Cheapest per credit, not cheapest overall — that is the
@@ -122,7 +130,7 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                   for (final p in validity) ...[
                     _PlanCard(
                       package: p,
-                      offer: offer,
+                      discount: best,
                       busy: _busyPackageId == p.id,
                       disabled: _busyPackageId != null,
                       // The server rejects this outright for anyone who has
@@ -195,6 +203,7 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
           // An offer is single-use, and buying validity changes whether more
           // validity may be bought.
           ref.invalidate(walletOfferProvider);
+          ref.invalidate(platformPromoProvider);
           ref.invalidate(walletExpiryProvider);
           context.showMessage(
             package.isValidityOnly
@@ -276,18 +285,15 @@ class _CurrentPlan extends StatelessWidget {
 /// Without this the page quotes full price and the payment sheet charges less,
 /// which reads as a pricing bug even though the user is better off.
 class _OfferBanner extends StatelessWidget {
-  const _OfferBanner({required this.offer});
+  const _OfferBanner({required this.discount});
 
-  final RenewalOffer offer;
+  final Discount discount;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final fg = Tone.success.foreground(brightness);
-    final pct = offer.percentOff;
-    final label = pct == pct.roundToDouble()
-        ? pct.toStringAsFixed(0)
-        : pct.toStringAsFixed(1);
+    final label = discount.percentLabel;
 
     return THTCard(
       background: Tone.success.background(brightness),
@@ -301,7 +307,13 @@ class _OfferBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$label% off your renewal',
+                  // A sale is announced by its name — "Teachers' Day 20% off"
+                  // is worth more to a buyer than a bare percentage, and the
+                  // name comes from the server so the app never has to know
+                  // which sale is running.
+                  discount.isSale
+                      ? '${discount.label} · $label% off'
+                      : '$label% off your renewal',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -310,10 +322,10 @@ class _OfferBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  offer.expiresAt == null
+                  discount.endsOn == null
                       ? 'Applied automatically at checkout.'
                       : 'Applied automatically at checkout · ends '
-                          '${Fmt.relative(offer.expiresAt).toLowerCase()}.',
+                          '${Fmt.relative(discount.endsOn).toLowerCase()}.',
                   style: TextStyle(
                     fontSize: 12.5,
                     height: 1.45,
@@ -370,7 +382,7 @@ class _WebNotice extends StatelessWidget {
 class _PlanCard extends ConsumerWidget {
   const _PlanCard({
     required this.package,
-    required this.offer,
+    required this.discount,
     required this.busy,
     required this.disabled,
     required this.onBuy,
@@ -379,7 +391,7 @@ class _PlanCard extends ConsumerWidget {
   });
 
   final CreditPackage package;
-  final RenewalOffer offer;
+  final Discount discount;
   final bool busy;
   final bool disabled;
   final VoidCallback onBuy;
@@ -396,17 +408,16 @@ class _PlanCard extends ConsumerWidget {
     final isDark = brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
     final locked = lockedReason != null;
-    final discounted = offer.isLive;
+    final discounted = discount.isReal;
 
     // Only quoted for a plan that can actually be bought, and only shown when
     // the server says there is real value to credit back — a quote that fails
     // or has nothing to prorate leaves the card exactly as it was.
-    final quote = locked
-        ? null
-        : ref.watch(upgradeQuoteProvider(package.id)).valueOrNull;
+    final quote =
+        locked ? null : ref.watch(upgradeQuoteProvider(package.id)).valueOrNull;
     final upgrade = quote != null && quote.isRealUpgrade ? quote : null;
     final payable =
-        discounted ? offer.discounted(package.price) : package.price;
+        discounted ? discount.applyTo(package.price) : package.price;
 
     // Per the price actually payable, not the struck-through one — a discounted
     // ₹479 plan sitting above "₹200 per credit" invites the buyer to check the
@@ -460,14 +471,20 @@ class _PlanCard extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 3),
-                          child: Text(
-                            heroUnit,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: muted,
+                        // Flexible: the unit sits beside a 32px numeral, and
+                        // on a narrow phone a longer one ran off the card.
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 3),
+                            child: Text(
+                              heroUnit,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: muted,
+                              ),
                             ),
                           ),
                         ),
@@ -542,7 +559,7 @@ class _PlanCard extends ConsumerWidget {
                 ),
               if (discounted)
                 Pill(
-                  '${offer.percentOff.toStringAsFixed(0)}% OFF',
+                  '${discount.percentLabel}% OFF',
                   tone: Tone.success,
                   icon: Icons.local_offer_rounded,
                   dense: true,
@@ -661,7 +678,8 @@ class _FeatureList extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
-    final shown = features.where((f) => f.trim().isNotEmpty).take(_max).toList();
+    final shown =
+        features.where((f) => f.trim().isNotEmpty).take(_max).toList();
     final extra = features.length - shown.length;
 
     return Column(

@@ -72,6 +72,21 @@ final creditPackagesProvider = FutureProvider.autoDispose<List<CreditPackage>>(
 /// applies whatever offer the user holds at order creation regardless of what
 /// the app sends, so this endpoint only affects what the page *says* — and an
 /// optional promo lookup must never take down a checkout screen.
+/// The sale the whole platform is running, if any.
+///
+/// Collapses to [PlatformPromo.none] on failure for the same reason as the
+/// offer above: the server applies the discount either way, so a lookup that
+/// fails must cost the buyer a banner and never the page.
+final platformPromoProvider = FutureProvider.autoDispose<PlatformPromo>(
+  (ref) async {
+    try {
+      return await ref.watch(walletRepositoryProvider).platformPromo();
+    } catch (_) {
+      return PlatformPromo.none;
+    }
+  },
+);
+
 final walletOfferProvider = FutureProvider.autoDispose<RenewalOffer>(
   (ref) async {
     try {

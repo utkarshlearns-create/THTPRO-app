@@ -73,6 +73,13 @@ class WalletRepository extends Repository {
   /// A renewal offer being held for this user, if any.
   ///
   /// Answers `{'valid': false}` rather than 404 when there is none.
+  /// The site-wide sale, if one is running.
+  ///
+  /// Never let this fail a page: it is a bonus, and the server applies the
+  /// discount regardless of whether the app asked about it.
+  Future<PlatformPromo> platformPromo() async =>
+      PlatformPromo.fromJson(await getMap('/api/wallet/promo/'));
+
   Future<RenewalOffer> currentOffer() async =>
       RenewalOffer.fromJson(await getMap('/api/wallet/offer/'));
 
