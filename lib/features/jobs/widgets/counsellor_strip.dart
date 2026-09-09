@@ -17,9 +17,16 @@ import 'package:url_launcher/url_launcher.dart';
 /// Renders nothing when no counsellor is assigned or no number came back,
 /// rather than offering a button that dials nothing.
 class CounsellorStrip extends StatelessWidget {
-  const CounsellorStrip({super.key, required this.job});
+  const CounsellorStrip({super.key, required this.job, this.forParent = false});
 
   final Job job;
+
+  /// Whose screen this is on.
+  ///
+  /// The same person is on both sides of the job, but "this lead" is the
+  /// teacher's word for a family — on the parent's own requirement it reads as
+  /// jargon about themselves. Only the wording changes.
+  final bool forParent;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +56,9 @@ class CounsellorStrip extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Need help with this job?',
+                      forParent
+                          ? 'Need help with your requirement?'
+                          : 'Need help with this job?',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -58,7 +67,11 @@ class CounsellorStrip extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${Fmt.titleCase(counsellor.name)} is handling this lead',
+                      forParent
+                          ? '${Fmt.titleCase(counsellor.name)} is looking '
+                              'after this for you'
+                          : '${Fmt.titleCase(counsellor.name)} is handling '
+                              'this lead',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 12.5, color: muted),
@@ -107,9 +120,12 @@ class CounsellorStrip extends StatelessWidget {
       if (job.classGrade.isNotEmpty) job.classGrade,
       if (job.subjects.isNotEmpty) job.subjects.take(2).join(', '),
     ].join(' ');
-    return 'Hi, I have a question about job JD-${job.id}'
-        '${what.isEmpty ? '' : ' ($what'
-            '${job.locality.isEmpty ? '' : ', ${job.locality}'})'}.';
+    final subject = what.isEmpty
+        ? ''
+        : ' ($what${job.locality.isEmpty ? '' : ', ${job.locality}'})';
+    return forParent
+        ? 'Hi, I have a question about my requirement JD-${job.id}$subject.'
+        : 'Hi, I have a question about job JD-${job.id}$subject.';
   }
 
   Future<void> _open(String uri) =>

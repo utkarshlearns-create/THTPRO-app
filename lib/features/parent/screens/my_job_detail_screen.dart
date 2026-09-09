@@ -20,6 +20,8 @@ import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/messages/providers/messages_providers.dart';
 import 'package:tht_app/features/parent/providers/parent_providers.dart';
+import 'package:tht_app/features/jobs/widgets/counsellor_strip.dart';
+import 'package:tht_app/features/jobs/widgets/job_share.dart';
 import 'package:tht_app/features/parent/widgets/attendance_card.dart';
 import 'package:tht_app/features/parent/widgets/demo_review_sheet.dart';
 import 'package:tht_app/features/parent/widgets/rate_tutor_sheet.dart';
@@ -58,6 +60,10 @@ class MyJobDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Your requirement'),
         actions: [
+          // Share and copy, same as the teacher's side. A parent passes their
+          // requirement to teachers they already know; the block carries no
+          // contact details, so forwarding it costs them nothing.
+          if (job != null) JobShareActions(job: job),
           if (isParent)
             PopupMenuButton<String>(
               tooltip: 'More',
@@ -120,6 +126,10 @@ class MyJobDetailScreen extends ConsumerWidget {
               // parent was told to spend a credit to unlock their own contact.
               if (job != null) ...[
                 _RequirementCard(job: job),
+                const SizedBox(height: AppSpacing.xl),
+                // Who at THT is actually working this requirement, and two
+                // ways to reach them. Renders nothing until one is assigned.
+                CounsellorStrip(job: job, forParent: true),
                 const SizedBox(height: AppSpacing.xl),
               ],
               // Only once there is a teacher to keep a record of, and only for
@@ -561,7 +571,6 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
               Pill(a.stageLabel, tone: toneForStatus(a.toneKey), dense: true),
             ],
           ),
-
           const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: AppSpacing.sm,
@@ -590,7 +599,6 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
                 ),
             ],
           ),
-
           if (a.coverMessage.trim().isNotEmpty &&
               !a.coverMessage.startsWith('Auto-applied')) ...[
             const SizedBox(height: AppSpacing.md),
@@ -607,7 +615,6 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
               ),
             ),
           ],
-
           if (a.demoDate != null) ...[
             const SizedBox(height: AppSpacing.md),
             Row(
@@ -632,7 +639,6 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
               ],
             ),
           ],
-
           const SizedBox(height: AppSpacing.base),
           _actions(a),
         ],
@@ -809,7 +815,9 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
           a.tutor == null ? null : () => context.push('/tutors/${a.tutor!.id}'),
       child: const Text('View profile'),
     );
-    if (primaryLabel == null) return SizedBox(width: double.infinity, child: profile);
+    if (primaryLabel == null) {
+      return SizedBox(width: double.infinity, child: profile);
+    }
 
     return Row(
       children: [
