@@ -118,8 +118,20 @@ class Application {
   bool get isClosed =>
       const {'REJECTED', 'NOT_SELECTED'}.contains(status.toUpperCase());
 
-  bool get isRunning =>
-      isHired && completionStatus.toUpperCase() == 'ONGOING';
+  /// The requirement itself is over, whatever this application still says.
+  ///
+  /// Closing a job does not touch the applications on it — the server records
+  /// the termination against the job alone — so an application sits at APPLIED
+  /// forever, waiting on a family that has already gone. The job's own status
+  /// rides along in `job_details`, so the app can tell even though the
+  /// application cannot.
+  bool get jobClosed => const {'CLOSED', 'CANCELLED', 'EXPIRED'}
+      .contains((job?.status ?? '').toUpperCase());
+
+  /// Nothing further can happen here, by either route.
+  bool get isOver => isClosed || isCompleted || jobClosed;
+
+  bool get isRunning => isHired && completionStatus.toUpperCase() == 'ONGOING';
 
   bool get isCompleted => completionStatus.toUpperCase() == 'COMPLETED';
 
@@ -155,7 +167,12 @@ class Application {
     if (isCompleted) return 'Completed';
     if (isRunning) return 'Teaching';
     if (isHired) return 'Hired';
-    if (isClosed) return status.toUpperCase() == 'REJECTED' ? 'Declined' : 'Not selected';
+    if (isClosed) {
+      return status.toUpperCase() == 'REJECTED' ? 'Declined' : 'Not selected';
+    }
+    // Checked after the application's own outcome — being hired on a job that
+    // has since closed is a finished tuition, not a lost lead.
+    if (jobClosed) return 'Requirement closed';
     // Both demo labels need the date. Without it `demo_status` is only its
     // server-side default and every new application would read "Demo
     // proposed" the moment it was sent.
@@ -170,13 +187,15 @@ class Application {
     if (isCompleted) return 'COMPLETED';
     if (isRunning || isHired) return 'HIRED';
     if (isClosed) return status;
+    if (jobClosed) return 'NOT_SELECTED';
     if (isDemoBooked) return 'ACCEPTED';
     if (isDemoAwaitingParent) return 'PENDING';
     return 'APPLIED';
   }
 
   /// What the teacher earns or earned here, preferring the recorded share.
-  double? get earning => tutorPaymentAmount ??
+  double? get earning =>
+      tutorPaymentAmount ??
       (finalizedAmount != null ? finalizedAmount! * 0.5 : null);
 
   factory Application.fromJson(Map<String, dynamic> json) {

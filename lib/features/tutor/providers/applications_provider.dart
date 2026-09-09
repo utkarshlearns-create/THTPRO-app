@@ -25,14 +25,19 @@ extension ApplicationStageX on ApplicationStage {
     switch (this) {
       case ApplicationStage.all:
         return true;
+      // A closed requirement outranks every live stage: there is nothing left
+      // to wait for, no demo that will happen, and leaving it under Applied
+      // has a teacher chasing a family that has gone.
       case ApplicationStage.awaiting:
-        return (a.isAwaiting || a.isShortlisted) && !a.hasUpcomingDemo;
+        return (a.isAwaiting || a.isShortlisted) &&
+            !a.hasUpcomingDemo &&
+            !a.jobClosed;
       case ApplicationStage.demo:
-        return a.hasUpcomingDemo;
+        return a.hasUpcomingDemo && !a.jobClosed;
       case ApplicationStage.teaching:
         return a.isRunning || (a.isHired && !a.isCompleted);
       case ApplicationStage.closed:
-        return a.isClosed || a.isCompleted;
+        return a.isClosed || a.isCompleted || (a.jobClosed && !a.isHired);
     }
   }
 }

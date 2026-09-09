@@ -151,7 +151,8 @@ class ApplicationTimelineSheet extends ConsumerWidget {
   /// and *upcoming* otherwise — never ticked on hope.
   List<_TimelineStep> _stepsFor(Application a) {
     final steps = <_TimelineStep>[];
-    final closed = a.isClosed;
+    // Either the application lost, or the requirement itself ended.
+    final closed = a.isClosed || (a.jobClosed && !a.isHired);
 
     // 1 — Applied. Always done; it is why this sheet exists.
     steps.add(_TimelineStep(
@@ -272,13 +273,19 @@ class ApplicationTimelineSheet extends ConsumerWidget {
 
     if (closed) {
       steps.add(_TimelineStep(
-        title: a.status.toUpperCase() == 'REJECTED'
-            ? 'The family went elsewhere'
-            : 'Not selected for this one',
-        detail: a.closureReason.trim().isEmpty
-            ? 'It happens on most leads. The teachers who get hired are '
-                'usually the ones applying quickly and often.'
-            : a.closureReason.trim(),
+        title: a.isClosed
+            ? (a.status.toUpperCase() == 'REJECTED'
+                ? 'The family went elsewhere'
+                : 'Not selected for this one')
+            : 'The family closed this requirement',
+        detail: a.closureReason.trim().isNotEmpty
+            ? a.closureReason.trim()
+            : a.isClosed
+                ? 'It happens on most leads. The teachers who get hired are '
+                    'usually the ones applying quickly and often.'
+                : 'They have taken it down, so nothing further will happen '
+                    'here. Nothing you did — it is off the board for everyone '
+                    'who applied.',
         state: _StepState.bad,
         icon: Icons.do_not_disturb_on_rounded,
       ));
