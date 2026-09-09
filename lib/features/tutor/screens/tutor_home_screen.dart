@@ -10,6 +10,7 @@ import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
+import 'package:tht_app/core/ui/shortcut_grid.dart';
 import 'package:tht_app/core/ui/stat_tile.dart';
 import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/states.dart';
@@ -867,174 +868,37 @@ class _EarningsSection extends ConsumerWidget {
 /// allowed two lines and the row is a fixed height rather than a GridView with
 /// an aspect ratio — an aspect ratio fixes the height before the text is
 /// measured, and the second line then overflows at larger text scales.
+/// The teacher's shortcuts.
+///
+/// Refer & earn, attendance, score and settings each existed as a route with no
+/// entrance from the home screen — the only way in was the profile tab or a
+/// guess.
 class TutorShortcuts extends StatelessWidget {
   const TutorShortcuts({super.key});
 
-  static const _row1 = [
-    _Shortcut(
-        Icons.work_outline_rounded, 'Find jobs', '/tutor-jobs', Tone.accent),
-    _Shortcut(Icons.description_outlined, 'Applications', '/tutor-applications',
-        Tone.info),
-    _Shortcut(
-        Icons.lock_open_rounded, 'My leads', '/tutor-leads', Tone.success),
-    _Shortcut(Icons.cast_for_education_rounded, 'My tuitions',
-        '/tutor-tuitions', Tone.accent),
-  ];
-
-  static const _row2 = [
-    _Shortcut(Icons.card_giftcard_rounded, 'Refer & earn', '/tutor-referrals',
-        Tone.warning),
-    _Shortcut(Icons.event_available_rounded, 'Attendance', '/tutor-attendance',
-        Tone.info),
-    _Shortcut(
-        Icons.emoji_events_rounded, 'My score', '/tutor-score', Tone.success),
-    _Shortcut(
-        Icons.settings_outlined, 'Settings', '/account-security', Tone.neutral),
-  ];
-
   @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          'Shortcuts',
-          icon: Icons.bolt_rounded,
-          iconTone: Tone.warning,
-        ),
-        SizedBox(height: AppSpacing.md),
-        _TileRow(items: _row1),
-        SizedBox(height: AppSpacing.base),
-        _TileRow(items: _row2),
-      ],
-    );
-  }
-}
-
-/// A shortcut's fixed data, so the rows read as a list rather than as markup.
-class _Shortcut {
-  const _Shortcut(this.icon, this.label, this.route, this.tone);
-
-  final IconData icon;
-  final String label;
-  final String route;
-  final Tone tone;
-}
-
-class _TileRow extends StatelessWidget {
-  const _TileRow({required this.items});
-
-  final List<_Shortcut> items;
-
-  @override
-  Widget build(BuildContext context) => IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < items.length; i++) ...[
-              if (i > 0) const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _ActionTile(item: items[i])),
-            ],
+  Widget build(BuildContext context) => const ShortcutGrid(
+        rows: [
+          [
+            Shortcut(Icons.work_outline_rounded, 'Find jobs', '/tutor-jobs',
+                ShortcutTint.orange),
+            Shortcut(Icons.description_outlined, 'Applications',
+                '/tutor-applications', ShortcutTint.blue),
+            Shortcut(Icons.lock_open_rounded, 'My leads', '/tutor-leads',
+                ShortcutTint.green),
+            Shortcut(Icons.cast_for_education_rounded, 'My tuitions',
+                '/tutor-tuitions', ShortcutTint.violet),
           ],
-        ),
+          [
+            Shortcut(Icons.card_giftcard_rounded, 'Refer & earn',
+                '/tutor-referrals', ShortcutTint.amber),
+            Shortcut(Icons.event_available_rounded, 'Attendance',
+                '/tutor-attendance', ShortcutTint.blue),
+            Shortcut(Icons.emoji_events_rounded, 'My score', '/tutor-score',
+                ShortcutTint.green),
+            Shortcut(Icons.settings_outlined, 'Settings', '/account-security',
+                ShortcutTint.slate),
+          ],
+        ],
       );
-}
-
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.item});
-
-  final _Shortcut item;
-
-  /// The chip's fill, which is not the same colour as the tone's text.
-  ///
-  /// [ToneColors.foreground] is tuned for *text on a light surface*, so in
-  /// light mode it is deliberately dark and desaturated — warning is amber-700,
-  /// a brown. Poured into a 46dp chip and then shaded by the gradient it goes
-  /// muddy. These are the mid-tones of the same families, chosen so a white
-  /// icon still clears 3:1 against them, which is the bar for a meaningful
-  /// graphic. They are the same in both themes: a saturated chip reads as an
-  /// island of colour on white and on slate-950 alike.
-  Color get _fill {
-    switch (item.tone) {
-      case Tone.accent:
-        return const Color(0xFFE1702E);
-      case Tone.info:
-        return const Color(0xFF2563EB);
-      case Tone.success:
-        return const Color(0xFF059669);
-      case Tone.warning:
-        return const Color(0xFFD97706);
-      case Tone.critical:
-        return const Color(0xFFDC2626);
-      case Tone.neutral:
-        return const Color(0xFF475569);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
-    final tint = _fill;
-
-    return InkWell(
-      onTap: () => context.push(item.route),
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Column(
-          children: [
-            // The depth is painted rather than imported: a top-lit gradient,
-            // a coloured drop shadow and a hairline highlight. A 3D PNG would
-            // carry baked-in lighting that fights the dark theme, and the
-            // free sets that exist do not carry a usable licence.
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color.alphaBlend(
-                        Colors.white.withValues(alpha: 0.22), tint),
-                    tint,
-                    Color.alphaBlend(
-                        Colors.black.withValues(alpha: 0.16), tint),
-                  ],
-                  stops: const [0, 0.55, 1],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: tint.withValues(alpha: isDark ? 0.34 : 0.30),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  width: 0.8,
-                ),
-              ),
-              child: Icon(item.icon, size: 21, color: Colors.white),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              item.label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11.5,
-                height: 1.25,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.slate200 : AppColors.slate700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

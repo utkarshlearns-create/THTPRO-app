@@ -10,6 +10,7 @@ import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
+import 'package:tht_app/core/ui/shortcut_grid.dart';
 import 'package:tht_app/core/ui/stat_tile.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/subject_glyph.dart';
@@ -452,113 +453,39 @@ class _HeroLayout extends StatelessWidget {
 
 // ── Quick actions ────────────────────────────────────────────────────────────
 
+/// The parent's shortcuts.
+///
+/// Three tiles becomes eight. Messages, the current teacher, support and
+/// settings were all reachable only from the profile tab, and a parent looking
+/// for their teacher's number does not think to look under their own profile.
 class _QuickActions extends StatelessWidget {
   const _QuickActions();
 
   @override
-  Widget build(BuildContext context) {
-    // Three, not four. A Credits tile would have been this screen's third route
-    // to the wallet after the header chip and the bottom bar, and dropping it
-    // buys the remaining labels enough width to survive text scaling.
-    //
-    // Fixed height with Expanded children rather than a GridView with an aspect
-    // ratio: a ratio-derived box has no slack when the label wraps.
-    return const SizedBox(
-      height: 98,
-      child: Row(
-        children: [
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.post_add_rounded,
-              label: 'Post a\nrequirement',
-              tone: Tone.info,
-              route: '/post-requirement',
-              push: true,
-            ),
-          ),
-          SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.person_search_rounded,
-              label: 'Find\nteachers',
-              tone: Tone.success,
-              route: '/find-teachers',
-            ),
-          ),
-          SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.work_outline_rounded,
-              label: 'My\nrequirements',
-              tone: Tone.warning,
-              route: '/my-jobs',
-            ),
-          ),
+  Widget build(BuildContext context) => const ShortcutGrid(
+        rows: [
+          [
+            Shortcut(Icons.post_add_rounded, 'Post a need', '/post-requirement',
+                ShortcutTint.blue),
+            Shortcut(Icons.person_search_rounded, 'Find teachers',
+                '/find-teachers', ShortcutTint.green),
+            Shortcut(Icons.work_outline_rounded, 'My requirements', '/my-jobs',
+                ShortcutTint.amber),
+            Shortcut(Icons.school_rounded, 'Current teacher', '/current-tutor',
+                ShortcutTint.violet),
+          ],
+          [
+            Shortcut(Icons.chat_bubble_outline_rounded, 'Messages', '/messages',
+                ShortcutTint.blue),
+            Shortcut(Icons.account_balance_wallet_outlined, 'Credits',
+                '/wallet', ShortcutTint.orange),
+            Shortcut(Icons.support_agent_rounded, 'Support', '/support',
+                ShortcutTint.green),
+            Shortcut(Icons.settings_outlined, 'Settings', '/account-security',
+                ShortcutTint.slate),
+          ],
         ],
-      ),
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.tone,
-    required this.route,
-    this.push = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final Tone tone;
-  final String route;
-
-  /// The requirement wizard is pushed full-screen; the tabs are switched to.
-  final bool push;
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
-
-    return THTCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 6,
-        vertical: AppSpacing.md,
-      ),
-      onTap: () => push ? context.push(route) : context.go(route),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: tone.background(brightness),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(icon, size: 18, color: tone.foreground(brightness)),
-          ),
-          const SizedBox(height: 7),
-          Flexible(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
-                height: 1.25,
-                color: isDark ? AppColors.slate300 : AppColors.slate700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      );
 }
 
 // ── Numbers ──────────────────────────────────────────────────────────────────
