@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ backup rules. Nothing leaves the device.
+
+  The session token lives in EncryptedSharedPreferences, whose key is bound to
+  this device's keystore, so a restored copy would be undecryptable anyway —
+  but excluding it outright is clearer than relying on that.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" />
+        <exclude domain="database" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" />
+        <exclude domain="database" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>

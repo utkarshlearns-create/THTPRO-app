@@ -62,6 +62,17 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+
+            // R8: strips unused code and renames what is left. Not a security
+            // control on its own — anything shipped in the APK is readable by
+            // someone determined — but it removes the free read of class and
+            // method names that makes an APK easy to browse. Also shrinks it.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

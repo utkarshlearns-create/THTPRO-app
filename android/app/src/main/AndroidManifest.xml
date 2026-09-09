@@ -5,10 +5,17 @@
          for it after login rather than on first launch. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Backup is off deliberately. The session lives in
+         EncryptedSharedPreferences, and cloud/adb backup would carry it off
+         the device it was bound to. Nothing here is worth restoring: signing
+         in again reproduces every bit of it from the server. -->
     <application
         android:label="THTPRO"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -122,12 +122,54 @@ class ApiClient {
       return handler.next(err);
     }
 
-    // Attempt token refresh
-    final refreshToken = await TokenStorage.getRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) {
+    // One refresh for however many requests hit 401 together.
+    final newAccess = await _refreshOnce();
+    if (newAccess == null) {
+      // The refresh token is dead, so the session is over. Retrying the
+      // request without auth was tempting but wrong: on any endpoint with a
+      // public fallback it turns "you have been signed out" into "you have no
+      // data", and the user sits looking at an empty dashboard that should
+      // have asked them to sign in.
       await _forceLogout();
       return handler.next(err);
     }
+
+    try {
+      final retryOptions = err.requestOptions;
+      retryOptions.headers['Authorization'] = 'Bearer $newAccess';
+      final retryResponse = await _dio.fetch(retryOptions);
+      return handler.resolve(retryResponse);
+    } on DioException catch (e) {
+      return handler.next(e);
+    }
+  }
+
+  /// The refresh currently in flight, shared by every caller that wants one.
+  static Future<String?>? _inFlight;
+
+  /// Refreshes the access token, at most once at a time.
+  ///
+  /// **The lock is the whole point.** The server rotates refresh tokens and
+  /// blacklists the old one (`ROTATE_REFRESH_TOKENS` + `BLACKLIST_AFTER_ROTATION`),
+  /// so the first refresh to land invalidates the token every other in-flight
+  /// refresh is holding. Without this, an access token expiring while a screen
+  /// has several requests open — which is every screen — meant one refresh
+  /// succeeded and the rest were rejected against a blacklisted token and
+  /// signed the user out. It reads as being randomly logged out, and it is
+  /// worst on the busiest screens.
+  ///
+  /// Returns the new access token, or null when the session is genuinely over.
+  static Future<String?> _refreshOnce() {
+    return _inFlight ??= _performRefresh().whenComplete(() {
+      // Cleared on completion, so a later expiry starts a fresh one rather
+      // than reusing a token that has since been rotated again.
+      _inFlight = null;
+    });
+  }
+
+  static Future<String?> _performRefresh() async {
+    final refreshToken = await TokenStorage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return null;
 
     try {
       final response = await _refreshDio.post(
@@ -136,31 +178,19 @@ class ApiClient {
       );
 
       final newAccess = response.data['access'] as String?;
-      if (newAccess == null) {
-        await _forceLogout();
-        return handler.next(err);
-      }
+      if (newAccess == null) return null;
 
-      // Save new tokens
-      await TokenStorage.saveAccessToken(newAccess);
+      // The rotated refresh token has to be stored with the access token, or
+      // the next refresh presents one the server has already blacklisted.
       final newRefresh = response.data['refresh'] as String?;
       if (newRefresh != null) {
         await TokenStorage.saveTokens(access: newAccess, refresh: newRefresh);
+      } else {
+        await TokenStorage.saveAccessToken(newAccess);
       }
-
-      // Retry the original request with the new token
-      final retryOptions = err.requestOptions;
-      retryOptions.headers['Authorization'] = 'Bearer $newAccess';
-      final retryResponse = await _dio.fetch(retryOptions);
-      return handler.resolve(retryResponse);
+      return newAccess;
     } on DioException {
-      // The refresh token is dead, so the session is over. Retrying the request
-      // without auth was tempting but wrong: on any endpoint with a public
-      // fallback it turns "you have been signed out" into "you have no data",
-      // and the user sits looking at an empty dashboard that should have asked
-      // them to sign in.
-      await _forceLogout();
-      return handler.next(err);
+      return null;
     }
   }
 
