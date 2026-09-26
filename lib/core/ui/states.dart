@@ -114,13 +114,15 @@ class ErrorView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.base),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0x26EF4444) : AppColors.errorBg,
+              color: isDark
+                  ? AppColors.error.withValues(alpha: 0.15)
+                  : AppColors.errorBg,
               shape: BoxShape.circle,
             ),
             child: Icon(
               offline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
               size: compact ? 22 : 28,
-              color: isDark ? const Color(0xFFF87171) : AppColors.error,
+              color: isDark ? AppColors.errorOnDark : AppColors.error,
             ),
           ),
           SizedBox(height: compact ? AppSpacing.md : AppSpacing.base),

@@ -317,14 +317,14 @@ class _Backdrop extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: isDark
               ? const [
-                  Color(0xFF15121B),
+                  AppColors.authWashDark,
                   AppColors.slate950,
                   AppColors.slate950,
                 ]
               : const [
-                  Color(0xFFFCF0E6),
-                  Color(0xFFFFF9F5),
-                  Color(0xFFFFFDFC),
+                  AppColors.authWashWarm,
+                  AppColors.authWashWarmMid,
+                  AppColors.authWashWarmFaint,
                 ],
           stops: const [0, 0.42, 1],
         ),
@@ -687,9 +687,9 @@ class _FloatingBadge extends StatelessWidget {
       height: 52,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isDark ? const Color(0xFF3A2416) : const Color(0xFFFBE4D2),
+        color: isDark ? AppColors.warmTintDark : AppColors.warmTint,
         border: Border.all(
-          color: isDark ? AppColors.slate950 : const Color(0xFFFDF4EC),
+          color: isDark ? AppColors.slate950 : AppColors.warmVeil,
           width: 3,
         ),
         boxShadow: [
@@ -1005,7 +1005,7 @@ class _QuickAccess extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.primaryOrange.withValues(alpha: 0.08)
-            : const Color(0xFFFFF6EE),
+            : AppColors.warmWash,
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(
           color: AppColors.primaryOrange.withValues(alpha: isDark ? 0.22 : 0.14),
@@ -1028,7 +1028,7 @@ class _QuickAccess extends StatelessWidget {
                   fontSize: 13.5,
                   fontWeight: FontWeight.w800,
                   color: isDark
-                      ? const Color(0xFFFB923C)
+                      ? AppColors.primaryOrangeOnDark
                       : AppColors.primaryOrangeDark,
                 ),
               ),

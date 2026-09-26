@@ -59,7 +59,7 @@ abstract final class ParentTheme {
       ),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: primary, width: 2),
         ),
       ),
@@ -71,9 +71,9 @@ abstract final class ParentTheme {
         // The selected label and tick are orange in the base theme; without
         // these a selected chip on a parent screen kept a brand-orange tick.
         secondaryLabelStyle: base.chipTheme.secondaryLabelStyle?.copyWith(
-          color: isDark ? const Color(0xFF93C5FD) : primary,
+          color: isDark ? AppColors.primaryBlueOnDark : primary,
         ),
-        checkmarkColor: isDark ? const Color(0xFF93C5FD) : primary,
+        checkmarkColor: isDark ? AppColors.primaryBlueOnDark : primary,
       ),
     );
   }

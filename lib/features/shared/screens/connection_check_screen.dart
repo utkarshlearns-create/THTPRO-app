@@ -154,9 +154,9 @@ class _ConnectionCheckScreenState extends State<ConnectionCheckScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText(
+                const SelectableText(
                   ApiConfig.baseUrl,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -166,7 +166,7 @@ class _ConnectionCheckScreenState extends State<ConnectionCheckScreen> {
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: [
-                    Pill(
+                    const Pill(
                       kIsWeb ? 'In a browser' : 'Native build',
                       dense: true,
                     ),

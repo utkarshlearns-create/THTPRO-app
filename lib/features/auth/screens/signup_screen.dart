@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,6 +67,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         leading: _step > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back a step',
                 onPressed: () => setState(() => _step--),
               )
             : null,
@@ -85,7 +85,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 shape: BoxShape.circle,
                 color: isDark 
                     ? AppColors.primaryOrange.withValues(alpha: 0.1) 
-                    : const Color(0xFFF3F8FF),
+                    : AppColors.authBloomCool,
                 boxShadow: [
                   BoxShadow(
                     color: isDark ? AppColors.primaryOrange.withValues(alpha: 0.2) : Colors.transparent,
@@ -105,7 +105,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 shape: BoxShape.circle,
                 color: isDark 
                     ? AppColors.violet.withValues(alpha: 0.1) 
-                    : const Color(0xFFFFF9ED),
+                    : AppColors.authBloomWarm,
                 boxShadow: [
                   BoxShadow(
                     color: isDark ? AppColors.violet.withValues(alpha: 0.2) : Colors.transparent,
@@ -201,7 +201,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           'I am a...',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : const Color(0xFF131D42),
+                color: isDark ? Colors.white : AppColors.authHeading,
                 letterSpacing: -0.5,
               ),
         ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.2, end: 0),
@@ -308,7 +308,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           'Your details',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : const Color(0xFF131D42),
+                color: isDark ? Colors.white : AppColors.authHeading,
                 letterSpacing: -0.5,
               ),
         ),
@@ -376,7 +376,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           'Verify your number',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : const Color(0xFF131D42),
+                color: isDark ? Colors.white : AppColors.authHeading,
                 letterSpacing: -0.5,
               ),
         ),
@@ -435,7 +435,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           'Set password',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : const Color(0xFF131D42),
+                color: isDark ? Colors.white : AppColors.authHeading,
                 letterSpacing: -0.5,
               ),
         ),
@@ -597,7 +597,13 @@ class _RoleCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
-        transform: Matrix4.identity()..scale(isSelected ? 1.02 : 1.0),
+        transform: Matrix4.identity()
+          ..scaleByDouble(
+            isSelected ? 1.02 : 1.0,
+            isSelected ? 1.02 : 1.0,
+            1,
+            1,
+          ),
         transformAlignment: Alignment.center,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(

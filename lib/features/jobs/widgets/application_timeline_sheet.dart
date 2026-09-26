@@ -77,6 +77,7 @@ class ApplicationTimelineSheet extends ConsumerWidget {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Close',
                   icon: const Icon(Icons.close_rounded),
                 ),
               ],

@@ -487,7 +487,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
         put('gender', _gender ?? '', p.gender);
         put(
           'dob',
-          _dob == null ? null : _dob!.toIso8601String().split('T').first,
+          _dob?.toIso8601String().split('T').first,
           p.dob?.toIso8601String().split('T').first,
         );
         put('about_me', _about.text.trim(), p.aboutMe);

@@ -129,6 +129,7 @@ class _JobWizardScreenState extends ConsumerState<JobWizardScreen> {
         title: const Text('Post a Tuition Requirement'),
         leading: IconButton(
           icon: const Icon(Icons.close),
+          tooltip: 'Discard and close',
           onPressed: () => context.pop(),
         ),
       ),

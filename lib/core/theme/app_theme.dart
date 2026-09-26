@@ -17,6 +17,27 @@ abstract final class AppTheme {
     'Noto Sans',
   ];
 
+  /// The smallest a themed button or icon button is allowed to be.
+  ///
+  /// Material's defaults are under both platforms' published minimum — a text
+  /// button is 36dp tall and an icon button is effectively the size of its own
+  /// glyph box — which showed up most on the icon-only actions in an app bar.
+  /// Stated once here so it holds everywhere instead of being remembered on each
+  /// screen that happens to need it.
+  static const double minTapTarget = 48;
+
+  /// Radii and paddings below come from [AppRadius] and [AppSpacing], never
+  /// from a literal. The tokens existed before this theme did and the theme
+  /// wrote the numbers anyway, which is how a Card and a ThtCard could drift
+  /// apart without anybody changing a card.
+  ///
+  /// The two brightnesses hold different orange values on purpose, and neither
+  /// is [AppColors.primaryOrange]: light uses [AppColors.primaryOrangeAction]
+  /// because white has to be readable on it, dark uses
+  /// [AppColors.primaryOrangeOnDark] with slate900 on top because on a slate
+  /// card the light orange is the readable one. The brand orange stays on
+  /// borders, focus rings and decoration, where 3:1 is the bar it has to clear.
+
   // ── Light ──
   static ThemeData get light => ThemeData(
         useMaterial3: true,
@@ -26,7 +47,7 @@ abstract final class AppTheme {
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.light,
-          primary: AppColors.primaryOrange,
+          primary: AppColors.primaryOrangeAction,
           onPrimary: Colors.white,
           surface: Colors.white,
           onSurface: AppColors.slate900,
@@ -50,19 +71,20 @@ abstract final class AppTheme {
           color: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             side: const BorderSide(color: AppColors.slate200),
           ),
           margin: EdgeInsets.zero,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryOrange,
+            backgroundColor: AppColors.primaryOrangeAction,
             foregroundColor: Colors.white,
             elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 14),
+            minimumSize: const Size(0, minTapTarget),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
@@ -75,9 +97,10 @@ abstract final class AppTheme {
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.slate700,
             side: const BorderSide(color: AppColors.slate200),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 14),
+            minimumSize: const Size(0, minTapTarget),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
@@ -88,7 +111,7 @@ abstract final class AppTheme {
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.primaryOrange,
+            foregroundColor: AppColors.primaryOrangeAction,
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
               fontSize: 14,
@@ -100,22 +123,22 @@ abstract final class AppTheme {
           filled: true,
           fillColor: AppColors.slate50,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: 14),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(color: AppColors.slate200),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(color: AppColors.slate200),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide:
                 const BorderSide(color: AppColors.primaryOrange, width: 2),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(color: AppColors.error),
           ),
           hintStyle: const TextStyle(
@@ -128,9 +151,14 @@ abstract final class AppTheme {
             fontWeight: FontWeight.w500,
           ),
         ),
+        iconButtonTheme: IconButtonThemeData(
+          style: IconButton.styleFrom(
+            minimumSize: const Size(minTapTarget, minTapTarget),
+          ),
+        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
-          selectedItemColor: AppColors.primaryOrange,
+          selectedItemColor: AppColors.primaryOrangeAction,
           unselectedItemColor: AppColors.slate400,
           type: BottomNavigationBarType.fixed,
           elevation: 8,
@@ -166,14 +194,14 @@ abstract final class AppTheme {
             fontFamily: AppTheme.fontFamily,
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.primaryOrangeDark,
+            color: AppColors.primaryOrangeAction,
           ),
-          checkmarkColor: AppColors.primaryOrangeDark,
+          checkmarkColor: AppColors.primaryOrangeAction,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
           side: BorderSide.none,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
         ),
         snackBarTheme: SnackBarThemeData(
           backgroundColor: AppColors.slate800,
@@ -183,7 +211,7 @@ abstract final class AppTheme {
             fontSize: 14,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -198,8 +226,8 @@ abstract final class AppTheme {
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.dark,
-          primary: AppColors.primaryOrange,
-          onPrimary: Colors.white,
+          primary: AppColors.primaryOrangeOnDark,
+          onPrimary: AppColors.slate900,
           surface: AppColors.darkSurface,
           onSurface: AppColors.slate100,
           error: AppColors.error,
@@ -222,19 +250,20 @@ abstract final class AppTheme {
           color: AppColors.darkCard,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             side: const BorderSide(color: AppColors.darkBorder),
           ),
           margin: EdgeInsets.zero,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryOrange,
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.primaryOrangeOnDark,
+            foregroundColor: AppColors.slate900,
             elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 14),
+            minimumSize: const Size(0, minTapTarget),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
@@ -247,9 +276,10 @@ abstract final class AppTheme {
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.slate300,
             side: const BorderSide(color: AppColors.darkBorder),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 14),
+            minimumSize: const Size(0, minTapTarget),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
           ),
         ),
@@ -257,25 +287,30 @@ abstract final class AppTheme {
           filled: true,
           fillColor: AppColors.darkCard,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: 14),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(color: AppColors.darkBorder),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(color: AppColors.darkBorder),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide:
                 const BorderSide(color: AppColors.primaryOrange, width: 2),
           ),
           hintStyle: const TextStyle(color: AppColors.slate500, fontSize: 14),
         ),
+        iconButtonTheme: IconButtonThemeData(
+          style: IconButton.styleFrom(
+            minimumSize: const Size(minTapTarget, minTapTarget),
+          ),
+        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.darkCard,
-          selectedItemColor: AppColors.primaryOrange,
+          selectedItemColor: AppColors.primaryOrangeOnDark,
           unselectedItemColor: AppColors.slate500,
           type: BottomNavigationBarType.fixed,
           elevation: 8,
@@ -300,14 +335,14 @@ abstract final class AppTheme {
             fontFamily: AppTheme.fontFamily,
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: Color(0xFFFB923C),
+            color: AppColors.primaryOrangeOnDark,
           ),
-          checkmarkColor: const Color(0xFFFB923C),
+          checkmarkColor: AppColors.primaryOrangeOnDark,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
           side: BorderSide.none,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
         ),
         snackBarTheme: SnackBarThemeData(
           backgroundColor: AppColors.slate700,
@@ -317,7 +352,7 @@ abstract final class AppTheme {
             fontSize: 14,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           behavior: SnackBarBehavior.floating,
         ),

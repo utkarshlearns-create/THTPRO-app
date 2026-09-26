@@ -37,7 +37,7 @@ class ContinueOnWebScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? const Color(0x26E1702E)
+                            ? AppColors.primaryOrange.withValues(alpha: 0.15)
                             : AppColors.primaryOrangeLight,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
