@@ -111,6 +111,14 @@ class ApiClient {
       return handler.next(err);
     }
 
+    // A request that already carried a *fresh* token and still came back 401
+    // has not expired — the new token was rejected too — so refreshing again
+    // would loop, and each loop burns a rotation. The session is over.
+    if (err.requestOptions.extra[_retriedKey] == true) {
+      await _forceLogout();
+      return handler.next(err);
+    }
+
     // Don't retry auth endpoints
     final path = err.requestOptions.path;
     const skipPaths = [
@@ -134,8 +142,10 @@ class ApiClient {
       return handler.next(err);
     }
 
+    final retryOptions = _retryableCopy(err.requestOptions);
+    if (retryOptions == null) return handler.next(err);
+
     try {
-      final retryOptions = err.requestOptions;
       retryOptions.headers['Authorization'] = 'Bearer $newAccess';
       final retryResponse = await _dio.fetch(retryOptions);
       return handler.resolve(retryResponse);
@@ -143,6 +153,45 @@ class ApiClient {
       return handler.next(e);
     }
   }
+
+  /// Marks a request that has already been through a refresh-and-retry.
+  static const _retriedKey = 'tht.retried_after_refresh';
+
+  /// The request made sendable a second time, or null if it cannot be.
+  ///
+  /// **A `FormData` body is single-use.** Dio finalises each part as it writes
+  /// the request, so handing the same instance back to [Dio.fetch] throws
+  /// `StateError: The MultipartFile has already been finalized` rather than
+  /// retrying. That is exactly the case the refresh exists for: KYC documents
+  /// and a profile photo or intro video are the slowest requests the app makes,
+  /// so they are the likeliest to straddle a token expiry — and the failure
+  /// surfaced as an unexplained error the teacher could only escape by picking
+  /// every file again.
+  ///
+  /// `clone()` rebuilds each part from the byte source it was created with,
+  /// which is what every upload here uses ([MultipartFile.fromBytes], because a
+  /// picked file has no readable path on web). The boundary is carried over, so
+  /// the content-type header already on the request stays correct.
+  static RequestOptions? _retryableCopy(RequestOptions options) {
+    final data = options.data;
+    if (data is FormData) {
+      try {
+        options.data = data.clone();
+      } catch (_) {
+        // A part built from a stream that has been drained genuinely cannot be
+        // rebuilt. Nothing in this app builds one, but a caller that did should
+        // see its own 401 rather than a finalisation StateError from in here.
+        return null;
+      }
+    }
+    options.extra = {...options.extra, _retriedKey: true};
+    return options;
+  }
+
+  /// The retry preparation above, for the test that pins it.
+  @visibleForTesting
+  static RequestOptions? debugRetryableCopy(RequestOptions options) =>
+      _retryableCopy(options);
 
   /// The refresh currently in flight, shared by every caller that wants one.
   static Future<String?>? _inFlight;
