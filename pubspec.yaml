@@ -104,7 +104,12 @@ flutter_native_splash:
   color: "#FFFFFF"
   color_dark: "#0F172A"
   image: assets/images/splash.png
+  # The mark's lettering is black, and color_dark is #0F172A — so on a dark
+  # phone the very first frame of the app showed a roof and no name. The dark
+  # variant repaints only that ink and leaves the blue alone.
+  image_dark: assets/images/splash_dark.png
   android_12:
     color: "#FFFFFF"
     color_dark: "#0F172A"
     image: assets/images/splash.png
+    image_dark: assets/images/splash_dark.png

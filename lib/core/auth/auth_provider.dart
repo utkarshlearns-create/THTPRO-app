@@ -9,6 +9,7 @@ import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/network/token_storage.dart';
 import 'package:tht_app/core/notifications/push_service.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
+import 'package:tht_app/core/ui/intro_timing.dart';
 
 export 'package:tht_app/core/auth/user_role.dart';
 
@@ -67,9 +68,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// usually finishes in milliseconds, so this is the *floor*, not an
   /// addition. Without one the splash was drawn and replaced inside a frame or
   /// two, so its animation never played and the app appeared to snap straight
-  /// to a login form. Long enough for the mark to land, short enough that a
-  /// signed-in user does not notice it.
-  static const _minimumSplash = Duration(milliseconds: 1100);
+  /// to a login form.
+  ///
+  /// Owned by [IntroTiming] rather than written here, because the intro's own
+  /// length is the only correct answer: the two drifting apart is exactly what
+  /// cuts a title card off mid-animation. It is the full 2.6s cinematic on the
+  /// first open of an install and ~1.25s on every launch after that, so a daily
+  /// user is not made to sit through a title card to reach their dashboard.
+  static Duration get _minimumSplash => IntroTiming.floor;
 
   final _bootedAt = DateTime.now();
 
