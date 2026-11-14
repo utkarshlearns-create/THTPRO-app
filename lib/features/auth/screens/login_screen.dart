@@ -61,15 +61,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       final data = (response.data as Map).cast<String, dynamic>();
 
-      if (data['requires_2fa'] == true) {
-        setState(() {
-          _error = 'This account uses two-factor authentication. '
-              'Please sign in on thehometuitions.com for now.';
-          _loading = false;
-        });
-        return;
-      }
-
       final access = data['access'] as String?;
       final refreshToken = data['refresh'] as String?;
 
@@ -89,8 +80,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // GoRouter's redirect takes it from here.
     } catch (e) {
       if (!mounted) return;
+      final failure = ApiFailure.from(e);
       setState(() {
-        _error = ApiFailure.from(e).message;
+        // Two-factor is a SUPERADMIN-only control -- users/serializers.py checks
+        // the role before it ever looks at the flag -- and a superadmin's tools
+        // live on the website, so there is no code step worth offering here,
+        // only an honest redirect.
+        //
+        // This used to read `requires_2fa` out of the SUCCESS body, a key the
+        // server does not send. The real signal is a 401 carrying
+        // `two_factor_required`, so the one account that needed this message
+        // was the one account that never saw it: it got "Incorrect password"
+        // instead, for a password that was right.
+        _error = failure.flag('two_factor_required')
+            ? 'This account uses two-factor authentication. Sign in on '
+                'thehometuitions.com -- staff tools live there.'
+            : failure.message;
         _loading = false;
       });
     }
