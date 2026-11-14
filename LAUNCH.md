@@ -341,6 +341,19 @@ be cleared before the file is even reached.
 It is still required, because push notifications are a shipped feature of the
 app and Firebase Messaging will not initialise without it.
 
+**As of 14 Nov 2026 it is the only thing left.** A build reached exactly that
+task and failed on nothing else:
+
+```
+Execution failed for task ':app:processReleaseGoogleServices'.
+> File google-services.json is missing.
+  Searched locations: ... D:\Downloads\THTPRO-app\android\app\google-services.json
+```
+
+Every plugin compiled, the Dart snapshot built, and the signing config loaded
+the keystore from 0.3. Drop the file in at the last of those searched paths and
+the next build should produce the `.aab`.
+
 Firebase console → project **`tht-app-60862`** → Project settings → Your apps
 → **`com.thehometuitions.app`** → **google-services.json** → download it to
 `android/app/google-services.json`. Never commit it.
