@@ -91,7 +91,7 @@ look like code problems. Where the space went, measured 14 Nov 2026:
 | `AppData\Local\Google` | 10.4 GB | Chrome's cache can be cleared; the profile cannot |
 | `hiberfil.sys` | 6.3 GB | `powercfg /h off` removes it, at the cost of hibernate |
 | `AppData\Local\npm-cache` | 5.6 GB | Yes — `npm cache clean --force` |
-| `.gemini` | 6.2 GB | Yes — a CLI cache |
+| `.gemini` | 6.3 GB | **No** — despite the name this is Antigravity IDE's data, not a Gemini CLI cache |
 | `AppData\Local\Docker` | 3.2 GB | Yes — `docker system prune -a` |
 | `ms-playwright`, `pip` | 1.4 GB | Yes — both re-download on demand |
 
