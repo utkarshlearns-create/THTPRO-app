@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The app's privacy manifest, required by Apple since spring 2024.
+
+  Two separate jobs in one file. NSPrivacyAccessedAPITypes declares the
+  "required reason" APIs the app reaches through its plugins — an undeclared
+  one is rejected at upload, with no hint as to which plugin reached for it.
+  NSPrivacyCollectedDataTypes feeds the privacy report Apple shows on the
+  store page, and must say the same thing as the App Store Connect answers
+  and the Play data-safety table in LAUNCH.md. If one of the three changes,
+  all three change.
+
+  This file has to be a member of the Runner target: open Runner.xcworkspace,
+  drag it into the Runner group, and confirm it appears under Build Phases →
+  Copy Bundle Resources. Sitting in the folder alone does nothing.
+
+  Nothing here is tracking. We do not have an advertising SDK, an analytics
+  SDK or Crashlytics, we never join a user's data to data from another
+  company, and the app asks for no device location at all.
+-->
+<plist version="1.0">
+	<dict>
+		<key>NSPrivacyTracking</key>
+		<false/>
+		<key>NSPrivacyTrackingDomains</key>
+		<array/>
+
+		<key>NSPrivacyAccessedAPITypes</key>
+		<array>
+			<!-- shared_preferences + flutter_secure_storage read and write the
+			     app's own defaults: the signed-in role, the last tab, the
+			     notification token. Only ever this app's own container. -->
+			<dict>
+				<key>NSPrivacyAccessedAPIType</key>
+				<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+				<key>NSPrivacyAccessedAPITypeReasons</key>
+				<array>
+					<string>CA92.1</string>
+				</array>
+			</dict>
+			<!-- image_picker and cached_network_image write into the app's own
+			     caches directory and read the timestamps back when deciding
+			     whether a cached profile photo is stale. -->
+			<dict>
+				<key>NSPrivacyAccessedAPIType</key>
+				<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+				<key>NSPrivacyAccessedAPITypeReasons</key>
+				<array>
+					<string>C617.1</string>
+				</array>
+			</dict>
+			<!-- Checked before writing a KYC document to the cache, so a full
+			     disk fails the upload with a sentence rather than a crash. -->
+			<dict>
+				<key>NSPrivacyAccessedAPIType</key>
+				<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+				<key>NSPrivacyAccessedAPITypeReasons</key>
+				<array>
+					<string>E174.1</string>
+				</array>
+			</dict>
+		</array>
+
+		<key>NSPrivacyCollectedDataTypes</key>
+		<array>
+			<!-- Name, email, phone: the account itself. A teacher and a parent
+			     cannot be introduced to each other anonymously. -->
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypeName</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypeEmailAddress</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypePhoneNumber</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<!-- An address the user types, never a device location: the area a
+			     tuition is in, which is the whole basis of a match. -->
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypePhysicalAddress</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<!-- Profile photo and the KYC documents a teacher uploads. -->
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<!-- Which credit pack was bought, and when. Card and UPI details
+			     are entered inside the payment provider's own sheet and never
+			     reach the app or our servers. -->
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<!-- The push token, so a teacher hears about a tuition in their
+			     own area while the app is shut. -->
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypeDeviceID</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+			<!-- Applications, demos and tuition records: the product itself,
+			     not behavioural analytics. -->
+			<dict>
+				<key>NSPrivacyCollectedDataType</key>
+				<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+				<key>NSPrivacyCollectedDataTypeLinked</key>
+				<true/>
+				<key>NSPrivacyCollectedDataTypeTracking</key>
+				<false/>
+				<key>NSPrivacyCollectedDataTypePurposes</key>
+				<array>
+					<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				</array>
+			</dict>
+		</array>
+	</dict>
+</plist>

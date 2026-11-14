@@ -1,30 +1,98 @@
-# Play Store launch checklist
+# Launch checklist — Play Store and App Store
 
-Everything the Play Console asks for, answered once, so nobody has to re-derive
-it at upload time. The answers below are taken from the code, not from memory —
-where a claim needs checking, the file that settles it is named.
+Everything the two consoles ask for, answered once, so nobody has to re-derive
+it at upload time. The answers are taken from the code, not from memory — where
+a claim needs checking, the file that settles it is named.
+
+Sections 0–6 are Android and Play. Section 7 is iOS and the App Store, which
+needs a Mac and a second set of answers.
 
 Build the bundle with [`release.sh`](release.sh). `ship.sh` is the other path:
 an APK for the Firebase App Distribution testers. Play will not accept an APK.
 
 ---
 
-## 0. Two things only you can do
+## 0. What is missing before a build can even run
 
-**The upload keystore.** `android/key.properties` and the `.jks` it points at
-are gitignored and not on this machine (`C:/THTAPP/` no longer exists). Without
-them the build is debug-signed: Play rejects it outright, and a debug build
-cannot be installed over a properly signed one. If the key is genuinely lost
-*and* something has already been published under it, only Google can fix that —
-Play Console → **App integrity → Request upload key reset**, a few days. If
-nothing has ever shipped, make a fresh one; `release.sh` prints the `keytool`
-line. Then back it up somewhere you will still have in three years.
+Four things, in this order. The first one is not optional and is not about
+Play at all: **this machine cannot build an Android release today.**
 
-**`android/app/google-services.json`.** Also gitignored, also absent. The
-Gradle build cannot even start without it, because the
-`com.google.gms.google-services` plugin reads it. Firebase console → project
-**`tht-app-60862`** → Project settings → Your apps → `com.thehometuitions.app`
-→ download. Never commit either file.
+### 0.1 A working Android toolchain
+
+`flutter doctor` says, right now:
+
+```
+[X] Android toolchain - develop for Android devices
+    X cmdline-tools component is missing.
+```
+
+There is no JDK and no Android Studio on the machine — only a bare SDK folder
+at `%LOCALAPPDATA%/Android/sdk`. `flutter build appbundle` cannot run, and
+neither can `keytool`, which is how a keystore gets made in the first place.
+
+Fix: install **Android Studio** (it brings a JDK 17 and the cmdline-tools with
+it), open it once so it finishes its own setup, then:
+
+```bash
+flutter doctor --android-licenses     # accept them all
+flutter doctor -v                     # the Android line must go green
+```
+
+A bare JDK 17 plus `cmdline-tools` from the SDK manager also works, but Android
+Studio is one download instead of three decisions.
+
+### 0.2 A fresh upload keystore
+
+The old one is gone — `C:/THTAPP/` no longer exists and there is no `.jks`
+anywhere on the machine. **If nothing has ever been published to Play under
+that key, this costs nothing: a brand-new key is perfectly fine.** Check that
+first, in the Play Console, before doing anything else; it is the difference
+between five minutes and five days.
+
+Never published → make one (keytool comes with Android Studio's JDK):
+
+```bash
+keytool -genkey -v -keystore C:/keys/tht-upload.jks -storetype JKS \
+    -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Then copy [`android/key.properties.example`](android/key.properties.example) to
+`android/key.properties` and fill in the two passwords you chose. Neither file
+nor the `.jks` may ever be committed — `.gitignore` already refuses both.
+
+**Back the `.jks` up in two places you will still have in three years**, with
+the passwords. It is the single thing in this whole list that cannot be
+regenerated: every future update to a published app must be signed with the
+same key.
+
+Already published under the lost key → you cannot recreate it. Play Console →
+**App integrity → Request upload key reset**, which Google takes a few days
+over. There is no faster route, and no amount of rebuilding helps.
+
+### 0.3 `android/app/google-services.json`
+
+Also gitignored, also absent. The Gradle build cannot even start without it,
+because the `com.google.gms.google-services` plugin reads it. Firebase console
+→ project **`tht-app-60862`** → Project settings → Your apps →
+`com.thehometuitions.app` → download. Never commit it.
+
+### 0.4 A Play Console developer account
+
+$25, once, ever. Two things about it decide the calendar more than anything in
+this document:
+
+- **Identity verification.** Google verifies a legal name and address for a
+  personal account; an **organisation** account additionally needs a **D-U-N-S
+  number** for the company, which is free from Dun & Bradstreet but can take a
+  couple of weeks to issue. If the plan is to publish as the company, start the
+  D-U-N-S the same day you start everything else.
+- **The 12-tester rule.** A **personal** developer account created after
+  November 2023 must run a **closed test with at least 12 testers who stay
+  opted in for 14 continuous days** before it may even apply for production
+  access. Organisation accounts are exempt. So on a personal account the
+  earliest possible public launch is roughly **two to three weeks** after the
+  first upload, no matter how ready the app is — line up the 12 testers now,
+  and real ones, because Google looks at whether they actually opened it.
 
 ---
 
@@ -211,3 +279,147 @@ gets held.
 
 First submission review takes longer than updates — allow a few days, and for a
 brand-new developer account Google may also ask to verify the business.
+
+---
+
+## 7. The App Store (iOS)
+
+The code is ready; the surrounding machinery is not. Nothing below is a change
+to how the app behaves — it is an account, a Mac, and five iOS-only answers.
+
+### 7.1 You cannot build it on Windows
+
+An iOS release has to be compiled and signed by Xcode on macOS. There is no
+flag, no SDK and no cross-compiler that removes that. Three real options:
+
+1. **A Mac** (any Apple-silicon Mac will do) — `flutter build ipa`, upload with
+   Transporter or Xcode. Simplest, if one is available.
+2. **A cloud Mac CI** — Codemagic is the usual choice for Flutter and is driven
+   entirely from a browser, so it works from this Windows machine. It signs and
+   uploads to App Store Connect for you. Paid once past the free tier.
+3. **A rented Mac by the hour** (MacStadium, MacinCloud) if it is a one-off.
+
+Whichever it is, the first iOS build also runs `pod install` — there is no
+`Podfile` in the repo yet because the iOS side has never been built. That is
+expected, and Flutter generates it.
+
+### 7.2 Apple Developer Program
+
+**$99 a year**, and it must be renewed or the apps come down. As with Play, an
+**organisation** enrolment needs a **D-U-N-S number** (same one Play wants) and
+is slower; an **individual** enrolment is usually approved in a day or two but
+puts a personal name on the store page. Decide which name should sit under
+"Developer" on the listing before enrolling — changing it later means a new
+account, not a setting.
+
+### 7.3 Decide the bundle identifier
+
+The two platforms currently disagree:
+
+| | identifier |
+|---|---|
+| Android | `com.thehometuitions.app` |
+| iOS | `com.thehometuitions.thtApp` |
+
+Nothing is broken by that — they are separate namespaces — but one identifier
+across both is worth having while nothing is published: it keeps the Firebase
+project, the push certificates and every support conversation on one name.
+Changing it is an Xcode step (**Runner → General → Bundle Identifier**, and the
+`RunnerTests` target alongside it), so do it before the App Store Connect
+record is created. After the record exists, the identifier is permanent.
+
+### 7.4 Firebase and push on iOS
+
+Push does not work on iOS the way it does on Android, and three pieces are
+missing:
+
+1. **`ios/Runner/GoogleService-Info.plist`** — Firebase console, project
+   `tht-app-60862`, add an **iOS app** with whichever bundle id 7.3 settles on,
+   download the plist, and drag it into the Runner target in Xcode. Gitignored,
+   like its Android counterpart; never commit it.
+2. **An APNs auth key** — Apple Developer portal → Keys → new key with **Apple
+   Push Notifications service** ticked → download the `.p8` **once** (Apple
+   will not give it twice) → upload it to Firebase under Project settings →
+   Cloud Messaging → iOS app configuration. Without this, `getToken()` returns
+   nothing and no notification ever arrives.
+3. **The Push Notifications capability** — Xcode → Runner → Signing &
+   Capabilities → **+ Capability → Push Notifications**. That writes a
+   `Runner.entitlements` file, which the repo does not have yet because this
+   has never been done. The `remote-notification` background mode it pairs with
+   is already declared in `Info.plist`.
+
+### 7.5 The privacy manifest
+
+[`ios/Runner/PrivacyInfo.xcprivacy`](ios/Runner/PrivacyInfo.xcprivacy) is
+written and matches the Play data-safety table in section 3. It is **not yet a
+member of the Runner target**, because that is a change only Xcode can make:
+drag it into the Runner group and check it appears under **Build Phases → Copy
+Bundle Resources**. A missing or incomplete manifest is rejected at upload,
+with no hint as to which API caused it.
+
+### 7.6 Where Apple reviews differently from Google
+
+Four things, and the first one is the only one that could cost money:
+
+- **Payments — Apple's 3.1 rules.** Teachers buy credits inside the app. If
+  Apple reads those credits as *digital content consumed in the app*, Guideline
+  **3.1.1** applies and the purchase must go through **In-App Purchase**, at
+  Apple's 30% (15% on the small-business programme) — Razorpay would be
+  rejected outright. The argument against that reading is Guideline
+  **3.1.3(e), "goods and services outside of the app"**: a credit unlocks a
+  parent's contact details so a human being can teach a child in their home,
+  which is a real-world service, the same exemption contractor-lead and
+  home-services marketplaces run on. That is a defensible position and worth
+  arguing in the review notes, but **it is the reviewer's call, not ours**.
+  Have a fallback decided before submitting: either add IAP for iOS only, or
+  hide the purchase screen in the iOS build and let teachers top up on the
+  website. Do not discover this question on the day of the first rejection.
+- **Account deletion in the app.** Mandatory since 2022, and **already done** —
+  Profile → Sign-in and security → Delete my account.
+- **Sign in with Apple.** Only required where a third-party social login is
+  offered. The app has none (no `google_sign_in` dependency — the comment in
+  `android/app/build.gradle.kts:38` that mentions it is stale), so this does
+  not apply.
+- **Demo account.** Same as Play: App Store Connect → App Review Information →
+  a working parent login and a working teacher login, left alive.
+
+### 7.7 iPhone only, or iPad too?
+
+`TARGETED_DEVICE_FAMILY = "1,2"` — the project claims **iPhone and iPad**. The
+App Store then demands iPad screenshots and a reviewer will open it on a 13"
+iPad, where a layout built for a phone usually looks stretched rather than
+wrong. For a first release, **iPhone only** is the smaller surface: Xcode →
+Runner → General → Supported Destinations, remove iPad. Set it back once
+somebody has actually sat with the app on an iPad.
+
+### 7.8 Store assets iOS needs that Play does not
+
+- **Screenshots per device size** — 6.9" iPhone (1320×2868) and 6.5"
+  (1242×2688) at minimum, plus 13" iPad if 7.7 keeps iPad.
+- **A 1024×1024 icon, no alpha channel.** Already generated and already
+  opaque: `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png`.
+- **Export compliance** — answered in `Info.plist`
+  (`ITSAppUsesNonExemptEncryption = false`), so Connect stops asking on every
+  upload.
+- The same privacy-policy and support URLs as Play, plus a **marketing URL**
+  if you want one (`https://www.thehometuitions.com`).
+
+### 7.9 The order to do it in
+
+```
+D-U-N-S (if publishing as the company)  ──┐   weeks, start first
+Apple Developer enrolment ($99)         ──┤
+Mac or Codemagic access                 ──┘
+        ↓
+bundle id decided (7.3)
+        ↓
+Firebase iOS app + APNs key + capability (7.4)
+        ↓
+PrivacyInfo into the target (7.5), iPad decision (7.7)
+        ↓
+flutter build ipa  →  TestFlight  →  test login, payment, push by hand
+        ↓
+submit for review (expect 24-48h, longer for a first app)
+```
+
+Android and iOS can run in parallel; nothing in one blocks the other.

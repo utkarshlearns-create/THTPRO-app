@@ -1,0 +1,16 @@
+# Copy to android/key.properties and fill in. NEVER commit the real one, and
+# never commit the .jks it points at — .gitignore already refuses both.
+#
+# Make the keystore once (keytool ships with Android Studio's bundled JDK):
+#
+#   keytool -genkey -v -keystore C:/keys/tht-upload.jks -storetype JKS \
+#       -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# Then back the .jks up somewhere you will still have it in three years.
+# Lose it after a release is published and only Google can help, via
+# Play Console -> App integrity -> Request upload key reset.
+
+storePassword=the store password you chose
+keyPassword=the key password you chose
+keyAlias=upload
+storeFile=C:/keys/tht-upload.jks
