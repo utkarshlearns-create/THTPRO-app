@@ -67,4 +67,82 @@ void main() {
       '12.5',
     );
   });
+
+  // ── the coupon arm ────────────────────────────────────────────────────────
+  //
+  // A coupon is the only discount the buyer presents, and it does not behave
+  // like the other two. CreateRazorpayOrderView reads it FIRST and only falls
+  // back to the renewal offer (`elif offer`), so applying one retires that
+  // offer outright — while the sale stays in the running and the larger of the
+  // two is charged. These pin that asymmetry, because the obvious reading
+  // ("the biggest of the three wins") is wrong in a way that quietly overstates
+  // the discount on the card.
+  group('a coupon the buyer applied', () {
+    final coupon = CouponCheck.fromJson(
+      {'valid': true, 'code': 'RAHUL15', 'percent_off': '15.00'},
+    );
+
+    test('a coupon on its own applies', () {
+      final d = Discount.betterWithCoupon(
+        RenewalOffer.none,
+        PlatformPromo.none,
+        coupon,
+      );
+      expect(d.percentOff, 15);
+      expect(d.applyTo(1000), 850);
+    });
+
+    test('it retires the renewal offer even when it is smaller', () {
+      final d = Discount.betterWithCoupon(bigOffer, PlatformPromo.none, coupon);
+      expect(d.percentOff, 15, reason: 'the 30% offer is out of the running');
+      expect(d.applyTo(1000), 850);
+    });
+
+    test('a running sale still wins when it is larger', () {
+      final d = Discount.betterWithCoupon(bigOffer, promo, coupon);
+      expect(d.percentOff, 20,
+          reason: 'the sale beats the coupon, and the offer is retired');
+      expect(d.applyTo(1000), 800, reason: '35% would mean they stacked');
+    });
+
+    test('the coupon wins over a smaller sale', () {
+      final big = CouponCheck.fromJson(
+        {'valid': true, 'code': 'BIG40', 'percent_off': '40'},
+      );
+      expect(Discount.betterWithCoupon(offer, promo, big).percentOff, 40);
+    });
+
+    test('no coupon leaves the ordinary choice alone', () {
+      expect(Discount.betterWithCoupon(offer, promo, null).percentOff, 20);
+      expect(
+        Discount.betterWithCoupon(bigOffer, promo, CouponCheck.none).percentOff,
+        30,
+      );
+    });
+
+    test('a rejected code changes nothing', () {
+      final no = CouponCheck.fromJson({'valid': false});
+      expect(no.isValid, isFalse);
+      expect(Discount.betterWithCoupon(bigOffer, promo, no).percentOff, 30,
+          reason: 'an unknown code must not cost the teacher their own offer');
+    });
+
+    test('a valid code worth nothing is still a valid code', () {
+      // Its job can be attribution alone — it credits the staff member who
+      // shared it — so hasDiscount is kept apart from isValid.
+      final zero = CouponCheck.fromJson(
+        {'valid': true, 'code': 'ZERO', 'percent_off': '0'},
+      );
+      expect(zero.isValid, isTrue);
+      expect(zero.hasDiscount, isFalse);
+      expect(Discount.betterWithCoupon(bigOffer, promo, zero).percentOff, 20,
+          reason: 'the sale is all that is left once the offer is retired');
+    });
+
+    test('the code reads back as the server spells it', () {
+      expect(coupon.code, 'RAHUL15');
+      expect(coupon.percentOff, 15);
+      expect(coupon.hasDiscount, isTrue);
+    });
+  });
 }

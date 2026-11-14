@@ -27,6 +27,13 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
   /// The plan currently going through checkout, so only its button spins.
   int? _busyPackageId;
 
+  /// The coupon the server has accepted, or null when none is applied.
+  ///
+  /// Page state rather than a provider: unlike the sale and the renewal offer,
+  /// a coupon is something the buyer typed on this screen, and it should not
+  /// outlive it.
+  CouponCheck? _coupon;
+
   @override
   Widget build(BuildContext context) {
     final packages = ref.watch(creditPackagesProvider);
@@ -42,6 +49,16 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
     final promo =
         ref.watch(platformPromoProvider).valueOrNull ?? PlatformPromo.none;
     final best = Discount.better(offer, promo);
+
+    // What the cards must quote. A coupon retires the renewal offer and then
+    // competes with the sale — the server charges the larger of the two and
+    // never adds them up. See Discount.betterWithCoupon.
+    final quoted = Discount.betterWithCoupon(offer, promo, _coupon);
+
+    // Coupons here are staff referral codes, issued on the teacher side; the
+    // website shows the box to teachers only, and a parent who typed one would
+    // only ever be told it was not valid.
+    final isTeacher = ref.watch(authProvider).role == UserRole.teacher;
     final expiry = ref.watch(walletExpiryProvider).valueOrNull ??
         WalletExpiryStatus.unknown;
 
@@ -88,12 +105,26 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                   _CurrentPlan(wallet: wallet),
                   const SizedBox(height: AppSpacing.base),
                 ],
-                if (best.isReal) ...[
+                // Stood down once a coupon is applied: the coupon box then
+                // states the effective percentage itself, and two banners
+                // quoting different numbers is how a buyer stops believing
+                // either of them.
+                if (best.isReal && _coupon == null) ...[
                   _OfferBanner(discount: best),
                   const SizedBox(height: AppSpacing.base),
                 ],
                 if (!CheckoutService.isSupported) ...[
                   const _WebNotice(),
+                  const SizedBox(height: AppSpacing.base),
+                ],
+                if (isTeacher) ...[
+                  _CouponBox(
+                    applied: _coupon,
+                    // The number the buyer will actually be charged off, which
+                    // is not always the coupon's own.
+                    effectivePercent: quoted.percentOff,
+                    onChanged: (c) => setState(() => _coupon = c),
+                  ),
                   const SizedBox(height: AppSpacing.base),
                 ],
                 const SizedBox(height: AppSpacing.xs),
@@ -107,13 +138,13 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                 for (final p in credit) ...[
                   _PlanCard(
                     package: p,
-                    discount: best,
+                    discount: quoted,
                     busy: _busyPackageId == p.id,
                     disabled: _busyPackageId != null,
                     // Cheapest per credit, not cheapest overall — that is the
                     // comparison a buyer is actually making between plans.
                     bestValue: p.id == bestValueId,
-                    onBuy: () => _buy(p, offer),
+                    onBuy: () => _buy(p, offer, _coupon),
                   ),
                   const SizedBox(height: AppSpacing.md),
                 ],
@@ -130,7 +161,7 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                   for (final p in validity) ...[
                     _PlanCard(
                       package: p,
-                      discount: best,
+                      discount: quoted,
                       busy: _busyPackageId == p.id,
                       disabled: _busyPackageId != null,
                       // The server rejects this outright for anyone who has
@@ -140,7 +171,7 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
                           ? null
                           : 'Buy a credit plan first — this only extends '
                               'credits you already hold.',
-                      onBuy: () => _buy(p, offer),
+                      onBuy: () => _buy(p, offer, _coupon),
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -163,7 +194,11 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
     return comparable.first.id;
   }
 
-  Future<void> _buy(CreditPackage package, RenewalOffer offer) async {
+  Future<void> _buy(
+    CreditPackage package,
+    RenewalOffer offer,
+    CouponCheck? coupon,
+  ) async {
     setState(() => _busyPackageId = package.id);
     final repo = ref.read(walletRepositoryProvider);
 
@@ -173,6 +208,10 @@ class _PackagesScreenState extends ConsumerState<PackagesScreen> {
         // The server resolves the user's offer with or without this, but naming
         // it keeps the code honest about the price the card just quoted.
         offerCode: offer.isLive ? offer.code : null,
+        // Sent whenever one is applied, discount or not: a coupon is also what
+        // credits the staff member who shared it, and that attribution is owed
+        // even on a sale that pays more than the coupon would have.
+        couponCode: coupon != null && coupon.isValid ? coupon.code : null,
       );
       if (!mounted) return;
 
@@ -371,6 +410,204 @@ class _WebNotice extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Coupon ────────────────────────────────────────────────────────
+
+/// "Have a coupon code?" — the website's box, in the app.
+///
+/// It exists so the buyer knows the price before tapping Buy. It does not
+/// decide that price: the server re-resolves the code at order creation, so the
+/// worst a wrong answer here can do is surprise someone at the payment sheet,
+/// which is exactly the surprise this box is for preventing.
+class _CouponBox extends ConsumerStatefulWidget {
+  const _CouponBox({
+    required this.applied,
+    required this.effectivePercent,
+    required this.onChanged,
+  });
+
+  /// The code the server has accepted, or null when none is applied.
+  final CouponCheck? applied;
+
+  /// What the buyer will actually be charged off with this coupon in place —
+  /// the larger of the sale and the coupon, because the server never stacks
+  /// them. Quoting the coupon's own percentage instead would understate a
+  /// running sale and read as the coupon having made things worse.
+  final double effectivePercent;
+
+  final ValueChanged<CouponCheck?> onChanged;
+
+  @override
+  ConsumerState<_CouponBox> createState() => _CouponBoxState();
+}
+
+class _CouponBoxState extends ConsumerState<_CouponBox> {
+  final _code = TextEditingController();
+  bool _checking = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  Future<void> _apply() async {
+    final code = _code.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      setState(() => _error = 'Enter a coupon code.');
+      return;
+    }
+    setState(() {
+      _checking = true;
+      _error = null;
+    });
+    try {
+      final res = await ref.read(walletRepositoryProvider).couponStatus(code);
+      if (!mounted) return;
+      if (res.isValid) {
+        // The server's spelling, not the typed one — that is what checkout
+        // sends, so that is what the buyer should see applied.
+        widget.onChanged(res);
+        setState(() => _checking = false);
+      } else {
+        setState(() {
+          _error = 'That code isn’t valid.';
+          _checking = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      // Kept apart from an invalid code on purpose: one means the code is
+      // wrong, the other means we could not tell, and telling someone their
+      // valid code is invalid is how a sale gets lost.
+      setState(() {
+        _error = 'Could not check the code just now. Please try again.';
+        _checking = false;
+      });
+    }
+  }
+
+  void _remove() {
+    widget.onChanged(null);
+    _code.clear();
+    setState(() => _error = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final applied = widget.applied;
+    final pct = widget.effectivePercent;
+    final pctLabel = pct == pct.roundToDouble()
+        ? pct.toStringAsFixed(0)
+        : pct.toStringAsFixed(1);
+
+    return THTCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            'Have a coupon code?',
+            icon: Icons.sell_outlined,
+            iconTone: Tone.accent,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (applied != null)
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 18,
+                  color: Tone.success.foreground(brightness),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    pct > 0
+                        // A sale can be the one paying, so this says what comes
+                        // off rather than what the coupon claims.
+                        ? 'Code ${applied.code} applied — $pctLabel% off '
+                            'at checkout.'
+                        : 'Code ${applied.code} applied.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.45,
+                      fontWeight: FontWeight.w600,
+                      color: Tone.success.foreground(brightness),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                TextButton(
+                  onPressed: _remove,
+                  child: const Text('Remove'),
+                ),
+              ],
+            )
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _code,
+                    enabled: !_checking,
+                    textCapitalization: TextCapitalization.characters,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _apply(),
+                    decoration: const InputDecoration(
+                      hintText: 'Enter coupon code',
+                      isDense: true,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                FilledButton(
+                  onPressed: _checking ? null : _apply,
+                  child: _checking
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Apply'),
+                ),
+              ],
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                _error!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.error,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Applies when you buy a plan. If a sale is already running, you '
+              'get whichever discount is larger — they do not add up.',
+              style: TextStyle(fontSize: 11.5, height: 1.45, color: muted),
+            ),
+          ],
         ],
       ),
     );

@@ -206,6 +206,31 @@ class Discount {
         : none;
     return fromPromo.percentOff > fromOffer.percentOff ? fromPromo : fromOffer;
   }
+
+  /// The same choice once the buyer has applied a coupon code.
+  ///
+  /// Three discounts can be in play and the server still picks exactly one.
+  /// `CreateRazorpayOrderView` reads the coupon first and only falls back to the
+  /// teacher's own renewal offer (`elif offer`), so **an applied coupon retires
+  /// that offer entirely** — even a smaller coupon does, because the coupon is
+  /// also what credits the staff member who shared it. The sale stays in the
+  /// running, and the larger of the two is what gets charged.
+  ///
+  /// So a 10% coupon against a 20% sale is still 20% off, and the card has to
+  /// say 20. The coupon box quotes this same number, which is why the math
+  /// lives here and not in the screen: two places would eventually disagree,
+  /// and the one the buyer remembers is whichever was lower.
+  static Discount betterWithCoupon(
+    RenewalOffer offer,
+    PlatformPromo promo,
+    CouponCheck? coupon,
+  ) {
+    if (coupon == null || !coupon.isValid) return better(offer, promo);
+    final fromPromo = better(RenewalOffer.none, promo);
+    return coupon.percentOff > fromPromo.percentOff
+        ? Discount(percentOff: coupon.percentOff)
+        : fromPromo;
+  }
 }
 
 /// A site-wide sale running right now, from `GET /api/wallet/promo/`.
@@ -299,6 +324,49 @@ class RenewalOffer {
         code: asString(json, 'code'),
         percentOff: asDouble(json, 'percent_off'),
         expiresAt: asDateOrNull(json, 'expires_at'),
+      );
+}
+
+/// A coupon code the buyer typed, from `GET /api/wallet/coupon/<code>/`.
+///
+/// The one discount that is *presented* rather than resolved: [RenewalOffer]
+/// and [PlatformPromo] are both found by the server from the signed-in user and
+/// the calendar, while this is a code someone was given — usually a staff
+/// member's referral code, which doubles as a discount and credits them.
+///
+/// Checking it is display only, and `CouponStatusView` says so in as many
+/// words: the same resolution runs again at order creation and the attribution
+/// is re-derived there, so a tampered answer here buys nothing.
+///
+/// An unknown code is a 200 carrying `{"valid": false}` rather than a 4xx — not
+/// an error, an answer, and it belongs under the field rather than in a failure
+/// message across the page.
+class CouponCheck {
+  const CouponCheck({this.valid = false, this.code = '', this.percentOff = 0});
+
+  final bool valid;
+
+  /// The server's spelling of the code, not the buyer's — it comes back
+  /// canonicalised, and that is the one checkout has to send.
+  final String code;
+
+  /// A decimal string over the wire, e.g. `"15.00"`.
+  final double percentOff;
+
+  static const none = CouponCheck();
+
+  bool get isValid => valid && code.isNotEmpty;
+
+  /// Whether applying it changes the price. A valid code can be worth nothing
+  /// on its own and still be worth sending, because it is what credits the
+  /// person who shared it — so this is kept apart from [isValid] rather than
+  /// folded into it.
+  bool get hasDiscount => isValid && percentOff > 0;
+
+  factory CouponCheck.fromJson(Map<String, dynamic> json) => CouponCheck(
+        valid: asBool(json, 'valid'),
+        code: asString(json, 'code'),
+        percentOff: asDouble(json, 'percent_off'),
       );
 }
 

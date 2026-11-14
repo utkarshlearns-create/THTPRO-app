@@ -41,12 +41,28 @@ class WalletRepository extends Repository {
     int packageId, {
     bool upgrade = false,
     String? offerCode,
+    String? couponCode,
   }) async =>
       PaymentOrder.fromJson(await postMap('/api/wallet/create-order/', body: {
         'package_id': packageId,
         if (upgrade) 'upgrade': true,
         if (offerCode != null && offerCode.isNotEmpty) 'offer_code': offerCode,
+        if (couponCode != null && couponCode.isNotEmpty)
+          'coupon_code': couponCode,
       }));
+
+  /// Checks a coupon code the buyer typed — `GET /api/wallet/coupon/<code>/`.
+  ///
+  /// An unknown code answers 200 with `{"valid": false}`, so this returns a
+  /// verdict instead of throwing; a throw from here means the check itself
+  /// failed, which is a different thing to tell the buyer than "that code is
+  /// not valid".
+  ///
+  /// Preview only — see [CouponCheck]. Whatever this says, the price is settled
+  /// by [createOrder].
+  Future<CouponCheck> couponStatus(String code) async => CouponCheck.fromJson(
+        await getMap('/api/wallet/coupon/${Uri.encodeComponent(code.trim())}/'),
+      );
 
   /// Confirms a completed Razorpay payment so the credits actually land.
   ///
