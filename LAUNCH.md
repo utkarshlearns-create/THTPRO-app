@@ -51,8 +51,9 @@ it is applied for once and used twice.
 
 **What it is.** A free nine-digit identifier Dun & Bradstreet issues to a
 business. One per legal entity per address. Apple requires it to enrol as an
-organisation; Google requires it for an organisation Play account. Neither
-needs it for an individual account — see the fork at the end of this section.
+organisation; Google requires it for an organisation Play account. We have a
+registered company, so both stores take the organisation route and both want
+this number.
 
 **Where to apply.** Use **Apple's own form**, even though the number is also
 for Google: it is free, it searches the existing D&B database first, and it
@@ -67,17 +68,46 @@ registered in India often **already has** a D-U-N-S number it never asked for,
 and if so you are done in two minutes — just confirm the address and phone on
 the record are current, because those are what get verified later.
 
-**Have these ready before opening the form** (every one of them is checked):
+**What goes in the form.** The entity is a registered private limited
+company, so every store takes the organisation route. These are the answers,
+and they are the same answers for Apple enrolment and for the Play Console —
+copy them from here rather than retyping, because a one-character difference
+between the three is what stalls an application:
 
-| Field | Must be |
+| Field | Value |
 |---|---|
-| Legal entity name | **Exactly** as on the Certificate of Incorporation / GST certificate — not the brand. "The Home Tuitions" is the brand; the registered name is what goes here. |
-| Legal form | Private Limited / LLP / Partnership / Proprietorship |
-| Registered address | With pincode, as on the registration papers |
-| Phone number | **One that will actually be answered.** See the warning below. |
+| Legal entity name | **THT EDUCATION TECHNOLOGIES PRIVATE LIMITED** — the registered name, not the brand. "The Home Tuitions" is the brand and belongs only in the store listing. |
+| Legal form | Private Limited Company |
+| CIN | `U85500UP2026PTC250409` |
+| Registered address | Plot No. 310, Khasra No. 73 Min., Aziz Nagar, Madiyaon, Lucknow – 226021, Uttar Pradesh |
 | Website | `https://www.thehometuitions.com` |
-| Your name, title, email | A work address on the domain — `…@thehometuitions.in` — not a free Gmail. A Gmail does not fail it, but it slows the review. |
-| Year started, headcount, rough annual revenue | Approximations are fine |
+| Email | `support@thehometuitions.in` — the domain address, not the Gmail on the signboard. A Gmail does not fail the application, but it is the slowest kind of applicant to verify. |
+| Phone | **A number somebody will answer.** See the warning below. |
+| Year started | 2026 (the CIN says so: `…UP2026PTC…`) |
+| Headcount, rough annual revenue | Approximations are fine |
+
+**Two things about this particular company.**
+
+It was incorporated in **2026**, which means there is almost certainly **no
+existing D&B record** to find — search for it anyway, then expect to file a
+fresh application and to get the verification call. A company this new is also
+the kind D&B checks most carefully.
+
+And the registered office above is **not** the address the website publishes
+(the footer carries the working office, Verma Complex, A-mart Chauraha). For
+anything a registrar can check — D-U-N-S, Apple, Play — use the **registered**
+office, because that is what matches the MCA record. Worth deciding separately
+which of the two should be the public developer address on the Play listing,
+since Play shows it to everyone.
+
+**Keep these to hand** — Apple or Google may ask for any of them: Certificate
+of Incorporation, company PAN, GST certificate, and a utility bill or bank
+statement in the company's name at the registered address.
+
+**Who enrols.** Apple requires the person enrolling to have **legal authority
+to bind the company** — a director, or someone holding written authorisation
+from one. Enrol in a director's name from the start; handing it over later is
+a support ticket, not a setting.
 
 **The warning.** D&B verifies a new record by **telephoning the number on the
 application**, and whoever answers has to confirm the business details. An
@@ -94,21 +124,20 @@ be typed into Apple enrolment and into the Play Console. "Pvt Ltd" versus
 "Private Limited" is enough to stall both. Once the number comes through,
 screenshot the record and copy from the screenshot, never from memory.
 
-**The fork, if there is no registered entity.** If the business is a brand run
-by one person rather than a registered company, the honest path is an
-individual account on both stores — the store page then shows a personal name
-instead of the company, which is the real cost:
+**What the organisation route buys.** Enrolling as the company rather than as
+a person is not only about the name on the listing:
 
-| | Organisation | Individual |
+| | Organisation (this is us) | Individual |
 |---|---|---|
 | D-U-N-S | required | not needed |
-| Apple | can enrol as the company; needs authority to sign for it | personal name on the listing |
-| Play | exempt from the 12-tester rule | **12 testers for 14 days** before production |
-| Store shows | the company | a person's name |
+| Play 12-tester rule | **exempt** | 12 testers, 14 continuous days, before production |
+| Store shows | THT Education Technologies Private Limited | a person's name |
+| If the founder leaves | the account belongs to the company | the account belongs to them |
 
-Decide this before enrolling anywhere. The developer name on a published
-listing is not a setting you flip afterwards — changing it means a new account
-and a transfer.
+The exemption is the part worth noticing: as an individual, Play would hold the
+app in closed testing for a **fortnight** before it could even apply to go
+live. As the company, there is no such wait — which is most of the reason the
+D-U-N-S is worth starting today rather than after the build works.
 
 ### 0.3 A fresh upload keystore
 
@@ -150,18 +179,18 @@ because the `com.google.gms.google-services` plugin reads it. Firebase console
 $25, once, ever. Two things about it decide the calendar more than anything in
 this document:
 
-- **Identity verification.** Google verifies a legal name and address for a
-  personal account; an **organisation** account additionally needs a **D-U-N-S
-  number** for the company, which is free from Dun & Bradstreet but can take a
-  couple of weeks to issue. If the plan is to publish as the company, start the
-  D-U-N-S the same day you start everything else.
-- **The 12-tester rule.** A **personal** developer account created after
-  November 2023 must run a **closed test with at least 12 testers who stay
-  opted in for 14 continuous days** before it may even apply for production
-  access. Organisation accounts are exempt. So on a personal account the
-  earliest possible public launch is roughly **two to three weeks** after the
-  first upload, no matter how ready the app is — line up the 12 testers now,
-  and real ones, because Google looks at whether they actually opened it.
+- **Identity verification.** An organisation account needs the **D-U-N-S
+  number from section 0.2** plus the company's legal name and registered
+  address, verified against them. Google also wants a contact email and phone
+  it can reach. The same details, character for character, as Apple's.
+- **The 12-tester rule — does not apply to us.** A **personal** developer
+  account created after November 2023 must run a closed test with 12 testers
+  who stay opted in for 14 continuous days before it may even apply for
+  production access. **Organisation accounts are exempt**, and we enrol as
+  THT Education Technologies Private Limited, so the app can go to production
+  as soon as it is ready and reviewed. Internal testing first is still the
+  right call (section 6) — but that is our choice about quality, not Google's
+  two-week gate.
 
 ---
 
