@@ -6,6 +6,7 @@ import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
 
@@ -204,6 +205,25 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
     }
   }
 
+  /// Opens the writer, and puts its answer in the field as a DRAFT.
+  ///
+  /// Deliberately not saved: the teacher reads it, edits it, and taps Save like
+  /// any other change. A profile line that appeared on the public listing
+  /// without the teacher ever having agreed to the words would be our sentence
+  /// in their voice.
+  Future<void> _writeAboutMe() async {
+    final written = await _AboutWriterSheet.show(
+      context,
+      profile: widget.profile,
+      currentAbout: _about.text,
+    );
+    if (written == null || !mounted) return;
+    setState(() {
+      _about.text = written.length > 600 ? written.substring(0, 600) : written;
+      _fieldErrors.remove('about_me');
+    });
+  }
+
   List<Widget> _fields() {
     switch (widget.section) {
       case ProfileSection.about:
@@ -247,7 +267,15 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
               errorText: _fieldErrors['about_me'],
             ),
           ),
-          const SizedBox(height: AppSpacing.base),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _writeAboutMe,
+              icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+              label: const Text('Help me write this'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           TextFormField(
             controller: _whatsapp,
             keyboardType: TextInputType.phone,
@@ -321,8 +349,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Subjects and classes are set on the website — the picker there '
-            'keeps them matched to the syllabus list.',
+            'Subjects and classes have their own picker — close this and tap '
+            'What you teach on your profile. Keeping them there is what gets '
+            'you matched to the right leads.',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
@@ -705,4 +734,259 @@ class _DateField extends StatelessWidget {
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
       ][m - 1];
+}
+
+
+/// Four questions, then an About Me written from the answers.
+///
+/// The questions are the ones the model cannot guess and the teacher answers in
+/// a sentence: how they teach, a result they are proud of, what sets them apart.
+/// Everything else -- subjects, classes, years, city -- is read off the profile
+/// and the open form, so the teacher is never asked to retype what we already
+/// have.
+class _AboutWriterSheet extends ConsumerStatefulWidget {
+  const _AboutWriterSheet({required this.profile, required this.currentAbout});
+
+  final TutorProfile profile;
+  final String currentAbout;
+
+  static Future<String?> show(
+    BuildContext context, {
+    required TutorProfile profile,
+    required String currentAbout,
+  }) =>
+      showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => _AboutWriterSheet(
+          profile: profile,
+          currentAbout: currentAbout,
+        ),
+      );
+
+  @override
+  ConsumerState<_AboutWriterSheet> createState() => _AboutWriterSheetState();
+}
+
+class _AboutWriterSheetState extends ConsumerState<_AboutWriterSheet> {
+  static const _tones = ['Professional', 'Friendly', 'Confident', 'Simple'];
+
+  final _style = TextEditingController();
+  final _achievement = TextEditingController();
+  final _unique = TextEditingController();
+
+  String _tone = _tones.first;
+  bool _running = false;
+  String? _error;
+  String? _result;
+
+  @override
+  void dispose() {
+    for (final c in [_style, _achievement, _unique]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _run() async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _running = true;
+      _error = null;
+    });
+
+    final p = widget.profile;
+    try {
+      final written = await ref.read(usersRepositoryProvider).enhanceAboutMe(
+            currentAbout: widget.currentAbout,
+            // The picker writes class_subjects; subjects and classes are
+            // read-only derivations of it, so flattening the map is the only
+            // way to describe a teacher who has never used the website.
+            subjects: p.classSubjects.values
+                .expand((s) => s)
+                .where((s) => s.trim().isNotEmpty)
+                .toSet()
+                .toList(),
+            classes: p.classSubjects.keys.toList(),
+            experience: p.experienceYears > 0 ? '${p.experienceYears}' : null,
+            qualifications: p.highestQualification.trim().isEmpty
+                ? null
+                : p.highestQualification,
+            city: p.city.trim().isEmpty ? null : p.city,
+            teachingStyle: _style.text.trim(),
+            achievement: _achievement.text.trim(),
+            unique: _unique.text.trim(),
+            tone: _tone,
+          );
+      if (!mounted) return;
+      setState(() {
+        _running = false;
+        _result = written;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _running = false;
+        _error = ApiFailure.from(e).message;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Help me write this',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.slate50 : AppColors.slate900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed:
+                        _running ? null : () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Close',
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (_result == null) ...[
+                Text(
+                  'Answer what you can in a line each. Your subjects, classes '
+                  'and years are already filled in from your profile.',
+                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                ),
+                const SizedBox(height: AppSpacing.base),
+                TextField(
+                  controller: _style,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'How do you teach?',
+                    hintText: 'Concept first, then past papers',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.base),
+                TextField(
+                  controller: _achievement,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'A result you are proud of',
+                    hintText: 'Took a Class 10 student from 48% to 81%',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.base),
+                TextField(
+                  controller: _unique,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'What makes you different?',
+                    hintText: 'Weekly test and a parent update every Sunday',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.base),
+                _Choices(
+                  label: 'Tone',
+                  options: {for (final t in _tones) t: t},
+                  value: _tone,
+                  onChanged: (v) => setState(() => _tone = v ?? _tones.first),
+                ),
+              ] else ...[
+                Text(
+                  'Read it before you keep it. Nothing is saved until you tap '
+                  'Save on your profile.',
+                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                ),
+                const SizedBox(height: AppSpacing.base),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.base),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.slate800 : AppColors.slate50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? AppColors.slate700 : AppColors.slate200,
+                    ),
+                  ),
+                  child: Text(
+                    _result!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: isDark ? AppColors.slate100 : AppColors.slate800,
+                    ),
+                  ),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                NoteBox(message: _error!),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              if (_result == null)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _running ? null : _run,
+                    child: _running
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Write it'),
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _running
+                            ? null
+                            : () => setState(() => _result = null),
+                        child: const Text('Try again'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(_result),
+                        child: const Text('Use this'),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

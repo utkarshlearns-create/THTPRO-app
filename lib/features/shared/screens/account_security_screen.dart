@@ -23,6 +23,8 @@ class AccountSecurityScreen extends ConsumerWidget {
     final phone = ref.watch(currentUserProvider).valueOrNull?.phone;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? AppColors.slate400 : AppColors.slate500;
+    final canDelete =
+        UsersRepository.canSelfDelete(ref.watch(authProvider).role);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sign-in and security')),
@@ -101,16 +103,278 @@ class AccountSecurityScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          const NoteBox(
-            tone: Tone.info,
-            title: 'Two-factor authentication',
-            message: 'If your account uses 2FA, set it up and manage it on '
-                'thehometuitions.com — the app does not carry that step yet.',
+          const SectionHeader(
+            'Close account',
+            icon: Icons.person_off_outlined,
+            iconTone: Tone.critical,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          THTCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  canDelete
+                      ? 'Closing your account signs you out everywhere and '
+                          'removes your profile from search and from every job '
+                          'you have applied to. Your number is freed, so you '
+                          'can sign up again later if you change your mind.'
+                      : 'An institute account is closed by our team, because '
+                          'the vacancies and hires made under it have to be '
+                          'settled first. Tell us below and we will call you.',
+                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                ),
+                const SizedBox(height: AppSpacing.base),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => canDelete
+                        ? _DeleteAccountSheet.show(context)
+                        : _RequestClosureSheet.show(context),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                    label: Text(canDelete
+                        ? 'Delete my account'
+                        : 'Request account closure'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+// ── Close account ────────────────────────────────────────────────────────────
+
+/// Deleting an account is the one action on this screen that cannot be undone
+/// from the app, so it asks for the word rather than for a tap: a destructive
+/// confirm that only needs a second tap is the same as no confirm at all on a
+/// phone, where the button lands under a thumb already moving.
+class _DeleteAccountSheet extends ConsumerStatefulWidget {
+  const _DeleteAccountSheet();
+
+  static const confirmWord = 'DELETE';
+
+  static Future<void> show(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => const _DeleteAccountSheet(),
+      );
+
+  @override
+  ConsumerState<_DeleteAccountSheet> createState() =>
+      _DeleteAccountSheetState();
+}
+
+class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
+  final _form = GlobalKey<FormState>();
+  final _confirm = TextEditingController();
+  final _reason = TextEditingController();
+
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _confirm.dispose();
+    _reason.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!(_form.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await ref
+          .read(usersRepositoryProvider)
+          .deleteMyAccount(reason: _reason.text);
+      if (!mounted) return;
+      // The token died with is_active, so every provider holding account data
+      // is now holding something unreachable. Close the sheet first, then sign
+      // out: the router watches auth and sends an unauthenticated app to
+      // /login on its own, and a sheet still mounted over that is a dead layer
+      // the user has to dismiss to reach the login form.
+      Navigator.of(context).pop();
+      await ref.read(authProvider.notifier).logout();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = ApiFailure.from(e).message;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _SheetScaffold(
+        title: 'Delete my account',
+        saving: _saving,
+        actionLabel: 'Delete my account',
+        destructive: true,
+        onSave: _save,
+        child: Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const NoteBox(
+                tone: Tone.critical,
+                title: 'This signs you out and hides your profile',
+                message: 'Your applications, credits and tuition history are '
+                    'kept as a record with our team, but your profile stops '
+                    'appearing anywhere and you will not be able to sign in. '
+                    'Your phone number is freed, so you can register again '
+                    'with it later.',
+              ),
+              const SizedBox(height: AppSpacing.base),
+              TextFormField(
+                controller: _reason,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Why are you leaving? (optional)',
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.base),
+              TextFormField(
+                controller: _confirm,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  labelText: 'Type DELETE to confirm',
+                  prefixIcon: Icon(Icons.warning_amber_rounded, size: 20),
+                ),
+                validator: (v) =>
+                    (v ?? '').trim().toUpperCase() ==
+                            _DeleteAccountSheet.confirmWord
+                        ? null
+                        : 'Type DELETE exactly to confirm',
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                NoteBox(message: _error!),
+              ],
+            ],
+          ),
+        ),
+      );
+}
+
+/// The institute door. The server refuses a self-delete for anything but a
+/// teacher or a parent, so offering the same button to an institute would be a
+/// button that 403s. This files the request through the support enquiry the app
+/// already has, which lands on the desk that can actually settle the account.
+class _RequestClosureSheet extends ConsumerStatefulWidget {
+  const _RequestClosureSheet();
+
+  static Future<void> show(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => const _RequestClosureSheet(),
+      );
+
+  @override
+  ConsumerState<_RequestClosureSheet> createState() =>
+      _RequestClosureSheetState();
+}
+
+class _RequestClosureSheetState extends ConsumerState<_RequestClosureSheet> {
+  final _form = GlobalKey<FormState>();
+  final _reason = TextEditingController();
+
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!(_form.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    final user = ref.read(currentUserProvider).valueOrNull;
+    try {
+      await ref.read(usersRepositoryProvider).raiseEnquiry(
+            name: user?.firstName.trim().isNotEmpty == true
+                ? user!.firstName.trim()
+                : 'Institute',
+            subject: 'Account closure request',
+            message: _reason.text.trim(),
+            phone: user?.phone,
+            email: user?.email,
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      context.showMessage('Request sent. Our team will call you to confirm.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = ApiFailure.from(e).message;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _SheetScaffold(
+        title: 'Request account closure',
+        saving: _saving,
+        actionLabel: 'Send request',
+        destructive: true,
+        onSave: _save,
+        child: Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const NoteBox(
+                tone: Tone.warning,
+                message: 'We will call you on the number on this account to '
+                    'confirm before anything is closed. Nothing changes until '
+                    'then.',
+              ),
+              const SizedBox(height: AppSpacing.base),
+              TextFormField(
+                controller: _reason,
+                maxLines: 4,
+                autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Tell us why',
+                  alignLabelWithHint: true,
+                ),
+                validator: (v) => (v ?? '').trim().length < 5
+                    ? 'A line or two is enough'
+                    : null,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                NoteBox(message: _error!),
+              ],
+            ],
+          ),
+        ),
+      );
 }
 
 // ── Password ─────────────────────────────────────────────────────────────────
@@ -410,6 +674,7 @@ class _SheetScaffold extends StatelessWidget {
     required this.saving,
     required this.actionLabel,
     required this.onSave,
+    this.destructive = false,
   });
 
   final String title;
@@ -417,6 +682,10 @@ class _SheetScaffold extends StatelessWidget {
   final bool saving;
   final String actionLabel;
   final Future<void> Function() onSave;
+
+  /// Paints the action red. A delete and a save must not look alike — the
+  /// confirm word is the real guard, but the colour is what stops the tap.
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
@@ -456,6 +725,10 @@ class _SheetScaffold extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
+                  style: destructive
+                      ? FilledButton.styleFrom(
+                          backgroundColor: AppColors.error)
+                      : null,
                   onPressed: saving ? null : () => onSave(),
                   child: saving
                       ? const SizedBox(

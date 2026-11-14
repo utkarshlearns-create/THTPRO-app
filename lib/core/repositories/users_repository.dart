@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/auth/user_role.dart';
 import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/models/institution_profile.dart';
 import 'package:tht_app/core/models/kyc_status.dart';
@@ -93,6 +94,37 @@ class UsersRepository extends Repository {
     });
   }
 
+  /// Closes the signed-in account.
+  ///
+  /// `POST /api/users/me/delete-account/` (`DeleteMyAccountView`) archives
+  /// rather than erases. The row and everything hanging off it — profile,
+  /// wallet, KYC, applications, tuition history — are kept as a record, but
+  /// `is_active` is cleared and the phone and username are freed, so the same
+  /// number can sign up again from scratch.
+  ///
+  /// Clearing `is_active` invalidates the access token the moment this returns
+  /// (SimpleJWT refuses an inactive user), so the caller MUST sign out straight
+  /// afterwards. Leaving the session in place would leave the app holding a
+  /// token that 401s on every screen, which reads as an outage rather than as
+  /// the deletion the user just asked for.
+  ///
+  /// Only TEACHER and PARENT accounts may use it — the server answers 403 for
+  /// every other role, an institute included.
+  Future<void> deleteMyAccount({String? reason}) async {
+    await postMap('/api/users/me/delete-account/', body: {
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+  }
+
+  /// Whether this role can close its own account from inside the app.
+  ///
+  /// The server's list, mirrored here so the UI can offer the right door rather
+  /// than a button that 403s. An institute account is closed by asking our team
+  /// — see [raiseEnquiry] — because its record is tied to the vacancies and
+  /// hires made under it.
+  static bool canSelfDelete(UserRole? role) =>
+      role == UserRole.teacher || role == UserRole.parent;
+
   /// Raises an enquiry with our team — the app's support channel.
   ///
   /// `POST /api/users/contact/` (`EnquiryCreateView`, `AllowAny`) is the only
@@ -121,6 +153,53 @@ class UsersRepository extends Repository {
   /// A teacher's applications, earnings and demo counts.
   Future<TutorStats> tutorStats() async =>
       TutorStats.fromJson(await getMap('/api/users/dashboard/stats/'));
+
+  /// Rewrites a teacher's About Me, given the few things only they know.
+  ///
+  /// `POST /api/users/about-me/enhance/` returns `{enhanced: "..."}`. The model
+  /// is told to use ONLY what it is handed, so the live form values go up rather
+  /// than the saved profile: a teacher who has just typed three subjects and not
+  /// yet saved should see those three in the result, not the empty profile they
+  /// started the session with.
+  ///
+  /// TEACHER only (a tutor admin may pass a `tutor_id`, which the app never
+  /// does). The route is throttled and answers 503 when the AI provider is not
+  /// configured, so the caller must be able to show a failure and leave the
+  /// teacher's own words untouched.
+  Future<String> enhanceAboutMe({
+    required String currentAbout,
+    List<String> subjects = const [],
+    List<String> classes = const [],
+    String? experience,
+    String? qualifications,
+    String? city,
+    String teachingStyle = '',
+    String achievement = '',
+    String unique = '',
+    String tone = 'Professional',
+  }) async {
+    final res = await postMap('/api/users/about-me/enhance/', body: {
+      'current_about': currentAbout,
+      'subjects': subjects,
+      'classes': classes,
+      if (experience != null) 'experience': experience,
+      if (qualifications != null) 'qualifications': qualifications,
+      if (city != null) 'city': city,
+      'teaching_style': teachingStyle,
+      'achievement': achievement,
+      'unique': unique,
+      'tone': tone,
+    });
+    final enhanced = (res['enhanced'] as String? ?? '').trim();
+    if (enhanced.isEmpty) {
+      // A 200 with nothing in it would otherwise wipe the field the teacher is
+      // about to overwrite with it.
+      throw const ApiFailure(
+        'The writer came back empty. Please try again in a moment.',
+      );
+    }
+    return enhanced;
+  }
 
   /// The teacher's own profile.
   Future<TutorProfile> tutorProfile() async =>
