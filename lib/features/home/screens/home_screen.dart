@@ -215,8 +215,42 @@ class _RolePaths extends StatelessWidget {
           subtitle: 'Hire qualified teachers for your centre.',
           role: 'INSTITUTION',
         ),
+        SizedBox(height: AppSpacing.sm),
+        _NoAccountRequirement(),
       ],
     ).animate(delay: 220.ms).fadeIn(duration: 400.ms);
+  }
+}
+
+/// For a school that wants a shortlist, not an account.
+///
+/// Sits directly under the institute card because that is where someone who
+/// runs a centre has just stopped reading, and signing up is more than they
+/// came to do: the requirement form needs no account and files the lead
+/// straight to the institutional desk.
+class _NoAccountRequirement extends StatelessWidget {
+  const _NoAccountRequirement();
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: () => context.push('/school-requirement'),
+        icon: const Icon(Icons.apartment_rounded, size: 17),
+        label: const Text(
+          'Or just tell us your teacher requirement — no account needed',
+          style: TextStyle(fontSize: 12.5, height: 1.35),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          alignment: Alignment.centerLeft,
+        ),
+      ),
+    );
   }
 }
 

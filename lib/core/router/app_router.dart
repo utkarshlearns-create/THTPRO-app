@@ -51,6 +51,7 @@ import 'package:tht_app/features/institution/screens/institution_jobs_screen.dar
 import 'package:tht_app/features/institution/screens/institution_teachers_screen.dart';
 import 'package:tht_app/features/institution/screens/institution_profile_screen.dart';
 import 'package:tht_app/features/institution/screens/post_vacancy_screen.dart';
+import 'package:tht_app/features/institution/screens/school_requirement_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _parentShellKey = GlobalKey<NavigatorState>();
@@ -92,6 +93,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         // the thing that fails, so gating the diagnostic behind auth would put
         // it out of reach exactly when it is needed.
         '/connection-check',
+        // An institute asking us to shortlist files a lead and nothing else —
+        // no account, no password, nothing to sign in to. Gating it behind
+        // login would be asking a school to register before it may tell us
+        // what it needs, which is the whole problem this screen solves.
+        '/school-requirement',
         '/',
       ];
       final isPublicRoute =
@@ -438,6 +444,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/post-requirement',
         builder: (_, __) => const JobWizardScreen(),
+      ),
+      // Declared at the root, not inside the institute shell: most people who
+      // open it have no account and therefore no shell to sit in.
+      GoRoute(
+        path: '/school-requirement',
+        builder: (_, __) => const SchoolRequirementScreen(),
       ),
     ],
   );

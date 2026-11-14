@@ -62,6 +62,8 @@ class InstitutionDashboardScreen extends ConsumerWidget {
                 const _Hero(),
                 const SizedBox(height: AppSpacing.lg),
                 const _QuickActions(),
+                const SizedBox(height: AppSpacing.lg),
+                const _ShortlistForMe(),
                 if (p.weakestSpot != null) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _ProfilePrompt(profile: p),
@@ -232,7 +234,7 @@ class _Hero extends ConsumerWidget {
       body = 'Post what you are hiring for and we will bring matching '
           'teachers to you — or browse the directory yourself.';
       primaryLabel = 'Post a vacancy';
-      onPrimary = () => context.push('/post-requirement');
+      onPrimary = () => context.push('/inst-post-vacancy');
       secondaryLabel = 'Browse teachers';
       onSecondary = () => context.go('/inst-teachers');
     }
@@ -339,7 +341,7 @@ class _QuickActions extends StatelessWidget {
               icon: Icons.post_add_rounded,
               label: 'Post a\nvacancy',
               tone: Tone.info,
-              route: '/post-requirement',
+              route: '/inst-post-vacancy',
               push: true,
             ),
           ),
@@ -360,6 +362,75 @@ class _QuickActions extends StatelessWidget {
               tone: Tone.warning,
               route: '/inst-jobs',
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The other way to hire: hand the requirement over instead of posting it.
+///
+/// Posting a vacancy waits for teachers to come to you, which suits an
+/// institute that already has applicants coming in. Most do not, and the thing
+/// they actually want is for someone to shortlist on their behalf — the one
+/// service the app had no door to at all, while the website has carried it
+/// since the school form shipped.
+class _ShortlistForMe extends StatelessWidget {
+  const _ShortlistForMe();
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+
+    return THTCard(
+      onTap: () => context.push('/school-requirement'),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Tone.accent.background(brightness),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(
+              Icons.support_agent_rounded,
+              size: 22,
+              color: Tone.accent.foreground(brightness),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.base),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Want us to shortlist for you?',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.slate50 : AppColors.slate900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Tell us what you need. Our institutional team calls you '
+                  'and shares matching teacher profiles.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: isDark ? AppColors.slate400 : AppColors.slate500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          const Icon(
+            Icons.arrow_forward_rounded,
+            size: 19,
+            color: AppColors.slate400,
           ),
         ],
       ),
@@ -594,7 +665,7 @@ class _OpenRequirements extends ConsumerWidget {
                     message: 'Post a vacancy and we will bring matching '
                         'teachers to you.',
                     actionLabel: 'Post a vacancy',
-                    onAction: () => context.push('/post-requirement'),
+                    onAction: () => context.push('/inst-post-vacancy'),
                     compact: true,
                   ),
                 )

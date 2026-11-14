@@ -229,8 +229,16 @@ class _PostVacancyScreenState extends ConsumerState<PostVacancyScreen> {
             const SizedBox(height: AppSpacing.md),
             const NoteBox(
               tone: Tone.info,
-              message: 'Need a tutor for your students instead? Your THT '
-                  'relationship manager posts those for you — just ask them.',
+              message: 'Would you rather we shortlisted for you? Send us the '
+                  'requirement and our institutional team calls you with '
+                  'matching teacher profiles.',
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => context.push('/school-requirement'),
+                child: const Text('Send a teacher requirement instead'),
+              ),
             ),
           ],
         ),

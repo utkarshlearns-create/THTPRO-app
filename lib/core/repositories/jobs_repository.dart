@@ -434,6 +434,19 @@ class JobsRepository extends Repository {
         await patchMap('/api/jobs/institution/jobs/$id/', body: changes),
       );
 
+  /// Hands a school / coaching teacher requirement to the institutional desk.
+  ///
+  /// Open to anyone — the endpoint takes no authentication at all, because an
+  /// institute asking us to shortlist should not have to make an account
+  /// first. Answers whether the desk already held this requirement: the server
+  /// derives the lead's reference from the answers themselves, so sending the
+  /// same form twice updates one lead instead of pinging the desk twice, and
+  /// the sender is owed that fact rather than a second identical thank-you.
+  Future<bool> submitInstituteRequirement(Map<String, dynamic> body) async {
+    final res = await postMap('/api/jobs/institute-requirement/', body: body);
+    return res['duplicate'] == true;
+  }
+
   // ── Notifications ─────────────────────────────────────────────────────────
 
   Future<List<AppNotification>> notifications() async =>
