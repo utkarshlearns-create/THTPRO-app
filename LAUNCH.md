@@ -86,7 +86,7 @@ look like code problems. Where the space went, measured 14 Nov 2026:
 
 | Location | Size | Safe to reclaim? |
 |---|---|---|
-| `ProgramData\McAfee` | 15.6 GB | Uninstalling it leaves Windows Defender, which is enough |
+| `ProgramData\McAfee` | 15.6 GB reported, 2.9 GB real | **Removed 14 Nov 2026.** See the note below |
 | `AppData\Local\Programs` | 11.2 GB | Installed applications — review, do not sweep |
 | `AppData\Local\Google` | 10.4 GB | Chrome's cache can be cleared; the profile cannot |
 | `hiberfil.sys` | 6.3 GB | `powercfg /h off` removes it, at the cost of hibernate |
@@ -97,6 +97,21 @@ look like code problems. Where the space went, measured 14 Nov 2026:
 
 **Check `df -h /c` before blaming a build failure on the build.** This one cost
 an hour of looking in the wrong place.
+
+One caveat on that table: it measures logical file size, which is not the same
+as space on the disk. McAfee looked like the biggest prize in it — 16 GB,
+of which 15.8 GB was a single runaway `ProgramData\McAfee\WPS\log` directory.
+Uninstalling both of its products (`wps` and `WebAdvisor`, each of whose
+uninstallers exits 0 silently) took that whole tree away and returned **2.9
+GB**, not 16. Log files compress well and NTFS was evidently storing them
+compressed, so measure a reclaim by `C:`'s free space before and after, never
+by what `Measure-Object -Property Length` adds up to.
+
+Windows Defender takes over on its own: `Get-MpComputerStatus` reported
+`AntivirusEnabled`, `RealTimeProtectionEnabled` and `AMServiceEnabled` all true
+immediately afterwards, with no reboot. A few `*.deleted` stubs stay behind in
+`C:\Program Files\McAfee` because removing them needs administrator rights;
+Windows clears them at the next restart.
 
 #### Everything a build caches now lives on D:
 
