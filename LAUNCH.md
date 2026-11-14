@@ -14,34 +14,44 @@ an APK for the Firebase App Distribution testers. Play will not accept an APK.
 
 ## 0. What is missing before a build can even run
 
-Five things, in this order. The first is not optional and is not about Play at
-all — **this machine cannot build an Android release today** — and the second
-is the one with a clock on it, so it is worth starting before the first
-finishes.
+Five things. Three of them are now done and are recorded below so nobody
+repeats them; what is left is **0.4** (one file, from the Firebase console)
+and **0.5** (the Play account, which waits on the D-U-N-S in 0.2).
 
-### 0.1 A working Android toolchain
+### 0.1 A working Android toolchain — **done, 14 Nov 2026**
 
-`flutter doctor` says, right now:
-
-```
-[X] Android toolchain - develop for Android devices
-    X cmdline-tools component is missing.
-```
-
-There is no JDK and no Android Studio on the machine — only a bare SDK folder
-at `%LOCALAPPDATA%/Android/sdk`. `flutter build appbundle` cannot run, and
-neither can `keytool`, which is how a keystore gets made in the first place.
-
-Fix: install **Android Studio** (it brings a JDK 17 and the cmdline-tools with
-it), open it once so it finishes its own setup, then:
+The machine had a bare `%LOCALAPPDATA%/Android/sdk` and no JDK at all, so
+neither `flutter build appbundle` nor `keytool` could run. Android Studio was
+not needed; three pieces were, and they total about 300 MB rather than 1 GB:
 
 ```bash
-flutter doctor --android-licenses     # accept them all
-flutter doctor -v                     # the Android line must go green
+winget install --id Microsoft.OpenJDK.17 --exact --silent
+
+# cmdline-tools, unzipped to %LOCALAPPDATA%/Android/sdk/cmdline-tools/latest
+# from https://dl.google.com/android/repository/commandlinetools-win-13114758_latest.zip
+
+sdkmanager --licenses                 # accept all
+sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+flutter config --android-sdk "%LOCALAPPDATA%/Android/sdk"
 ```
 
-A bare JDK 17 plus `cmdline-tools` from the SDK manager also works, but Android
-Studio is one download instead of three decisions.
+Flutter 3.44 wants **compileSdk 36, targetSdk 36, minSdk 24** — the numbers
+come from `FlutterExtension.kt` in the SDK, not from this repo, which is why
+`android/app/build.gradle.kts` reads `flutter.compileSdkVersion` rather than a
+literal. The README's claim of `minSdk 23` is stale.
+
+Set once, at user scope, so a new terminal inherits them:
+`JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.21.21-hotspot`,
+`ANDROID_HOME=%LOCALAPPDATA%\Android\sdk`, and both `bin` folders on `PATH`.
+
+`flutter doctor -v` now reports **`[√] Android toolchain … All Android
+licenses accepted`**. The Visual Studio warning it also prints is about
+building Windows desktop apps and has nothing to do with Android.
+
+One trap, if any of this is ever redone: **unzip cmdline-tools straight into
+the SDK folder.** Unzipping it under a long scratch path fails part-way on
+Windows' 260-character path limit, and the error names a Guava jar rather than
+the real cause.
 
 ### 0.2 The D-U-N-S number — start this today
 
@@ -139,40 +149,59 @@ app in closed testing for a **fortnight** before it could even apply to go
 live. As the company, there is no such wait — which is most of the reason the
 D-U-N-S is worth starting today rather than after the build works.
 
-### 0.3 A fresh upload keystore
+### 0.3 A fresh upload keystore — **made, 14 Nov 2026**
 
-The old one is gone — `C:/THTAPP/` no longer exists and there is no `.jks`
-anywhere on the machine. **If nothing has ever been published to Play under
-that key, this costs nothing: a brand-new key is perfectly fine.** Check that
-first, in the Play Console, before doing anything else; it is the difference
-between five minutes and five days.
+The old one is gone; `C:/THTAPP/` no longer exists and there was no `.jks`
+anywhere on the machine. A new one was generated, which is free and correct
+**so long as nothing has ever been published to Play under the old key** — see
+the caveat at the end of this section.
 
-Never published → make one (keytool comes with Android Studio's JDK):
-
-```bash
-keytool -genkey -v -keystore C:/keys/tht-upload.jks -storetype JKS \
-    -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+Keystore   C:/keys/tht-upload.jks        (JKS, RSA 2048, valid to 2054)
+Alias      upload
+SHA-1      C1:C9:83:41:83:9D:D2:77:EE:01:C0:4F:50:89:C7:76:23:4B:90:BF
+Password   C:/keys/KEYSTORE-BACKUP-README.txt
 ```
 
-Then copy [`android/key.properties.example`](android/key.properties.example) to
-`android/key.properties` and fill in the two passwords you chose. Neither file
-nor the `.jks` may ever be committed — `.gitignore` already refuses both.
+`android/key.properties` is written and points at it, so `release.sh` will
+sign with it. Neither that file nor the `.jks` is committed — `.gitignore`
+refuses both, and `git check-ignore` confirms it.
 
-**Back the `.jks` up in two places you will still have in three years**, with
-the passwords. It is the single thing in this whole list that cannot be
-regenerated: every future update to a published app must be signed with the
-same key.
+**Two things still to do by hand, and they are not optional:**
 
-Already published under the lost key → you cannot recreate it. Play Console →
+1. **Copy `tht-upload.jks` somewhere off this machine** — a company Drive
+   folder and a pen drive, say. This is the one item in this whole document
+   that cannot be regenerated: every future update to the published app must
+   be signed with this exact key, and a dead hard disk means the app can never
+   be updated again.
+2. **Move the password into a password manager, then delete the README.** A
+   signing password in plain text next to the key it unlocks is a stopgap, not
+   a home.
+
+The SHA-1 above is worth keeping: it is what identifies this key to Google
+Play and to Firebase, and it is the quickest way to confirm later that a build
+was signed with the right one.
+
+**The caveat.** If the app *was* ever published under the lost key, a new key
+is useless — Play will reject the upload. The only route is Play Console →
 **App integrity → Request upload key reset**, which Google takes a few days
-over. There is no faster route, and no amount of rebuilding helps.
+over. Worth confirming in the Play Console before the first upload; it costs a
+minute to check and several days to get wrong.
 
-### 0.4 `android/app/google-services.json`
+### 0.4 `android/app/google-services.json` — **the one thing still blocking a build**
 
-Also gitignored, also absent. The Gradle build cannot even start without it,
-because the `com.google.gms.google-services` plugin reads it. Firebase console
-→ project **`tht-app-60862`** → Project settings → Your apps →
-`com.thehometuitions.app` → download. Never commit it.
+Gitignored and absent. Gradle cannot even start without it, because the
+`com.google.gms.google-services` plugin reads it at configure time, so this is
+now the only thing between this machine and a signed `.aab`.
+
+Firebase console → project **`tht-app-60862`** → Project settings → Your apps
+→ **`com.thehometuitions.app`** → **google-services.json** → download it to
+`android/app/google-services.json`. Never commit it.
+
+If no Android app is listed under that project, add one with exactly that
+package name. While you are there, paste in the upload key's SHA-1 from 0.3 —
+nothing in this app needs it today (there is no Google Sign-In), but it costs
+nothing now and is a half-hour of confusion later.
 
 ### 0.5 A Play Console developer account
 
@@ -264,12 +293,21 @@ phone `+91 6387488141`.
 
 ## 2. Graphics
 
-| Asset | Size | Source |
+| Asset | Size | Status |
 |---|---|---|
-| App icon | 512×512 PNG, no transparency | `assets/images/icon.png` (1024², downscale) |
-| Feature graphic | 1024×500 PNG/JPG, no transparency | needs making — `logo.png` on the brand orange |
+| App icon | 512×512 PNG, no transparency | **done** — [`store/play/icon-512.png`](store/play/icon-512.png) |
+| Feature graphic | 1024×500 PNG, no transparency | **done** — [`store/play/feature-graphic-1024x500.png`](store/play/feature-graphic-1024x500.png) |
 | Phone screenshots | ≥2, 1080px+ on the short side, 16:9 or 9:16 | capture from a device |
 | Tablet screenshots | optional | — |
+
+Both graphics are generated from the app's own artwork by
+[`store/play/make_graphics.py`](store/play/make_graphics.py), so they cannot
+drift from `assets/images/`. Re-run it if the icon or logo changes.
+
+The store icon is **not** a plain downscale of the launcher icon: the launcher
+artwork carries a wide margin, which is right on a home screen and wrong on a
+listing where the tile is already small, so the script trims to the artwork's
+own edges and re-pads to 8%.
 
 Screenshots worth taking, in this order — they are the four screens that
 explain the product without a caption:
