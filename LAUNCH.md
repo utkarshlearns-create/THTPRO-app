@@ -53,6 +53,43 @@ the SDK folder.** Unzipping it under a long scratch path fails part-way on
 Windows' 260-character path limit, and the error names a Guava jar rather than
 the real cause.
 
+#### The disk, which is a real prerequisite
+
+The first release build on this machine did not fail on anything in this
+document. It ran for 3m43s and died on:
+
+```
+java.io.IOException: There is not enough space on the disk
+Could not open cache directory ... \.gradle\caches\9.1.0\transforms\...
+```
+
+`C:` was **100% full — 17 MB free of 147 GB**, while `D:` had 268 GB free. A
+Gradle build wants several GB of room for its transform cache alone, so the
+fix was to stop caching on the full drive:
+
+```bash
+setx GRADLE_USER_HOME "D:\gradle-home"      # user scope, so new shells inherit it
+# then move the existing cache over and delete the original
+```
+
+That alone took `C:` from 170 MB to 1.6 GB free. It is enough to build, but it
+is not comfortable, and a full system drive will keep producing failures that
+look like code problems. Where the space went, measured 14 Nov 2026:
+
+| Location | Size | Safe to reclaim? |
+|---|---|---|
+| `ProgramData\McAfee` | 15.6 GB | Uninstalling it leaves Windows Defender, which is enough |
+| `AppData\Local\Programs` | 11.2 GB | Installed applications — review, do not sweep |
+| `AppData\Local\Google` | 10.4 GB | Chrome's cache can be cleared; the profile cannot |
+| `hiberfil.sys` | 6.3 GB | `powercfg /h off` removes it, at the cost of hibernate |
+| `AppData\Local\npm-cache` | 5.6 GB | Yes — `npm cache clean --force` |
+| `.gemini` | 6.2 GB | Yes — a CLI cache |
+| `AppData\Local\Docker` | 3.2 GB | Yes — `docker system prune -a` |
+| `ms-playwright`, `pip` | 1.4 GB | Yes — both re-download on demand |
+
+**Check `df -h /c` before blaming a build failure on the build.** This one cost
+an hour of looking in the wrong place.
+
 ### 0.2 The D-U-N-S number — start this today
 
 Nothing in this document takes longer, and it is the only step whose clock
