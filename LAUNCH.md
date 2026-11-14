@@ -18,6 +18,14 @@ Five things. Three of them are now done and are recorded below so nobody
 repeats them; what is left is **0.4** (one file, from the Firebase console)
 and **0.5** (the Play account, which waits on the D-U-N-S in 0.2).
 
+Two of those three took far longer than they should have, because the machine
+itself was the obstacle rather than the app. 0.1 therefore ends with four
+subsections on the disk, the NDK, the pub cache and Developer Mode. **If a
+build fails and the error names a Kotlin compiler, a Guava jar, or a cache
+directory, read those four before reading the stack trace.** Of the four, the
+only one still needing a human is **Developer Mode**, which is one toggle in
+Windows settings and cannot be set without administrator rights.
+
 ### 0.1 A working Android toolchain — **done, 14 Nov 2026**
 
 The machine had a bare `%LOCALAPPDATA%/Android/sdk` and no JDK at all, so
@@ -89,6 +97,99 @@ look like code problems. Where the space went, measured 14 Nov 2026:
 
 **Check `df -h /c` before blaming a build failure on the build.** This one cost
 an hour of looking in the wrong place.
+
+#### Everything a build caches now lives on D:
+
+Moving only the Gradle cache was not enough. The second build got past the
+cache and then tried to auto-install the NDK, which Flutter 3.44 pins through
+`ndkVersion = flutter.ndkVersion` in `android/app/build.gradle.kts`:
+
+```
+Failed to install the following SDK components:
+    ndk;28.2.13676358 NDK (Side by side) 28.2.13676358
+```
+
+That is a 2.2 GB unpack on top of a ~600 MB download, into an SDK that was
+still on the full drive, so it emptied `C:` to zero bytes and left a 1.4 GB
+half-finished `sdk/.temp` behind. The whole SDK therefore moved too, and the
+three environment variables below are now set at **user scope**:
+
+| Variable | Value | What it stops filling `C:` with |
+|---|---|---|
+| `GRADLE_USER_HOME` | `D:\gradle-home` | Gradle's dependency and transform caches |
+| `ANDROID_HOME`, `ANDROID_SDK_ROOT` | `D:\Android\sdk` | platforms, build-tools, and the NDK |
+| `GRADLE_OPTS` | `-Djava.io.tmpdir=D:\gradle-tmp` | the JVM's scratch files during a build |
+
+`flutter config --android-sdk "D:/Android/sdk"` was run to match, and the NDK
+was installed with `sdkmanager.bat --sdk_root="D:\Android\sdk"
+"ndk;28.2.13676358"` — note `.bat`, since the bare name is not executable from
+a POSIX shell on Windows.
+
+Between that and clearing the npm cache, `C:` went from 0 bytes to 8.2 GB free
+and stayed there through a build, which is the real test.
+
+#### The pub cache has to live on the same drive as the repo
+
+With the disk and the NDK sorted, the build ran for 8m50s and then failed three
+plugins at once — `share_plus`, `image_picker_android` and
+`shared_preferences_android`, all on `compileReleaseKotlin`. The headline said
+only `A failure occurred while executing BuildToolsApiCompilationWork`, which
+is not a cause. The cause was forty lines down a nested stack trace:
+
+```
+java.lang.IllegalArgumentException: this and base files have different roots:
+  C:\Users\...\AppData\Local\Pub\Cache\hosted\pub.dev\share_plus-10.1.4\...\MethodCallHandler.kt
+  and D:\Downloads\THTPRO-app\android
+```
+
+Kotlin's incremental compiler makes each source path relative to the module it
+belongs to. On Windows there is no relative path between two different drive
+letters, so the call throws, the incremental cache cannot be closed, and the
+compile daemon dies. The repo is on `D:` and the pub cache was on `C:`, which
+is all it took.
+
+```bash
+setx PUB_CACHE "D:\pub-cache"     # user scope
+flutter pub get                   # re-resolves into the new location
+```
+
+That is 146 packages re-downloaded and all 62 Android plugin paths in
+`.flutter-plugins-dependencies` moved to `D:`. It frees space on `C:` as a
+bonus — the old cache under `AppData\Local\Pub\Cache` can be deleted once a
+build has proved the new one works.
+
+#### Developer Mode, which `flutter clean` will teach you about
+
+`flutter pub get` creates symlinks under `.dart_tool`, and Windows only allows
+that for an administrator or with **Developer Mode** on. With it off, pub get
+prints
+
+```
+Building with plugins requires symlink support.
+Please enable Developer Mode in your system settings.
+```
+
+and **exits 1**, which fails the whole build before Gradle is even invoked.
+
+This is easy to miss, because a build can succeed for a long time without it:
+the symlinks survive in `.dart_tool` from whenever they were last created, and
+nothing re-checks them. `flutter clean` deletes that directory, and the next
+build cannot rebuild it.
+
+Turn it on once — **Settings → System → For developers → Developer Mode** — or,
+elevated:
+
+```
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" ^
+    /v AllowDevelopmentWithoutDevLicense /t REG_DWORD /d 1 /f
+```
+
+The escape hatch, if neither is possible, is `flutter build appbundle
+--release --no-pub`: pub resolution writes `package_config.json` and
+`.flutter-plugins-dependencies` *before* it reaches the symlink step, so those
+files are already correct and Gradle has everything it needs. It works, but it
+means every dependency change needs a successful `pub get` first, so it is a
+workaround and not the fix.
 
 ### 0.2 The D-U-N-S number — start this today
 
@@ -225,11 +326,20 @@ is useless — Play will reject the upload. The only route is Play Console →
 over. Worth confirming in the Play Console before the first upload; it costs a
 minute to check and several days to get wrong.
 
-### 0.4 `android/app/google-services.json` — **the one thing still blocking a build**
+### 0.4 `android/app/google-services.json` — **still needed, but it does not block the build**
 
-Gitignored and absent. Gradle cannot even start without it, because the
-`com.google.gms.google-services` plugin reads it at configure time, so this is
-now the only thing between this machine and a signed `.aab`.
+Gitignored and absent. An earlier draft of this document said Gradle "cannot
+even start" without it; that was wrong, and worth correcting because it sent an
+hour of debugging in the wrong direction. A release build with the file still
+missing configured cleanly and ran for 8m50s, compiling plugin after plugin
+before dying on something else entirely. The
+`com.google.gms.google-services` plugin reads the file in its own task,
+`processReleaseGoogleServices`, which sits well into the execution phase —
+so a build fails *late* without it, not early, and every other failure has to
+be cleared before the file is even reached.
+
+It is still required, because push notifications are a shipped feature of the
+app and Firebase Messaging will not initialise without it.
 
 Firebase console → project **`tht-app-60862`** → Project settings → Your apps
 → **`com.thehometuitions.app`** → **google-services.json** → download it to
