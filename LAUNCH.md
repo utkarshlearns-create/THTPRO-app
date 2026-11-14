@@ -14,8 +14,10 @@ an APK for the Firebase App Distribution testers. Play will not accept an APK.
 
 ## 0. What is missing before a build can even run
 
-Four things, in this order. The first one is not optional and is not about
-Play at all: **this machine cannot build an Android release today.**
+Five things, in this order. The first is not optional and is not about Play at
+all — **this machine cannot build an Android release today** — and the second
+is the one with a clock on it, so it is worth starting before the first
+finishes.
 
 ### 0.1 A working Android toolchain
 
@@ -41,7 +43,74 @@ flutter doctor -v                     # the Android line must go green
 A bare JDK 17 plus `cmdline-tools` from the SDK manager also works, but Android
 Studio is one download instead of three decisions.
 
-### 0.2 A fresh upload keystore
+### 0.2 The D-U-N-S number — start this today
+
+Nothing in this document takes longer, and it is the only step whose clock
+runs whether or not anyone is working. Both stores want the same number, so
+it is applied for once and used twice.
+
+**What it is.** A free nine-digit identifier Dun & Bradstreet issues to a
+business. One per legal entity per address. Apple requires it to enrol as an
+organisation; Google requires it for an organisation Play account. Neither
+needs it for an individual account — see the fork at the end of this section.
+
+**Where to apply.** Use **Apple's own form**, even though the number is also
+for Google: it is free, it searches the existing D&B database first, and it
+feeds straight into Apple enrolment.
+
+```
+https://developer.apple.com/enroll/duns-lookup/
+```
+
+Search the legal entity name there before applying for anything. A company
+registered in India often **already has** a D-U-N-S number it never asked for,
+and if so you are done in two minutes — just confirm the address and phone on
+the record are current, because those are what get verified later.
+
+**Have these ready before opening the form** (every one of them is checked):
+
+| Field | Must be |
+|---|---|
+| Legal entity name | **Exactly** as on the Certificate of Incorporation / GST certificate — not the brand. "The Home Tuitions" is the brand; the registered name is what goes here. |
+| Legal form | Private Limited / LLP / Partnership / Proprietorship |
+| Registered address | With pincode, as on the registration papers |
+| Phone number | **One that will actually be answered.** See the warning below. |
+| Website | `https://www.thehometuitions.com` |
+| Your name, title, email | A work address on the domain — `…@thehometuitions.in` — not a free Gmail. A Gmail does not fail it, but it slows the review. |
+| Year started, headcount, rough annual revenue | Approximations are fine |
+
+**The warning.** D&B verifies a new record by **telephoning the number on the
+application**, and whoever answers has to confirm the business details. An
+unanswered or unrecognised call is the most common reason an application sits
+for weeks. Tell the office the call is coming.
+
+**Timeline.** Apple's form usually answers in up to **5 business days**; in
+India it can run longer, and a verification call that goes unanswered restarts
+the wait. Plan on a week, hope for two days.
+
+**The one thing that causes rejections later.** Whatever name and address the
+D-U-N-S record ends up holding, that is **character for character** what must
+be typed into Apple enrolment and into the Play Console. "Pvt Ltd" versus
+"Private Limited" is enough to stall both. Once the number comes through,
+screenshot the record and copy from the screenshot, never from memory.
+
+**The fork, if there is no registered entity.** If the business is a brand run
+by one person rather than a registered company, the honest path is an
+individual account on both stores — the store page then shows a personal name
+instead of the company, which is the real cost:
+
+| | Organisation | Individual |
+|---|---|---|
+| D-U-N-S | required | not needed |
+| Apple | can enrol as the company; needs authority to sign for it | personal name on the listing |
+| Play | exempt from the 12-tester rule | **12 testers for 14 days** before production |
+| Store shows | the company | a person's name |
+
+Decide this before enrolling anywhere. The developer name on a published
+listing is not a setting you flip afterwards — changing it means a new account
+and a transfer.
+
+### 0.3 A fresh upload keystore
 
 The old one is gone — `C:/THTAPP/` no longer exists and there is no `.jks`
 anywhere on the machine. **If nothing has ever been published to Play under
@@ -69,14 +138,14 @@ Already published under the lost key → you cannot recreate it. Play Console �
 **App integrity → Request upload key reset**, which Google takes a few days
 over. There is no faster route, and no amount of rebuilding helps.
 
-### 0.3 `android/app/google-services.json`
+### 0.4 `android/app/google-services.json`
 
 Also gitignored, also absent. The Gradle build cannot even start without it,
 because the `com.google.gms.google-services` plugin reads it. Firebase console
 → project **`tht-app-60862`** → Project settings → Your apps →
 `com.thehometuitions.app` → download. Never commit it.
 
-### 0.4 A Play Console developer account
+### 0.5 A Play Console developer account
 
 $25, once, ever. Two things about it decide the calendar more than anything in
 this document:
@@ -305,10 +374,11 @@ expected, and Flutter generates it.
 
 ### 7.2 Apple Developer Program
 
-**$99 a year**, and it must be renewed or the apps come down. As with Play, an
-**organisation** enrolment needs a **D-U-N-S number** (same one Play wants) and
-is slower; an **individual** enrolment is usually approved in a day or two but
-puts a personal name on the store page. Decide which name should sit under
+**$99 a year**, and it must be renewed or the apps come down. An
+**organisation** enrolment needs the **D-U-N-S number from section 0.2** —
+the same one Play wants, applied for once — and is slower; an **individual**
+enrolment needs no D-U-N-S and is usually approved in a day or two, but puts a
+personal name on the store page. Decide which name should sit under
 "Developer" on the listing before enrolling — changing it later means a new
 account, not a setting.
 
