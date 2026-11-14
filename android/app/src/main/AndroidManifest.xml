@@ -10,7 +10,7 @@
          the device it was bound to. Nothing here is worth restoring: signing
          in again reproduces every bit of it from the server. -->
     <application
-        android:label="THTPRO"
+        android:label="The Home Tuitions"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
