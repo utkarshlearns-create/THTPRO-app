@@ -206,11 +206,24 @@ files are already correct and Gradle has everything it needs. It works, but it
 means every dependency change needs a successful `pub get` first, so it is a
 workaround and not the fix.
 
-### 0.2 The D-U-N-S number — start this today
+### 0.2 The D-U-N-S number — **issued 16 Nov 2026**
 
-Nothing in this document takes longer, and it is the only step whose clock
-runs whether or not anyone is working. Both stores want the same number, so
-it is applied for once and used twice.
+| | |
+|---|---|
+| **D-U-N-S** | **`311281860`** |
+| Issued to | THT EDUCATION TECHNOLOGIES PRIVATE LIMITED |
+| Via | Apple's lookup form, `developer.apple.com/enroll/duns-lookup/` |
+| Turnaround | **same day** — no verification call, no documents |
+
+Apple Developer Relations mailed the number back within hours of the form
+being submitted, which is far faster than the five business days their own
+page promises. The rest of this section is kept as written because the same
+number now has to be typed into the Play Console and into Apple enrolment,
+and the matching rules below are what stall those.
+
+Nothing else in this document takes longer than this step did, and it was the
+only one whose clock ran whether or not anyone was working. Both stores want
+the same number, so it is applied for once and used twice.
 
 **What it is.** A free nine-digit identifier Dun & Bradstreet issues to a
 business. One per legal entity per address. Apple requires it to enrol as an
@@ -244,17 +257,19 @@ between the three is what stalls an application:
 | CIN | `U85500UP2026PTC250409` |
 | Registered address | Plot No. 310, Khasra No. 73 Min., Aziz Nagar, Madiyaon, Lucknow – 226021, Uttar Pradesh |
 | Website | `https://www.thehometuitions.com` |
-| Email | `support@thehometuitions.in` — the domain address, not the Gmail on the signboard. A Gmail does not fail the application, but it is the slowest kind of applicant to verify. |
+| Email | A **company-domain** address, not the Gmail on the signboard. `support@thehometuitions.com` is the one to use: it is a live Hostinger mailbox and it is on the same domain as the Website field above, so a verifier sees one organisation rather than two. `thehometuitions.in` is the company's second site and would also pass, but matching the declared website costs nothing. A Gmail does not fail the application; it is simply the slowest kind of applicant to verify. **Whichever is used, confirm somebody can actually open that inbox** — the number arrives there and nowhere else. |
 | Phone | **A number somebody will answer.** See the warning below. |
 | Year started | 2026 (the CIN says so: `…UP2026PTC…`) |
 | Headcount, rough annual revenue | Approximations are fine |
 
 **Two things about this particular company.**
 
-It was incorporated in **2026**, which means there is almost certainly **no
-existing D&B record** to find — search for it anyway, then expect to file a
-fresh application and to get the verification call. A company this new is also
-the kind D&B checks most carefully.
+It was incorporated in **2026**, so the expectation here was that no D&B
+record existed, that a fresh application would be filed, and that a
+verification call would follow. **None of that happened** — the number came
+back the same day, unprompted, with no call and no documents asked for. Either
+a record already existed against the CIN or D&B matched the registrar data
+directly. Worth remembering before anyone budgets a week for this again.
 
 And the registered office above is **not** the address the website publishes
 (the footer carries the working office, Verma Complex, A-mart Chauraha). For
@@ -282,10 +297,18 @@ India it can run longer, and a verification call that goes unanswered restarts
 the wait. Plan on a week, hope for two days.
 
 **The one thing that causes rejections later.** Whatever name and address the
-D-U-N-S record ends up holding, that is **character for character** what must
-be typed into Apple enrolment and into the Play Console. "Pvt Ltd" versus
-"Private Limited" is enough to stall both. Once the number comes through,
-screenshot the record and copy from the screenshot, never from memory.
+D-U-N-S record holds is **character for character** what must be typed into
+Apple enrolment and into the Play Console — Google's own wording is that the
+legal name and address in the payments profile must *exactly* match the Dun &
+Bradstreet profile. "Pvt Ltd" versus "Private Limited" is enough to stall
+both.
+
+The name on the issued record is confirmed: **THT EDUCATION TECHNOLOGIES
+PRIVATE LIMITED**, exactly as Apple's mail spelled it. The **address** on the
+record has not been seen and is the one remaining unknown. Look it up at
+D&B's free lookup before filling the Play payments profile, and if it differs
+from the registered office above, correct it at D&B **first** — changing it
+after Play has verified is the slower repair.
 
 **What the organisation route buys.** Enrolling as the company rather than as
 a person is not only about the name on the listing:
