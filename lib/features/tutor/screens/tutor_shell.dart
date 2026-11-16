@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/ui/haptics.dart';
 
 /// The bottom navigation shell for Tutor accounts.
 /// Wraps child screens injected by GoRouter.
@@ -51,6 +52,10 @@ class TutorShell extends StatelessWidget {
     }
 
     void onItemTapped(int index) {
+      // The tick fires on every tap, including a tap on the tab you
+      // are already on — the bar answered, and that is what the
+      // thumb is checking.
+      Haptics.select();
       switch (index) {
         case 0:
           context.go('/tutor-home');

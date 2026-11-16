@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tht_app/core/router/page_transitions.dart';
 import 'app_colors.dart';
 
 /// App-wide ThemeData for light and dark modes.
@@ -44,6 +45,7 @@ abstract final class AppTheme {
         brightness: Brightness.light,
         fontFamily: fontFamily,
         fontFamilyFallback: fontFallback,
+        pageTransitionsTheme: kThtPageTransitions,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.light,
@@ -223,6 +225,7 @@ abstract final class AppTheme {
         brightness: Brightness.dark,
         fontFamily: fontFamily,
         fontFamilyFallback: fontFallback,
+        pageTransitionsTheme: kThtPageTransitions,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.dark,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:tht_app/core/router/page_transitions.dart';
 import 'package:tht_app/core/ui/shell_back_handler.dart';
 import 'package:tht_app/core/notifications/push_service.dart';
 
@@ -229,9 +230,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/current-tutor',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: CurrentTutorScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const CurrentTutorScreen()),
           ),
           GoRoute(
             path: '/parent-profile',
@@ -273,15 +272,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/tutor-kyc',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorKYCScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorKYCScreen()),
           ),
           GoRoute(
             path: '/tutor-applications',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorApplicationsScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorApplicationsScreen()),
           ),
           GoRoute(
             path: '/tutor-schedule',
@@ -291,39 +286,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/tutor-leads',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorLeadsScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorLeadsScreen()),
           ),
           GoRoute(
             path: '/tutor-tuitions',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorTuitionsScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorTuitionsScreen()),
           ),
           GoRoute(
             path: '/tutor-referrals',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorReferralsScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorReferralsScreen()),
           ),
           GoRoute(
             path: '/tutor-education',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorEducationScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorEducationScreen()),
           ),
           GoRoute(
             path: '/tutor-score',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorScoreScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorScoreScreen()),
           ),
           GoRoute(
             path: '/tutor-attendance',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: TutorAttendanceScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const TutorAttendanceScreen()),
           ),
           GoRoute(
             path: '/tutor-wallet',
@@ -333,9 +316,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/tutor-notifications',
-            pageBuilder: (_, __) => const NoTransitionPage(
-              child: NotificationsScreen(),
-            ),
+            pageBuilder: (_, __) => slidePage(const NotificationsScreen()),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/ui/haptics.dart';
 
 enum ThtButtonVariant { filled, outlined, text }
 
@@ -50,7 +51,21 @@ class ThtButton extends StatelessWidget {
       ],
     );
 
-    final effectiveOnPressed = isLoading ? null : onPressed;
+    // Haptics belong here rather than at the call sites: one shared
+    // button means one place to decide how the whole app feels under the
+    // thumb. A filled button is the committing action on its screen, so
+    // it gets the thump; the quieter variants beside it get a tick.
+    final tap = onPressed;
+    final effectiveOnPressed = (isLoading || tap == null)
+        ? null
+        : () {
+            if (variant == ThtButtonVariant.filled) {
+              Haptics.action();
+            } else {
+              Haptics.light();
+            }
+            tap();
+          };
 
     switch (variant) {
       case ThtButtonVariant.filled:
