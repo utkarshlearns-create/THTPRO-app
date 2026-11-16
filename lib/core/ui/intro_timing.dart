@@ -7,14 +7,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// after that, so a daily user is not made to watch a title card to reach their
 /// dashboard.
 abstract final class IntroTiming {
-  /// The full sequence: the mark turns in, the wordmark writes itself, the rule
-  /// opens and `Learn & Earn` rises.
-  static const Duration full = Duration(milliseconds: 2600);
+  /// The full sequence: the roof holds where the launch screen left it, rises
+  /// and settles, the wordmark fades up, the rule opens and `Learn & Earn`
+  /// arrives.
+  ///
+  /// 1.8s, down from 2.6s. The old sequence spent most of its length on a
+  /// seventeen-glyph typing effect; with the wordmark arriving as one object
+  /// there is nothing left that needs the extra second, and a launch screen
+  /// that outstays the app's own load is a toll gate however well drawn.
+  static const Duration full = Duration(milliseconds: 1800);
 
   /// The same choreography, faster. Every beat still happens — the whole
   /// sequence is expressed as fractions of one controller, so shortening the
   /// controller shortens the film rather than truncating it.
-  static const Duration brief = Duration(milliseconds: 1250);
+  static const Duration brief = Duration(milliseconds: 1050);
 
   static const String _key = 'intro_played_v1';
 

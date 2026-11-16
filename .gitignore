@@ -64,3 +64,6 @@ ios/Runner/GoogleService-Info.plist
 android/key.properties
 *.jks
 *.keystore
+
+# Golden test diff output, written on every mismatch.
+test/golden/failures/

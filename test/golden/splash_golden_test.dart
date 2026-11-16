@@ -6,17 +6,17 @@ import 'package:tht_app/features/shared/screens/splash_screen.dart';
 
 /// The intro, recorded mid-flight and at rest.
 ///
-/// The mid-flight frame is the one worth having. At rest the splash is just a
-/// lockup; at 45% the mark is still turning through its perspective transform,
-/// the bloom is half up and the name is halfway written, so a change to any beat
-/// of the choreography — a curve, an interval, the depth of the rotation — moves
-/// this picture and nothing else would have caught it.
+/// The mid-flight frame is the one worth having. At rest the splash is just the
+/// logo; at 45% the mark has just finished settling, the lockup is halfway
+/// through its rise and the wordmark is fading up with the rule and the promise
+/// still to come — so a change to any beat of the choreography, a curve or an
+/// interval, moves this picture and nothing else would have caught it.
 ///
 /// Regenerate with: flutter test --update-goldens
 void main() {
   final frames = <String, double>{
-    // Mid-flight: the mark has landed, the name is being set, the promise has
-    // not arrived yet.
+    // Mid-flight: the mark has settled, the name is arriving, the rule and the
+    // promise have not.
     'midflight': 0.45,
     'settled': 1.0,
   };
