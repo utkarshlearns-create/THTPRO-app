@@ -21,12 +21,21 @@ if [ -z "$NOTES" ]; then
     exit 1
 fi
 
-APP_ID="1:113352609030:android:dc79fb00d2c5b8aa062287"
-export GOOGLE_APPLICATION_CREDENTIALS="C:/THTAPP/tht-app-60862-firebase-adminsdk-fbsvc-022556110f.json"
+APP_ID="1:672816783019:android:8c657d7d0d99b5fdfde1ee"
+
+# The service-account key lives outside the repo and never in git. Globbed
+# rather than hard-coded: Firebase's download name carries a random suffix, and
+# the last hard-coded path went stale the day C:/THTAPP stopped existing.
+# Set GOOGLE_APPLICATION_CREDENTIALS yourself to override.
+if [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$(ls -1 C:/keys/tht-app-*-firebase-adminsdk-*.json 2>/dev/null | head -1)"
+fi
 
 if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-    echo "Firebase service-account key not found at:"
-    echo "  $GOOGLE_APPLICATION_CREDENTIALS"
+    echo "Firebase service-account key not found."
+    echo "  Looked for: C:/keys/tht-app-*-firebase-adminsdk-*.json"
+    echo "  Get one from console.firebase.google.com -> tht-app-8009"
+    echo "  -> Project settings -> Service accounts -> Generate new private key"
     exit 1
 fi
 

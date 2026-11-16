@@ -341,42 +341,60 @@ is useless — Play will reject the upload. The only route is Play Console →
 over. Worth confirming in the Play Console before the first upload; it costs a
 minute to check and several days to get wrong.
 
-### 0.4 `android/app/google-services.json` — **still needed, but it does not block the build**
+### 0.4 `android/app/google-services.json` — **done, 16 Nov 2026**
 
-Gitignored and absent. An earlier draft of this document said Gradle "cannot
-even start" without it; that was wrong, and worth correcting because it sent an
-hour of debugging in the wrong direction. A release build with the file still
-missing configured cleanly and ran for 8m50s, compiling plugin after plugin
-before dying on something else entirely. The
+Gitignored, and now present. An earlier draft of this document said Gradle
+"cannot even start" without it; that was wrong, and worth correcting because it
+sent an hour of debugging in the wrong direction. A release build with the file
+still missing configured cleanly and ran for 8m50s, compiling plugin after
+plugin before dying on something else entirely. The
 `com.google.gms.google-services` plugin reads the file in its own task,
 `processReleaseGoogleServices`, which sits well into the execution phase —
 so a build fails *late* without it, not early, and every other failure has to
 be cleared before the file is even reached.
 
-It is still required, because push notifications are a shipped feature of the
-app and Firebase Messaging will not initialise without it.
+It is required all the same, because push notifications are a shipped feature
+of the app and Firebase Messaging will not initialise without it. With the file
+in place the very next build produced the bundle on the first attempt:
+`bundleRelease` in 272.8s, `app-release.aab`, 61.0 MB, signed by the upload key
+from 0.3.
 
-**As of 14 Nov 2026 it is the only thing left.** A build reached exactly that
-task and failed on nothing else:
+**The Firebase project changed.** The app used to belong to `tht-app-60862` and
+nobody here can sign in to it any more — the account that owns it is not ours
+to reach. Rather than chase it, a new project was created on 16 Nov 2026:
 
-```
-Execution failed for task ':app:processReleaseGoogleServices'.
-> File google-services.json is missing.
-  Searched locations: ... D:\Downloads\THTPRO-app\android\app\google-services.json
-```
+| | |
+|---|---|
+| Project id | `tht-app-8009` |
+| Project number | `672816783019` |
+| Android app id | `1:672816783019:android:8c657d7d0d99b5fdfde1ee` |
+| Package | `com.thehometuitions.app` |
 
-Every plugin compiled, the Dart snapshot built, and the signing config loaded
-the keystore from 0.3. Drop the file in at the last of those searched paths and
-the next build should produce the `.aab`.
+Three things were coupled to the old project and all three had to move with it:
+`ship.sh`'s `APP_ID`, `ship.sh`'s service-account path, and the backend's
+`FIREBASE_CREDENTIALS` on the Render env group. **Miss the third and nothing
+breaks loudly** — the server keeps accepting pushes and keeps sending them to a
+project the app no longer belongs to, so every notification is dropped in
+silence. Whoever changes the Firebase project next should change that env var
+in the same sitting, and remember that a Render env write restarts nothing
+until a deploy is triggered by hand, for the web service *and* for the three
+crons.
 
-Firebase console → project **`tht-app-60862`** → Project settings → Your apps
-→ **`com.thehometuitions.app`** → **google-services.json** → download it to
-`android/app/google-services.json`. Never commit it.
+Analytics was left off deliberately at project creation: the app ships no
+analytics SDK, so turning it on only adds another account to link. No SHA-1 was
+registered either. `pubspec.yaml` pulls `firebase_core` and
+`firebase_messaging` and nothing else, and a SHA-1 matters for Google Sign-In,
+phone auth and Dynamic Links — none of which this app uses. Adding one later
+costs nothing if that ever changes.
 
-If no Android app is listed under that project, add one with exactly that
-package name. While you are there, paste in the upload key's SHA-1 from 0.3 —
-nothing in this app needs it today (there is no Google Sign-In), but it costs
-nothing now and is a half-hour of confusion later.
+To re-download the file: Firebase console → project **`tht-app-8009`** →
+Project settings → Your apps → **`com.thehometuitions.app`** →
+**google-services.json** → save it at `android/app/google-services.json`.
+Never commit it.
+
+One consequence worth expecting: FCM tokens are issued per project, so every
+install that registered against the old project is unreachable. That cost
+nothing here, because the app has never been on Play.
 
 ### 0.5 A Play Console developer account
 
@@ -646,7 +664,7 @@ Push does not work on iOS the way it does on Android, and three pieces are
 missing:
 
 1. **`ios/Runner/GoogleService-Info.plist`** — Firebase console, project
-   `tht-app-60862`, add an **iOS app** with whichever bundle id 7.3 settles on,
+   `tht-app-8009`, add an **iOS app** with whichever bundle id 7.3 settles on,
    download the plist, and drag it into the Runner target in Xcode. Gitignored,
    like its Android counterpart; never commit it.
 2. **An APNs auth key** — Apple Developer portal → Keys → new key with **Apple

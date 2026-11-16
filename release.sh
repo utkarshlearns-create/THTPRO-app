@@ -30,7 +30,7 @@ android/app/google-services.json is missing, and the Gradle build cannot even
 start without it (the com.google.gms.google-services plugin reads it).
 
 Get it from the Firebase console:
-  console.firebase.google.com -> project tht-app-60862
+  console.firebase.google.com -> project tht-app-8009
   -> Project settings -> Your apps -> com.thehometuitions.app
   -> google-services.json
 
