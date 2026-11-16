@@ -5,6 +5,7 @@ import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
@@ -131,7 +132,10 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                                 itemCount: list.length,
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(height: AppSpacing.md),
-                                itemBuilder: (_, i) => _JobCard(job: list[i]),
+                                itemBuilder: (_, i) => ThtEntrance(
+                                  index: i,
+                                  child: _JobCard(job: list[i]),
+                                ),
                               ),
                       ),
                     ],

@@ -5,6 +5,7 @@ import 'package:tht_app/core/models/conversation.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
@@ -54,7 +55,10 @@ class ConversationsScreen extends ConsumerWidget {
                   itemCount: list.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (_, i) => _ConversationRow(conversation: list[i]),
+                  itemBuilder: (_, i) => ThtEntrance(
+                    index: i,
+                    child: _ConversationRow(conversation: list[i]),
+                  ),
                 ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tht_app/core/ui/haptics.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 
@@ -58,6 +59,10 @@ extension Feedback on BuildContext {
   /// Reports a failed action in the user's language, never a raw exception.
   void showFailure(Object error) {
     final failure = ApiFailure.from(error);
+    // The one buzz in the app that means "no". It fires here rather than
+    // at the call sites because every failed action already funnels
+    // through this method, so the thumb learns one signal, not forty.
+    Haptics.warn();
     ScaffoldMessenger.of(this)
       ..hideCurrentSnackBar()
       ..showSnackBar(

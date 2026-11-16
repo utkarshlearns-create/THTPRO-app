@@ -9,6 +9,7 @@ import 'package:tht_app/core/models/parent_stats.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/shortcut_grid.dart';
@@ -696,7 +697,10 @@ class _Recommended extends StatelessWidget {
             clipBehavior: Clip.none,
             itemCount: tutors.length,
             separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
-            itemBuilder: (_, i) => _RecommendedCard(tutor: tutors[i]),
+            itemBuilder: (_, i) => ThtEntrance(
+              index: i,
+              child: _RecommendedCard(tutor: tutors[i]),
+            ),
           ),
         ),
       ],

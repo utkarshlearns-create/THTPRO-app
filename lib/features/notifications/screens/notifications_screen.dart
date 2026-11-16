@@ -6,6 +6,7 @@ import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 // The ToneColors extension is only in scope where tone.dart is imported
@@ -68,9 +69,12 @@ class NotificationsScreen extends ConsumerWidget {
                   itemCount: list.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (_, i) => _NotificationCard(
-                    notification: list[i],
-                    onTap: () => _open(context, ref, list[i]),
+                  itemBuilder: (_, i) => ThtEntrance(
+                    index: i,
+                    child: _NotificationCard(
+                      notification: list[i],
+                      onTap: () => _open(context, ref, list[i]),
+                    ),
                   ),
                 ),
         ),

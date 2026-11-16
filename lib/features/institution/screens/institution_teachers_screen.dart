@@ -5,6 +5,7 @@ import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/explore/widgets/tutor_card.dart';
@@ -123,9 +124,13 @@ class _InstitutionTeachersScreenState
                             );
                           }
                           final tutor = list[i - 1];
-                          return TutorCard(
-                            tutor: tutor,
-                            onTap: () => context.push('/tutors/${tutor.id}'),
+                          return ThtEntrance(
+                            index: i,
+                            child: TutorCard(
+                              tutor: tutor,
+                              onTap: () =>
+                                context.push('/tutors/${tutor.id}'),
+                            ),
                           );
                         },
                       ),

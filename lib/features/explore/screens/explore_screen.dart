@@ -6,6 +6,7 @@ import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/explore/providers/tutor_search_provider.dart';
@@ -218,10 +219,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             );
           }
           final tutor = tutors[i];
-          return TutorCard(
-            tutor: tutor,
-            onTap: () => context.push('/tutors/${tutor.id}'),
-            onToggleFavourite: () => _toggleFavourite(tutor, notifier),
+          return ThtEntrance(
+            index: i,
+            child: TutorCard(
+              tutor: tutor,
+              onTap: () => context.push('/tutors/${tutor.id}'),
+              onToggleFavourite: () =>
+                _toggleFavourite(tutor, notifier),
+            ),
           );
         },
       ),

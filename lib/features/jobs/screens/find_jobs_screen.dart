@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
+import 'package:tht_app/core/ui/entrance.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
@@ -221,9 +222,12 @@ class _FindJobsScreenState extends ConsumerState<FindJobsScreen> {
             );
           }
           final job = jobs[i];
-          return JobCard(
-            job: job,
-            onTap: () => context.push('/jobs/${job.id}'),
+          return ThtEntrance(
+            index: i,
+            child: JobCard(
+              job: job,
+              onTap: () => context.push('/jobs/${job.id}'),
+            ),
           );
         },
       ),
