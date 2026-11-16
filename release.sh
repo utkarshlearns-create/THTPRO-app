@@ -90,10 +90,23 @@ echo
 echo "── testing ──"
 flutter test || { echo "tests failed - fix before releasing"; exit 1; }
 
+# Without Windows Developer Mode, `flutter pub get` exits 1 before the build
+# even starts -- symlink creation needs it. The packages are already in the pub
+# cache, so `--no-pub` is not a workaround here, it is the only way this runs
+# on a machine nobody has admin rights on. Drop the fallback once Developer
+# Mode is on; the first branch is the one that should normally win.
+build_release() {
+    flutter build "$1" --release || {
+        echo
+        echo "retrying without pub (Developer Mode is probably off)"
+        flutter build "$1" --release --no-pub
+    }
+}
+
 # ── Build ────────────────────────────────────────────────────────────────────
 echo
 echo "── building the bundle ──"
-flutter build appbundle --release
+build_release appbundle
 
 AAB="build/app/outputs/bundle/release/app-release.aab"
 [ -f "$AAB" ] || { echo "expected a bundle at $AAB and found none"; exit 1; }

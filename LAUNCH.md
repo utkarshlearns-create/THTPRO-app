@@ -496,12 +496,23 @@ We work across Lucknow — Gomti Nagar, Indira Nagar, Aliganj, Jankipuram,
 Hazratganj, Alambagh, Chinhat, Vikas Nagar, Mahanagar and the rest — and
 online across India.
 
-Questions: support@thehometuitions.in · WhatsApp +91 6387488141
+Questions: support@thehometuitions.com · WhatsApp +91 6387488141
 ```
 
 **Category** — Education. **Tags** — Tutoring, Education.
-**Contact** — `support@thehometuitions.in`, `https://www.thehometuitions.com`,
+**Contact** — `support@thehometuitions.com`, `https://www.thehometuitions.com`,
 phone `+91 6387488141`.
+
+> **`.com`, not `.in`.** This block said `.in` while section 0.2 said
+> `.com`; they are now both `.com`, which is the domain of the website
+> declared one line above, so a reviewer sees one organisation. But the
+> address has to be *readable*, and right now nobody can open it: the
+> Hostinger mailbox `support@thehometuitions.com` is live with 2FA on and
+> an unknown password, and the panel offers no password reset. **Before
+> this listing goes up, either recover it through Hostinger support or
+> set a forwarder to a Gmail somebody reads daily.** An unreachable
+> support address on a store listing is how an app loses an appeal it
+> would otherwise have won.
 **Privacy policy URL** — `https://www.thehometuitions.com/privacy-policy`
 (live, 200; note `/privacy` is a 404 — do not paste that one).
 
@@ -615,8 +626,61 @@ gets held.
 
 ## 6. Release steps
 
+### 6.0 Before the first upload: Razorpay or Play Billing
+
+**This is the one item that can fail the app after everything else has
+passed, and it has not been decided.** Settle it before the `.aab` goes up,
+not after a rejection.
+
+The app ships `razorpay_flutter` ([`pubspec.yaml:37`](pubspec.yaml)) and takes
+money inside the app for credits and plans
+([`lib/features/wallet/services/checkout_service.dart`](lib/features/wallet/services/checkout_service.dart)).
+Play's Payments policy requires **Google Play Billing** — and its 15–30% cut —
+for purchases of *digital* goods and content consumed in the app. Taking that
+money through Razorpay instead is the thing being judged.
+
+**The defence is the real-world-services exemption.** Play exempts payments for
+physical goods and for **services performed outside the app**. THT is a
+marketplace: a credit buys a teacher the contact details of a family who wants
+in-person tuition, and the tuition itself — the thing actually being paid for —
+happens in somebody's home. That is the same shape as a tradesperson or
+job-lead marketplace, and those bill outside Play legitimately.
+
+**Why it is not automatic.** What the credit unlocks *is* a piece of data
+inside the app, and a reviewer reading the purchase screen in isolation can
+see a digital unlock rather than a lead fee. Two things decide which way that
+reading goes:
+
+1. **The purchase copy.** The lead sheet currently says *"You are buying the
+   contact, not the job"*
+   ([`lib/features/jobs/widgets/lead_terms_sheet.dart:88`](lib/features/jobs/widgets/lead_terms_sheet.dart)).
+   That sentence exists to stop teachers thinking a credit guarantees work, and
+   it is honest — but it also describes the purchase in exactly the digital
+   terms the policy catches. Wording that leads with the real-world service
+   ("a fee to be connected with a family for home tuition") says the same true
+   thing and reads as the exemption rather than against it. **This is a product
+   decision, not a code fix — it is not changed here.**
+2. **The Play Console declaration.** The account currently answers *Earning
+   money → Yes → in-app purchases*. If the decision is Razorpay under the
+   exemption, that answer and the store listing have to describe the money
+   the same way the app does, or the mismatch is itself the flag.
+
+**The three ways out, cheapest first:**
+
+| Option | What it costs | What it risks |
+| --- | --- | --- |
+| **Ship on Razorpay, claim the exemption** | Nothing. Revisit the purchase copy first. | A rejection on first review. Recoverable — Play lets you reply and appeal — but it adds days, and a second rejection on the same point is worse. |
+| **Ask Play first** | A Play Console policy-support ticket, a few days, and a written answer to keep. | Only time. This is the answer to pick if the first submission must land clean. |
+| **Add Play Billing for in-app credit top-ups** | Real work, and 15–30% of every in-app sale. | Nothing, policy-wise. Note the web checkout on `thehometuitions.com` is unaffected either way — Play's cut applies to purchases made *in the Android app*. |
+
+**Recommendation:** open the policy ticket. It costs days, not money, and a
+written answer from Play is worth more at review time than any reading of the
+policy text here.
+
+---
+
 ```bash
-./release.sh                     # preflight, analyze, 217 tests, then the .aab
+./release.sh                     # preflight, analyze, 237 tests, then the .aab
 ```
 
 1. **Internal testing** first — upload the `.aab`, add yourself as a tester,
