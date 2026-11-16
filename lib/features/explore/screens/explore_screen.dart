@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/formatters.dart';
@@ -126,7 +127,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                                   '${Fmt.number(state.totalCount)} teachers'
                               : Fmt.plural(tutors.length, 'teacher'),
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: ThtType.body,
                         fontWeight: FontWeight.w500,
                         color: isDark ? AppColors.slate400 : AppColors.slate500,
                       ),

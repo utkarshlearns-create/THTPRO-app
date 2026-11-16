@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/star_rating.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -89,7 +90,7 @@ class _DemoReviewSheetState extends State<DemoReviewSheet> {
                     child: Text(
                       'How was the demo?',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -114,7 +115,7 @@ class _DemoReviewSheetState extends State<DemoReviewSheet> {
                     'requirement, alongside their own assessment of '
                     '${widget.tutorName}.',
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: ThtType.bodyStrong,
                       height: 1.5,
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
@@ -211,7 +212,7 @@ class _Question extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 14.5,
+              fontSize: ThtType.bodyStrong,
               fontWeight: FontWeight.w700,
               color: isDark ? AppColors.slate100 : AppColors.slate900,
             ),
@@ -220,7 +221,7 @@ class _Question extends StatelessWidget {
           Text(
             hint,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               height: 1.4,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),

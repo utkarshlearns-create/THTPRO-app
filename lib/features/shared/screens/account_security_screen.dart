@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -49,7 +50,7 @@ class AccountSecurityScreen extends ConsumerWidget {
                 Text(
                   'Use at least 8 characters. Changing it here changes it on '
                   'the website too — it is one account.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                 ),
                 const SizedBox(height: AppSpacing.base),
                 SizedBox(
@@ -79,7 +80,7 @@ class AccountSecurityScreen extends ConsumerWidget {
                       ? 'No number on the account'
                       : Fmt.phone(phone),
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
                   ),
@@ -88,7 +89,7 @@ class AccountSecurityScreen extends ConsumerWidget {
                 Text(
                   'This is how you sign in, so a change has to be confirmed by '
                   'an OTP sent to the new number.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                 ),
                 const SizedBox(height: AppSpacing.base),
                 SizedBox(
@@ -122,7 +123,7 @@ class AccountSecurityScreen extends ConsumerWidget {
                       : 'An institute account is closed by our team, because '
                           'the vacancies and hires made under it have to be '
                           'settled first. Tell us below and we will call you.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                 ),
                 const SizedBox(height: AppSpacing.base),
                 SizedBox(
@@ -706,7 +707,7 @@ class _SheetScaffold extends StatelessWidget {
                     child: Text(
                       title,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),

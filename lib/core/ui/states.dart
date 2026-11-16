@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 
@@ -58,7 +59,7 @@ class EmptyState extends StatelessWidget {
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: compact ? 14.5 : 16,
+              fontSize: compact ? ThtType.bodyStrong : ThtType.subtitle,
               fontWeight: FontWeight.w700,
               color: isDark ? AppColors.slate200 : AppColors.slate800,
             ),
@@ -69,7 +70,7 @@ class EmptyState extends StatelessWidget {
               message!,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: ThtType.bodyStrong,
                 height: 1.5,
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
               ),
@@ -129,7 +130,7 @@ class ErrorView extends StatelessWidget {
           Text(
             offline ? "You're offline" : "That didn't work",
             style: TextStyle(
-              fontSize: compact ? 14.5 : 16,
+              fontSize: compact ? ThtType.bodyStrong : ThtType.subtitle,
               fontWeight: FontWeight.w700,
               color: isDark ? AppColors.slate200 : AppColors.slate800,
             ),
@@ -139,7 +140,7 @@ class ErrorView extends StatelessWidget {
             failure.message,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: ThtType.bodyStrong,
               height: 1.5,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),

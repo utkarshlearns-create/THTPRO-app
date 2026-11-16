@@ -1,3 +1,4 @@
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +87,7 @@ class TutorDetailScreen extends ConsumerWidget {
                       THTCard(
                         child: Text(
                           t.aboutMe.trim(),
-                          style: const TextStyle(fontSize: 14, height: 1.6),
+                          style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.6),
                         ),
                       ),
                     ],
@@ -216,7 +217,7 @@ class _Header extends StatelessWidget {
                     ? 'Teacher'
                     : Fmt.titleCase(tutor.name),
                 style: TextStyle(
-                  fontSize: 23,
+                  fontSize: ThtType.headline,
                   fontWeight: FontWeight.w800,
                   height: 1.2,
                   letterSpacing: -0.5,
@@ -227,7 +228,7 @@ class _Header extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   credentials,
-                  style: TextStyle(fontSize: 13.5, height: 1.45, color: muted),
+                  style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.45, color: muted),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),
@@ -299,7 +300,7 @@ class _ActivityLine extends StatelessWidget {
         Expanded(
           child: Text(
             parts.join(' · '),
-            style: TextStyle(fontSize: 12.5, color: muted),
+            style: TextStyle(fontSize: ThtType.body, color: muted),
           ),
         ),
       ],
@@ -372,7 +373,7 @@ class _IntroVideo extends StatelessWidget {
                   Text(
                     'Watch their introduction',
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                       color: primary,
                     ),
@@ -517,7 +518,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
               Text(
                 'Contact unlocked',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: ThtType.subtitle,
                   fontWeight: FontWeight.w700,
                   color: Tone.success.foreground(brightness),
                 ),
@@ -529,7 +530,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
             Text(
               Fmt.phone(phone),
               style: const TextStyle(
-                fontSize: 17,
+                fontSize: ThtType.title,
                 fontWeight: FontWeight.w700,
                 fontFeatures: [FontFeature.tabularFigures()],
               ),
@@ -601,7 +602,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                 child: Text(
                   'Contact details are hidden',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: Tone.info.foreground(brightness),
                   ),
@@ -615,7 +616,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                 ? 'Unlock to see this teacher’s phone and WhatsApp number. '
                     'One credit is used, and the contact stays unlocked for you.'
                 : 'Sign in to see this teacher’s phone and WhatsApp number.',
-            style: const TextStyle(fontSize: 13.5, height: 1.55),
+            style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
           ),
           if (wallet != null) ...[
             const SizedBox(height: AppSpacing.base),
@@ -745,7 +746,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                   '${Fmt.titleCase(widget.tutor.name)} is not sharing their '
                   'number directly',
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: ThtType.title,
                     fontWeight: FontWeight.w800,
                     height: 1.3,
                   ),
@@ -755,7 +756,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                   'Some teachers prefer to be approached through a posted '
                   'requirement. Nothing has been charged — your credits are '
                   'untouched.',
-                  style: TextStyle(fontSize: 14, height: 1.55),
+                  style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SizedBox(
@@ -814,13 +815,13 @@ class _Teaches extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 13, color: muted)),
+            Text(label, style: TextStyle(fontSize: ThtType.body, color: muted)),
             const SizedBox(height: AppSpacing.sm),
             if (values.isEmpty)
               Text(
                 empty!,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   fontStyle: FontStyle.italic,
                   color: muted,
                 ),
@@ -842,7 +843,7 @@ class _Teaches extends StatelessWidget {
             children: [
               Expanded(
                 child:
-                    Text(label, style: TextStyle(fontSize: 13, color: muted)),
+                    Text(label, style: TextStyle(fontSize: ThtType.body, color: muted)),
               ),
               // Flexible so a long value wraps under itself instead of
               // running off the card at large text scales.
@@ -851,7 +852,7 @@ class _Teaches extends StatelessWidget {
                   value,
                   textAlign: TextAlign.end,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: emphasise ? FontWeight.w700 : FontWeight.w600,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
@@ -939,7 +940,7 @@ class _Ratings extends StatelessWidget {
                   Text(
                     tutor.avgRating!.toStringAsFixed(1),
                     style: TextStyle(
-                      fontSize: 34,
+                      fontSize: ThtType.figure,
                       fontWeight: FontWeight.w800,
                       height: 1,
                       letterSpacing: -1,
@@ -968,7 +969,7 @@ class _Ratings extends StatelessWidget {
                               child: Text(
                                 '$star',
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: ThtType.caption,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
                                   ],
@@ -1005,7 +1006,7 @@ class _Ratings extends StatelessWidget {
                                 '${tutor.ratingBreakdown[star] ?? 0}',
                                 textAlign: TextAlign.end,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: ThtType.caption,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
                                   ],
@@ -1058,7 +1059,7 @@ class _Reviews extends StatelessWidget {
                       child: Text(
                         tutor.reviews[i].name,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: ThtType.bodyStrong,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1083,13 +1084,13 @@ class _Reviews extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     tutor.reviews[i].role,
-                    style: TextStyle(fontSize: 11.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.caption, color: muted),
                   ),
                 ],
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   tutor.reviews[i].text,
-                  style: const TextStyle(fontSize: 13.5, height: 1.55),
+                  style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
                 ),
               ],
             ),

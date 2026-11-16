@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/states.dart';
@@ -101,7 +102,7 @@ class _TodayHeader extends StatelessWidget {
         Text(
           Fmt.longDate(schedule.date ?? DateTime.now()),
           style: TextStyle(
-            fontSize: 19,
+            fontSize: ThtType.title,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.3,
             color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -113,7 +114,7 @@ class _TodayHeader extends StatelessWidget {
               ? 'All ${Fmt.plural(schedule.totalActive, 'tuition')} marked for today'
               : '$unmarked of ${schedule.totalActive} still to mark',
           style: TextStyle(
-            fontSize: 13.5,
+            fontSize: ThtType.bodyStrong,
             fontWeight: FontWeight.w500,
             color: unmarked == 0
                 ? Tone.success.foreground(Theme.of(context).brightness)
@@ -153,7 +154,7 @@ class _TuitionCard extends ConsumerWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: ThtType.subtitle,
                         fontWeight: FontWeight.w700,
                         height: 1.3,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -164,7 +165,7 @@ class _TuitionCard extends ConsumerWidget {
                       tuition.summaryLine,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.body, color: muted),
                     ),
                   ],
                 ),
@@ -188,14 +189,14 @@ class _TuitionCard extends ConsumerWidget {
                     tuition.locality,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ),
                 if (rate != null)
                   Text(
                     '${(rate * 100).round()}% attendance',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w600,
                       fontFeatures: const [FontFeature.tabularFigures()],
                       color: isDark ? AppColors.slate300 : AppColors.slate600,
@@ -220,7 +221,7 @@ class _TuitionCard extends ConsumerWidget {
                   Text(
                     'Taught today',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                       color: muted,
@@ -229,14 +230,14 @@ class _TuitionCard extends ConsumerWidget {
                   const SizedBox(height: 3),
                   Text(
                     tuition.todayTopic.trim(),
-                    style: const TextStyle(fontSize: 13, height: 1.45),
+                    style: const TextStyle(fontSize: ThtType.body, height: 1.45),
                   ),
                   if (tuition.todayHomework.trim().isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       'Homework: ${tuition.todayHomework.trim()}',
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: ThtType.body,
                         height: 1.45,
                         color: muted,
                       ),
@@ -323,7 +324,7 @@ class _RecentLogs extends StatelessWidget {
         title: Text(
           'Recent sessions (${logs.length})',
           style: TextStyle(
-            fontSize: 12.5,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w600,
             color: muted,
           ),
@@ -340,7 +341,7 @@ class _RecentLogs extends StatelessWidget {
                     child: Text(
                       Fmt.date(log.date).replaceAll(RegExp(r' \d{4}$'), ''),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: ThtType.caption,
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
                         color: muted,
@@ -358,7 +359,7 @@ class _RecentLogs extends StatelessWidget {
                               ? '—'
                               : log.remarks.trim())
                           : log.topicTaught.trim(),
-                      style: TextStyle(fontSize: 12.5, height: 1.4, color: muted),
+                      style: TextStyle(fontSize: ThtType.body, height: 1.4, color: muted),
                     ),
                   ),
                 ],

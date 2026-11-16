@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 
 /// Reusable text field matching the app's design system.
 class ThtTextField extends StatelessWidget {
@@ -39,7 +40,7 @@ class ThtTextField extends StatelessWidget {
       onChanged: onChanged,
       maxLines: maxLines,
       enabled: enabled,
-      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+      style: const TextStyle(fontSize: ThtType.subtitle, fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

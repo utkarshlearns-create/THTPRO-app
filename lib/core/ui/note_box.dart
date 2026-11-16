@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
 /// A tinted panel carrying one short message — an error under a form, a
@@ -50,7 +51,7 @@ class NoteBox extends StatelessWidget {
                   Text(
                     title!,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: ThtType.body,
                       fontWeight: FontWeight.w700,
                       height: 1.35,
                       color: fg,
@@ -60,7 +61,7 @@ class NoteBox extends StatelessWidget {
                 ],
                 Text(
                   message,
-                  style: TextStyle(fontSize: 12.5, height: 1.45, color: fg),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.45, color: fg),
                 ),
               ],
             ),

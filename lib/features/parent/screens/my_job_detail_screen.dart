@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/repositories/messages_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/detail_row.dart';
 import 'package:tht_app/core/ui/note_box.dart';
@@ -223,7 +224,7 @@ class MyJobDetailScreen extends ConsumerWidget {
               const Text(
                 'Our team will look for a replacement and contact you. Tell '
                 'us what went wrong so we match you better this time.',
-                style: TextStyle(fontSize: 13.5, height: 1.5),
+                style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.5),
               ),
               const SizedBox(height: AppSpacing.md),
               TextField(
@@ -352,7 +353,7 @@ class _RequirementCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 19,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       height: 1.25,
                       letterSpacing: -0.4,
@@ -365,7 +366,7 @@ class _RequirementCard extends StatelessWidget {
                       if (job.classGrade.isNotEmpty) job.classGrade,
                       if (job.board.isNotEmpty) job.board,
                     ].join(' · '),
-                    style: TextStyle(fontSize: 13, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ],
               ),
@@ -440,13 +441,13 @@ class _RequirementCard extends StatelessWidget {
                     children: [
                       Text(
                         job.isMultiChild ? 'Students' : 'Student',
-                        style: TextStyle(fontSize: 12, color: muted),
+                        style: TextStyle(fontSize: ThtType.caption, color: muted),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         job.allStudents.map(Fmt.titleCase).join(', '),
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: ThtType.bodyStrong,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -465,12 +466,12 @@ class _RequirementCard extends StatelessWidget {
               children: [
                 Text(
                   'What you asked for',
-                  style: TextStyle(fontSize: 12, color: muted),
+                  style: TextStyle(fontSize: ThtType.caption, color: muted),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   job.requirements.trim(),
-                  style: const TextStyle(fontSize: 13.5, height: 1.55),
+                  style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
                 ),
               ],
             ),
@@ -533,7 +534,7 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 15.5,
+                              fontSize: ThtType.subtitle,
                               fontWeight: FontWeight.w700,
                               color: isDark
                                   ? AppColors.slate50
@@ -558,7 +559,7 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: ThtType.body,
                           height: 1.4,
                           color: muted,
                         ),
@@ -611,7 +612,7 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
               ),
               child: Text(
                 a.coverMessage.trim(),
-                style: const TextStyle(fontSize: 12.5, height: 1.5),
+                style: const TextStyle(fontSize: ThtType.body, height: 1.5),
               ),
             ),
           ],
@@ -630,7 +631,7 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
                     'Demo ${a.demoStatus.toUpperCase() == 'ACCEPTED' ? 'booked' : 'proposed'} '
                     'for ${Fmt.dateTime(a.demoDate)}',
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: ThtType.body,
                       fontWeight: FontWeight.w600,
                       color: Tone.info.foreground(brightness),
                     ),
@@ -1034,7 +1035,7 @@ class _ApplicantCardState extends ConsumerState<_ApplicantCard> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(body, style: const TextStyle(fontSize: 13.5, height: 1.5)),
+              Text(body, style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.5)),
               const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: controller,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/faculty_vacancy.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -78,7 +79,7 @@ class _PostVacancyScreenState extends ConsumerState<PostVacancyScreen> {
             Text(
               'Hiring teaching staff for your institute. Teachers see this on '
               'the jobs board and apply to you directly.',
-              style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+              style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
             ),
             const SizedBox(height: AppSpacing.lg),
 
@@ -187,7 +188,7 @@ class _PostVacancyScreenState extends ConsumerState<PostVacancyScreen> {
                   Expanded(
                     child: Text(
                       'How many teachers may reach you',
-                      style: TextStyle(fontSize: 13.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.bodyStrong, color: muted),
                     ),
                   ),
                   SizedBox(
@@ -327,7 +328,7 @@ class _StartDateField extends StatelessWidget {
         ),
         child: Text(
           value == null ? 'Not set' : Fmt.date(value),
-          style: const TextStyle(fontSize: 15),
+          style: const TextStyle(fontSize: ThtType.subtitle),
         ),
       ),
     );

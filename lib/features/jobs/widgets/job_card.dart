@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/subject_glyph.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
@@ -133,7 +134,7 @@ class JobCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: ThtType.subtitle,
                               fontWeight: FontWeight.w700,
                               height: 1.3,
                               color: isDark
@@ -155,7 +156,7 @@ class JobCard extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style:
-                                      TextStyle(fontSize: 12.5, color: muted),
+                                      TextStyle(fontSize: ThtType.body, color: muted),
                                 ),
                               ),
                             ],
@@ -235,7 +236,7 @@ class JobCard extends StatelessWidget {
                     Text(
                       'JD-${job.id}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: ThtType.caption,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.4,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -248,7 +249,7 @@ class JobCard extends StatelessWidget {
                           ' · ${Fmt.relative(job.postedAt).toLowerCase()}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 11.5, color: muted),
+                          style: TextStyle(fontSize: ThtType.caption, color: muted),
                         ),
                       )
                     else
@@ -261,7 +262,7 @@ class JobCard extends StatelessWidget {
                         // Deliberately not "paid": some of these are older free
                         // unlocks, so a count of unlocks is not a count of sales.
                         '${job.contactUnlockCount} already have this contact',
-                        style: TextStyle(fontSize: 11.5, color: muted),
+                        style: TextStyle(fontSize: ThtType.caption, color: muted),
                       ),
                     ],
                   ],
@@ -399,7 +400,7 @@ class _FeeBadge extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: ThtType.bodyStrong,
                 fontWeight: known ? FontWeight.w800 : FontWeight.w600,
                 fontFeatures: const [FontFeature.tabularFigures()],
                 color: fg,
@@ -442,7 +443,7 @@ class _MetaRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               fontWeight: FontWeight.w500,
               color: color,
             ),
@@ -490,7 +491,7 @@ class _ClassBlock extends StatelessWidget {
           Text(
             'CLASS',
             style: TextStyle(
-              fontSize: 8.5,
+              fontSize: ThtType.micro,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.6,
               height: 1,
@@ -504,7 +505,7 @@ class _ClassBlock extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w800,
               height: 1.05,
               color: tone.foreground(brightness),

@@ -6,6 +6,7 @@ import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/network/token_storage.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -157,7 +158,7 @@ class _ConnectionCheckScreenState extends State<ConnectionCheckScreen> {
                 const SelectableText(
                   ApiConfig.baseUrl,
                   style: TextStyle(
-                    fontSize: 14.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -272,7 +273,7 @@ class _ProbeRow extends StatelessWidget {
                 Text(
                   probe.label,
                   style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -280,7 +281,7 @@ class _ProbeRow extends StatelessWidget {
                 Text(
                   probe.path,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: ThtType.caption,
                     color: isDark ? AppColors.slate400 : AppColors.slate500,
                   ),
                 ),
@@ -297,7 +298,7 @@ class _ProbeRow extends StatelessWidget {
                 Text(
                   '${probe.millis} ms',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: ThtType.micro,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     color: isDark ? AppColors.slate500 : AppColors.slate400,
                   ),
@@ -344,7 +345,7 @@ class _Verdict extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 15.5,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w700,
               height: 1.3,
               color: tone.foreground(brightness),
@@ -354,7 +355,7 @@ class _Verdict extends StatelessWidget {
           Text(
             body,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: ThtType.body,
               height: 1.55,
               color: tone.foreground(brightness).withValues(alpha: 0.95),
             ),

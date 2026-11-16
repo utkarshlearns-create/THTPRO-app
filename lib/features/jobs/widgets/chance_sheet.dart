@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/chance_detail.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/ui/async_view.dart';
@@ -78,7 +79,7 @@ class ChanceSheet extends ConsumerWidget {
                   Text(
                     'Your chances here',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
                     ),
@@ -86,7 +87,7 @@ class ChanceSheet extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     'How well you fit what this family asked for.',
-                    style: TextStyle(fontSize: 13, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ],
               ),
@@ -104,7 +105,7 @@ class ChanceSheet extends ConsumerWidget {
                 child: Text(
                   '${pct.round()}%',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: ThtType.headline,
                     fontWeight: FontWeight.w800,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     color: tone.foreground(brightness),
@@ -139,7 +140,7 @@ class ChanceSheet extends ConsumerWidget {
         Text(
           'This is a guide, not a decision. Families choose for their own '
           'reasons, and a lower score has still won plenty of tuitions.',
-          style: TextStyle(fontSize: 12, height: 1.45, color: muted),
+          style: TextStyle(fontSize: ThtType.caption, height: 1.45, color: muted),
         ),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
@@ -219,7 +220,7 @@ class _PillarRow extends StatelessWidget {
               child: Text(
                 pillar.label,
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppColors.slate100 : AppColors.slate800,
                 ),
@@ -230,7 +231,7 @@ class _PillarRow extends StatelessWidget {
               // 6/6 on a small pillar is not the same win as 6/10 on a big one.
               '${_trim(pillar.score)} / ${_trim(pillar.max)}',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 fontWeight: FontWeight.w700,
                 fontFeatures: const [FontFeature.tabularFigures()],
                 color: tone.foreground(brightness),
@@ -252,7 +253,7 @@ class _PillarRow extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             '${_trim(pillar.lost)} point${pillar.lost == 1 ? '' : 's'} short',
-            style: TextStyle(fontSize: 11.5, color: muted),
+            style: TextStyle(fontSize: ThtType.caption, color: muted),
           ),
         ],
       ],

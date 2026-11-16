@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:tht_app/core/models/attendance_record.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -177,7 +178,7 @@ class _Stat extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: ThtType.headline,
               fontWeight: FontWeight.w800,
               height: 1.1,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -190,7 +191,7 @@ class _Stat extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: ThtType.caption,
               height: 1.3,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
@@ -231,7 +232,7 @@ class _RecordCard extends StatelessWidget {
                     Text(
                       Fmt.date(record.date),
                       style: TextStyle(
-                        fontSize: 14.5,
+                        fontSize: ThtType.bodyStrong,
                         fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -242,7 +243,7 @@ class _RecordCard extends StatelessWidget {
                         label!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12.5, color: muted),
+                        style: TextStyle(fontSize: ThtType.body, color: muted),
                       ),
                     ],
                   ],
@@ -319,7 +320,7 @@ class _Line extends StatelessWidget {
           child: RichText(
             text: TextSpan(
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 height: 1.45,
                 color: isDark ? AppColors.slate200 : AppColors.slate700,
                 fontFamily: DefaultTextStyle.of(context).style.fontFamily,

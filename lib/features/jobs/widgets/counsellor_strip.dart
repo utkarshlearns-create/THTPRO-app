@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -60,7 +61,7 @@ class CounsellorStrip extends StatelessWidget {
                           ? 'Need help with your requirement?'
                           : 'Need help with this job?',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ThtType.bodyStrong,
                         fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -74,7 +75,7 @@ class CounsellorStrip extends StatelessWidget {
                               'this lead',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.body, color: muted),
                     ),
                   ],
                 ),

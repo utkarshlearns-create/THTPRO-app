@@ -5,6 +5,7 @@ import 'package:tht_app/core/constants/search_constants.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/utils/api_error.dart';
@@ -141,7 +142,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                     child: Text(
                       _title,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -353,7 +354,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
             'What you teach on your profile. Keeping them there is what gets '
             'you matched to the right leads.',
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               height: 1.5,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate400
@@ -418,7 +419,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
           Text(
             'Your address',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: ThtType.bodyStrong,
               fontWeight: FontWeight.w700,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate100
@@ -430,7 +431,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
             'Only our team sees this. Families never get your address — they '
             'get yours only after you agree to teach them.',
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               height: 1.5,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate400
@@ -610,7 +611,7 @@ class _Choices extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w500,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
@@ -629,7 +630,7 @@ class _Choices extends StatelessWidget {
                     onChanged(value == entry.key ? null : entry.key),
                 selectedColor: AppColors.primaryOrangeLight,
                 labelStyle: TextStyle(
-                  fontSize: 13,
+                  fontSize: ThtType.body,
                   fontWeight:
                       value == entry.key ? FontWeight.w700 : FontWeight.w500,
                   color:
@@ -650,7 +651,7 @@ class _Choices extends StatelessWidget {
           Text(
             hint!,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: ThtType.caption,
               color: isDark ? AppColors.slate500 : AppColors.slate400,
             ),
           ),
@@ -724,7 +725,7 @@ class _DateField extends StatelessWidget {
           value == null
               ? 'Not set'
               : '${value!.day} ${_month(value!.month)} ${value!.year}',
-          style: const TextStyle(fontSize: 14.5),
+          style: const TextStyle(fontSize: ThtType.bodyStrong),
         ),
       ),
     );
@@ -853,7 +854,7 @@ class _AboutWriterSheetState extends ConsumerState<_AboutWriterSheet> {
                     child: Text(
                       'Help me write this',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -872,7 +873,7 @@ class _AboutWriterSheetState extends ConsumerState<_AboutWriterSheet> {
                 Text(
                   'Answer what you can in a line each. Your subjects, classes '
                   'and years are already filled in from your profile.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                 ),
                 const SizedBox(height: AppSpacing.base),
                 TextField(
@@ -918,7 +919,7 @@ class _AboutWriterSheetState extends ConsumerState<_AboutWriterSheet> {
                 Text(
                   'Read it before you keep it. Nothing is saved until you tap '
                   'Save on your profile.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                 ),
                 const SizedBox(height: AppSpacing.base),
                 Container(
@@ -934,7 +935,7 @@ class _AboutWriterSheetState extends ConsumerState<_AboutWriterSheet> {
                   child: Text(
                     _result!,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       height: 1.6,
                       color: isDark ? AppColors.slate100 : AppColors.slate800,
                     ),

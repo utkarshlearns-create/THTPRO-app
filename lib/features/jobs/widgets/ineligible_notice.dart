@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
@@ -50,7 +51,7 @@ class IneligibleNotice {
                 Text(
                   'You are not eligible to apply right now',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ThtType.body,
                     fontWeight: FontWeight.w700,
                     height: 1.4,
                     color: fg,
@@ -60,7 +61,7 @@ class IneligibleNotice {
                 Text(
                   reasonOr(reason),
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: fg.withValues(alpha: 0.95),
                   ),
@@ -123,7 +124,7 @@ class _IneligibleSheet extends StatelessWidget {
                   child: Text(
                     "You're not eligible to apply",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       height: 1.3,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -138,7 +139,7 @@ class _IneligibleSheet extends StatelessWidget {
               'Your account has been marked as not eligible to apply for '
               'jobs. This applies to every job on THT, not just this one.',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: ThtType.bodyStrong,
                 height: 1.55,
                 color: isDark ? AppColors.slate200 : AppColors.slate700,
               ),
@@ -155,7 +156,7 @@ class _IneligibleSheet extends StatelessWidget {
                     Text(
                       'Reason given',
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: ThtType.caption,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.4,
                         color: fg.withValues(alpha: 0.85),
@@ -165,7 +166,7 @@ class _IneligibleSheet extends StatelessWidget {
                     Text(
                       reason!.trim(),
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ThtType.bodyStrong,
                         height: 1.5,
                         fontWeight: FontWeight.w600,
                         color: fg,
@@ -181,7 +182,7 @@ class _IneligibleSheet extends StatelessWidget {
               'Everything else still works — you can browse jobs, keep your '
               'profile up to date and use your wallet as normal. Speak to '
               'your THT coordinator to get applying restored.',
-              style: TextStyle(fontSize: 13.5, height: 1.55, color: muted),
+              style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.55, color: muted),
             ),
 
             const SizedBox(height: AppSpacing.lg),

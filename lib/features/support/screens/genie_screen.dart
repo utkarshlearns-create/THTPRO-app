@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/repositories/genie_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
@@ -77,7 +78,7 @@ class _GenieScreenState extends ConsumerState<GenieScreen> {
               child: Text(
                 _error!,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   color: Tone.critical
                       .foreground(Theme.of(context).brightness),
                 ),
@@ -116,7 +117,7 @@ class _GenieScreenState extends ConsumerState<GenieScreen> {
           'Ask me anything about THT',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 18,
+            fontSize: ThtType.title,
             fontWeight: FontWeight.w800,
             color: isDark ? AppColors.slate50 : AppColors.slate900,
           ),
@@ -126,7 +127,7 @@ class _GenieScreenState extends ConsumerState<GenieScreen> {
           'Credits, verification, payments, finding tuitions — whatever you '
           'are stuck on.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+          style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
         ),
         const SizedBox(height: AppSpacing.xl),
         for (final starter in _starters)
@@ -140,7 +141,7 @@ class _GenieScreenState extends ConsumerState<GenieScreen> {
                     child: Text(
                       starter,
                       style: const TextStyle(
-                        fontSize: 13.5,
+                        fontSize: ThtType.bodyStrong,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -309,7 +310,7 @@ class _Bubble extends StatelessWidget {
               child: SelectableText(
                 turn.content,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   height: 1.5,
                   color: mine
                       ? Colors.white

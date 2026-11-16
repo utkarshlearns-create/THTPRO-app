@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/conversation.dart';
 import 'package:tht_app/core/repositories/messages_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/states.dart';
 import 'package:tht_app/core/utils/formatters.dart';
@@ -60,7 +61,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                 'About ${about.trim()}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11.5),
+                style: const TextStyle(fontSize: ThtType.caption),
               ),
           ],
         ),
@@ -236,7 +237,7 @@ class _Bubble extends StatelessWidget {
                   Text(
                     message.text,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       height: 1.45,
                       color: mine
                           ? Colors.white
@@ -250,7 +251,7 @@ class _Bubble extends StatelessWidget {
                     Text(
                       Fmt.time(message.createdAt),
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: ThtType.micro,
                         color: mine
                             ? Colors.white70
                             : (isDark

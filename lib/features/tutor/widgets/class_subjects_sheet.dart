@@ -4,6 +4,7 @@ import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/providers/master_data_provider.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -73,7 +74,7 @@ class _ClassSubjectsSheetState extends ConsumerState<ClassSubjectsSheet> {
                     child: Text(
                       'What you teach',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -136,7 +137,7 @@ class _ClassSubjectsSheetState extends ConsumerState<ClassSubjectsSheet> {
       Text(
         'Pick a class, then the subjects you teach in it. This is what we '
         'match you to — a job outside your list will not reach you.',
-        style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+        style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
       ),
       const SizedBox(height: AppSpacing.lg),
       if (_draft.isEmpty)
@@ -161,7 +162,7 @@ class _ClassSubjectsSheetState extends ConsumerState<ClassSubjectsSheet> {
       if (remaining.isEmpty && data.classes.isNotEmpty)
         Text(
           'Every class is on your list.',
-          style: TextStyle(fontSize: 12.5, color: muted),
+          style: TextStyle(fontSize: ThtType.body, color: muted),
         )
       else
         OutlinedButton.icon(
@@ -191,7 +192,7 @@ class _ClassSubjectsSheetState extends ConsumerState<ClassSubjectsSheet> {
               padding: EdgeInsets.all(AppSpacing.lg),
               child: Text(
                 'Add a class',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: ThtType.title, fontWeight: FontWeight.w800),
               ),
             ),
             const Divider(height: 1),
@@ -282,7 +283,7 @@ class _ClassBlock extends StatelessWidget {
                 child: Text(
                   className,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
                   ),

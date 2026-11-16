@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/attendance_record.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -81,7 +82,7 @@ class _TutorLog extends ConsumerWidget {
                     child: Text(
                       'Marked by $tutorName',
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: ThtType.bodyStrong,
                         fontWeight: FontWeight.w700,
                         color: Tone.info.foreground(brightness),
                       ),
@@ -95,7 +96,7 @@ class _TutorLog extends ConsumerWidget {
                   'Nothing logged yet. Your teacher marks each session after '
                   'they teach it.',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color:
                         Tone.info.foreground(brightness).withValues(alpha: 0.9),
@@ -107,7 +108,7 @@ class _TutorLog extends ConsumerWidget {
                   '${missed > 0 ? ', $missed missed' : ''}'
                   '${records.first.date != null ? ' · last on ${Fmt.date(records.first.date)}' : ''}',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: Tone.info
                         .foreground(brightness)
@@ -121,7 +122,7 @@ class _TutorLog extends ConsumerWidget {
                     'Last taught: ${lastWithNotes.topicTaught.trim()}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, height: 1.4, color: muted),
+                    style: TextStyle(fontSize: ThtType.caption, height: 1.4, color: muted),
                   ),
                 ],
               ],
@@ -185,7 +186,7 @@ class _AttendanceCardState extends ConsumerState<AttendanceCard> {
             Text(
               'Nothing marked yet. Keeping your own record helps if the '
               'month is ever queried.',
-              style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+              style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
             )
           else
             Wrap(
@@ -221,7 +222,7 @@ class _AttendanceCardState extends ConsumerState<AttendanceCard> {
                   child: Text(
                     'Today is marked. The server keeps one entry per day, so '
                     'it cannot be changed here.',
-                    style: TextStyle(fontSize: 12.5, height: 1.4, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, height: 1.4, color: muted),
                   ),
                 ),
               ],
@@ -262,7 +263,7 @@ class _AttendanceCardState extends ConsumerState<AttendanceCard> {
                     Expanded(
                       child: Text(
                         Fmt.date(r.date),
-                        style: const TextStyle(fontSize: 13),
+                        style: const TextStyle(fontSize: ThtType.body),
                       ),
                     ),
                     Pill(
@@ -278,7 +279,7 @@ class _AttendanceCardState extends ConsumerState<AttendanceCard> {
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: Text(
                   'and ${records.length - 5} more',
-                  style: TextStyle(fontSize: 12, color: muted),
+                  style: TextStyle(fontSize: ThtType.caption, color: muted),
                 ),
               ),
           ],

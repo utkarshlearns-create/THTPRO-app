@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
@@ -156,7 +157,7 @@ class _Tile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: ThtType.caption,
                 height: 1.25,
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.slate200 : AppColors.slate700,

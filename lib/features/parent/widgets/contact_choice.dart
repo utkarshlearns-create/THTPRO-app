@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
 /// How teachers may reach the family behind a requirement.
@@ -48,7 +49,7 @@ class ContactChoiceField extends StatelessWidget {
         Text(
           'How should teachers reach $subjectNoun?',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: ThtType.subtitle,
             fontWeight: FontWeight.w700,
             color: isDark ? AppColors.slate50 : AppColors.slate900,
           ),
@@ -163,7 +164,7 @@ class _Option extends StatelessWidget {
                           child: Text(
                             title,
                             style: TextStyle(
-                              fontSize: 13.5,
+                              fontSize: ThtType.bodyStrong,
                               fontWeight: FontWeight.w700,
                               height: 1.35,
                               color: isDark
@@ -187,7 +188,7 @@ class _Option extends StatelessWidget {
                             child: Text(
                               badge!,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: ThtType.micro,
                                 fontWeight: FontWeight.w700,
                                 color: Tone.success.foreground(brightness),
                               ),
@@ -200,7 +201,7 @@ class _Option extends StatelessWidget {
                     Text(
                       body,
                       style:
-                          TextStyle(fontSize: 12.5, height: 1.45, color: muted),
+                          TextStyle(fontSize: ThtType.body, height: 1.45, color: muted),
                     ),
                   ],
                 ),

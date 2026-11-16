@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/kyc_status.dart';
 import 'package:tht_app/core/models/upload_file.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -91,14 +92,14 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
         Text(
           'Submitted ${status.submissionCount} '
           '${status.submissionCount == 1 ? 'time' : 'times'} so far.',
-          style: TextStyle(fontSize: 12, color: muted),
+          style: TextStyle(fontSize: ThtType.caption, color: muted),
         ),
       ],
       const SizedBox(height: AppSpacing.lg),
       Text(
         'Photos only — JPG or PNG. PDFs are not accepted. Make sure the text '
         'is readable and all four corners are in frame.',
-        style: TextStyle(fontSize: 12.5, height: 1.5, color: muted),
+        style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
       ),
       const SizedBox(height: AppSpacing.lg),
 
@@ -142,14 +143,14 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
           Text(
             'Both sides of your Aadhaar are needed to submit.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: muted),
+            style: TextStyle(fontSize: ThtType.caption, color: muted),
           ),
         ] else if (!_termsAccepted) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Please accept the Terms & Conditions to submit.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: muted),
+            style: TextStyle(fontSize: ThtType.caption, color: muted),
           ),
         ],
       ],
@@ -182,7 +183,7 @@ class _TutorKYCScreenState extends ConsumerState<TutorKYCScreen> {
           Text(
             note,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               height: 1.45,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate400
@@ -406,7 +407,7 @@ class _DocRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: ThtType.bodyStrong,
                           fontWeight: FontWeight.w700,
                           color:
                               isDark ? AppColors.slate50 : AppColors.slate900,
@@ -418,7 +419,7 @@ class _DocRow extends StatelessWidget {
                       Text(
                         '*',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: ThtType.bodyStrong,
                           fontWeight: FontWeight.w800,
                           color: Tone.critical.foreground(brightness),
                         ),
@@ -432,7 +433,7 @@ class _DocRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: ThtType.caption,
                     height: 1.4,
                     color: tone == Tone.neutral
                         ? muted
@@ -574,7 +575,7 @@ class _TermsCheck extends StatelessWidget {
                   'I confirm these documents are mine and accept the Terms & '
                   'Conditions.',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: isDark ? AppColors.slate300 : AppColors.slate600,
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/tht_avatar.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
@@ -57,7 +58,7 @@ class TutorCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 15.5,
+                              fontSize: ThtType.subtitle,
                               fontWeight: FontWeight.w700,
                               color: isDark
                                   ? AppColors.slate50
@@ -84,7 +85,7 @@ class TutorCard extends StatelessWidget {
                           : Fmt.list(tutor.subjects),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.body, color: muted),
                     ),
                     if (tutor.credentialLine.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -92,7 +93,7 @@ class TutorCard extends StatelessWidget {
                         tutor.credentialLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: muted),
+                        style: TextStyle(fontSize: ThtType.caption, color: muted),
                       ),
                     ],
                   ],
@@ -161,14 +162,14 @@ class TutorCard extends StatelessWidget {
                     tutor.modeLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ),
                 if (tutor.ongoingTuitions > 0)
                   Text(
                     '${tutor.ongoingTuitions} running',
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w600,
                       color: muted,
                     ),

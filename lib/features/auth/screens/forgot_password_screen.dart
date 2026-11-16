@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
@@ -103,7 +104,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             'Enter your registered number and we will send a reset link to '
             'that number on WhatsApp.',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: ThtType.bodyStrong,
               height: 1.45,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate400
@@ -175,7 +176,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           'that number. Tap it to choose a new password, then come back here '
           'and sign in.',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: ThtType.bodyStrong,
             height: 1.5,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),

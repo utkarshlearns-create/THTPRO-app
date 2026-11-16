@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/states.dart';
@@ -149,7 +150,7 @@ class _StageTabs extends StatelessWidget {
                   onSelected: (_) => onSelect(stage),
                   showCheckmark: false,
                   labelStyle: TextStyle(
-                    fontSize: 13,
+                    fontSize: ThtType.body,
                     fontWeight:
                         stage == selected ? FontWeight.w700 : FontWeight.w500,
                     color: stage == selected
@@ -227,7 +228,7 @@ class _UpcomingDemos extends ConsumerWidget {
                       ? 'You have a demo coming up'
                       : '${upcoming.length} demos coming up',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: Tone.info.foreground(brightness),
                   ),
@@ -240,7 +241,7 @@ class _UpcomingDemos extends ConsumerWidget {
                 '${demo.job?.contextLine.isNotEmpty == true ? '${demo.job!.contextLine} — ' : ''}'
                 '${Fmt.dateTime(demo.demoDate)}',
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   height: 1.45,
                   color: Tone.info.foreground(brightness).withValues(alpha: 0.95),
                 ),
@@ -293,7 +294,7 @@ class _ApplicationCardState extends ConsumerState<_ApplicationCard> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15.5,
+                        fontSize: ThtType.subtitle,
                         fontWeight: FontWeight.w700,
                         height: 1.3,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -305,7 +306,7 @@ class _ApplicationCardState extends ConsumerState<_ApplicationCard> {
                         job.contextLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12.5, color: muted),
+                        style: TextStyle(fontSize: ThtType.body, color: muted),
                       ),
                     ],
                   ],
@@ -328,7 +329,7 @@ class _ApplicationCardState extends ConsumerState<_ApplicationCard> {
                   child: Text(
                     step.$2,
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: ThtType.body,
                       height: 1.45,
                       fontWeight: FontWeight.w600,
                       color: step.$3.foreground(Theme.of(context).brightness),
@@ -368,7 +369,7 @@ class _ApplicationCardState extends ConsumerState<_ApplicationCard> {
             Text(
               a.restrictionReason.trim(),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: ThtType.caption,
                 height: 1.45,
                 color: Tone.critical.foreground(Theme.of(context).brightness),
               ),

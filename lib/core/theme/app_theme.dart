@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/router/page_transitions.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'app_colors.dart';
 
 /// App-wide ThemeData for light and dark modes.
@@ -46,6 +47,7 @@ abstract final class AppTheme {
         fontFamily: fontFamily,
         fontFamilyFallback: fontFallback,
         pageTransitionsTheme: kThtPageTransitions,
+        textTheme: thtTextTheme(),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.light,
@@ -64,7 +66,7 @@ abstract final class AppTheme {
           centerTitle: false,
           titleTextStyle: TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 18,
+            fontSize: ThtType.title,
             fontWeight: FontWeight.w700,
             color: AppColors.slate900,
           ),
@@ -90,7 +92,7 @@ abstract final class AppTheme {
             ),
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -106,7 +108,7 @@ abstract final class AppTheme {
             ),
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -116,7 +118,7 @@ abstract final class AppTheme {
             foregroundColor: AppColors.primaryOrangeAction,
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
-              fontSize: 14,
+              fontSize: ThtType.bodyStrong,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -145,11 +147,11 @@ abstract final class AppTheme {
           ),
           hintStyle: const TextStyle(
             color: AppColors.slate400,
-            fontSize: 14,
+            fontSize: ThtType.bodyStrong,
           ),
           labelStyle: const TextStyle(
             color: AppColors.slate500,
-            fontSize: 14,
+            fontSize: ThtType.bodyStrong,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -166,12 +168,12 @@ abstract final class AppTheme {
           elevation: 8,
           selectedLabelStyle: TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 11,
+            fontSize: ThtType.caption,
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 11,
+            fontSize: ThtType.caption,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -188,13 +190,13 @@ abstract final class AppTheme {
           // the requirement wizard were barely readable.
           labelStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 13,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w500,
             color: AppColors.slate700,
           ),
           secondaryLabelStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 13,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w700,
             color: AppColors.primaryOrangeAction,
           ),
@@ -210,7 +212,7 @@ abstract final class AppTheme {
           contentTextStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
             color: Colors.white,
-            fontSize: 14,
+            fontSize: ThtType.bodyStrong,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -226,6 +228,7 @@ abstract final class AppTheme {
         fontFamily: fontFamily,
         fontFamilyFallback: fontFallback,
         pageTransitionsTheme: kThtPageTransitions,
+        textTheme: thtTextTheme(),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryOrange,
           brightness: Brightness.dark,
@@ -244,7 +247,7 @@ abstract final class AppTheme {
           centerTitle: false,
           titleTextStyle: TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 18,
+            fontSize: ThtType.title,
             fontWeight: FontWeight.w700,
             color: AppColors.slate100,
           ),
@@ -270,7 +273,7 @@ abstract final class AppTheme {
             ),
             textStyle: const TextStyle(
               fontFamily: AppTheme.fontFamily,
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -304,7 +307,7 @@ abstract final class AppTheme {
             borderSide:
                 const BorderSide(color: AppColors.primaryOrange, width: 2),
           ),
-          hintStyle: const TextStyle(color: AppColors.slate500, fontSize: 14),
+          hintStyle: const TextStyle(color: AppColors.slate500, fontSize: ThtType.bodyStrong),
         ),
         iconButtonTheme: IconButtonThemeData(
           style: IconButton.styleFrom(
@@ -330,13 +333,13 @@ abstract final class AppTheme {
           selectedColor: AppColors.primaryOrange.withValues(alpha: 0.22),
           labelStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 13,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w500,
             color: AppColors.slate200,
           ),
           secondaryLabelStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
-            fontSize: 13,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w700,
             color: AppColors.primaryOrangeOnDark,
           ),
@@ -352,7 +355,7 @@ abstract final class AppTheme {
           contentTextStyle: const TextStyle(
             fontFamily: AppTheme.fontFamily,
             color: Colors.white,
-            fontSize: 14,
+            fontSize: ThtType.bodyStrong,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),

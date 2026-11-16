@@ -5,6 +5,7 @@ import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/section_header.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
@@ -118,7 +119,7 @@ class SupportScreen extends ConsumerWidget {
           Text(
             'Policies',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: ThtType.body,
               fontWeight: FontWeight.w700,
               color: muted,
             ),
@@ -189,7 +190,7 @@ class _Option extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
                   ),
@@ -197,7 +198,7 @@ class _Option extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12.5, height: 1.4, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.4, color: muted),
                 ),
               ],
             ),
@@ -269,7 +270,7 @@ class _EnquirySheetState extends ConsumerState<_EnquirySheet> {
           Text(
             'Message sent',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: ThtType.title,
               fontWeight: FontWeight.w800,
               color: isDark ? AppColors.slate50 : AppColors.slate900,
             ),
@@ -279,7 +280,7 @@ class _EnquirySheetState extends ConsumerState<_EnquirySheet> {
             'One of our counsellors will get back to you on your registered '
             'number.',
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: ThtType.bodyStrong,
               height: 1.5,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
@@ -307,7 +308,7 @@ class _EnquirySheetState extends ConsumerState<_EnquirySheet> {
                   child: Text(
                     'Write to us',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
                     ),

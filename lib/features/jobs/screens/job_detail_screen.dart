@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -103,7 +104,7 @@ class JobDetailScreen extends ConsumerWidget {
                 THTCard(
                   child: Text(
                     j.requirements.trim(),
-                    style: const TextStyle(fontSize: 14, height: 1.55),
+                    style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
                   ),
                 ),
               ],
@@ -146,7 +147,7 @@ class _Summary extends StatelessWidget {
               ? 'Tuition required'
               : Fmt.list(job.subjects, max: 4),
           style: TextStyle(
-            fontSize: 23,
+            fontSize: ThtType.headline,
             fontWeight: FontWeight.w800,
             height: 1.25,
             letterSpacing: -0.4,
@@ -160,7 +161,7 @@ class _Summary extends StatelessWidget {
             if (job.board.isNotEmpty) job.board,
             job.modeLabel,
           ].where((s) => s.isNotEmpty).join(' · '),
-          style: TextStyle(fontSize: 14, color: muted),
+          style: TextStyle(fontSize: ThtType.bodyStrong, color: muted),
         ),
         const SizedBox(height: AppSpacing.md),
         Wrap(
@@ -263,7 +264,7 @@ class _CoApplicants extends ConsumerWidget {
                 child: Text(
                   'Nobody else has applied yet. You have this family to '
                   'yourself for now.',
-                  style: TextStyle(fontSize: 13.5, height: 1.5),
+                  style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.5),
                 ),
               )
             else
@@ -344,7 +345,7 @@ class _CoApplicantRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: ThtType.bodyStrong,
                           fontWeight: FontWeight.w700,
                           color:
                               isDark ? AppColors.slate50 : AppColors.slate900,
@@ -363,7 +364,7 @@ class _CoApplicantRow extends StatelessWidget {
                     line,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: muted),
+                    style: TextStyle(fontSize: ThtType.caption, color: muted),
                   ),
                 ],
               ],
@@ -446,7 +447,7 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
               child: Text(
                 'You have applied for this tuition.',
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w600,
                   color: Tone.info.foreground(brightness),
                 ),
@@ -479,7 +480,7 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
                 status == 'CLOSED' || status == 'CANCELLED'
                     ? 'This requirement has closed.'
                     : 'A teacher has already been selected for this tuition.',
-                style: const TextStyle(fontSize: 13.5, height: 1.5),
+                style: const TextStyle(fontSize: ThtType.bodyStrong, height: 1.5),
               ),
             ),
           ],
@@ -501,7 +502,7 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
               Expanded(
                 child: Text(
                   'Put your name forward',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: ThtType.subtitle, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -511,7 +512,7 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
             'Applying is free. The family sees you on '
             'their list of interested teachers, and our team may line up a '
             'demo. Their number stays private unless you are chosen.',
-            style: TextStyle(fontSize: 13.5, height: 1.55),
+            style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
           ),
           if (ineligible) ...[
             const SizedBox(height: AppSpacing.base),
@@ -734,7 +735,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
               Text(
                 bought ? 'Lead purchased' : 'Contact unlocked',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: ThtType.subtitle,
                   fontWeight: FontWeight.w700,
                   color: Tone.success.foreground(brightness),
                 ),
@@ -744,14 +745,14 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
           const SizedBox(height: AppSpacing.md),
           Text(
             job.parentName,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: ThtType.subtitle, fontWeight: FontWeight.w700),
           ),
           if (whatsapp != null) ...[
             const SizedBox(height: 2),
             Text(
               Fmt.phone(whatsapp),
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: ThtType.subtitle,
                 fontWeight: FontWeight.w600,
                 fontFeatures: [FontFeature.tabularFigures()],
               ),
@@ -789,7 +790,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                     'takes no commission on the tuition fee.'
                 : 'Please reach out and arrange your demo visit soon.',
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               height: 1.5,
               color:
                   Tone.success.foreground(brightness).withValues(alpha: 0.95),
@@ -845,7 +846,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                 child: Text(
                   'Buy this lead',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: Tone.accent.foreground(brightness),
                   ),
@@ -858,7 +859,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
             "Get the family's WhatsApp number straight away and arrange the "
             'tuition with them yourself. THT takes no commission — the fee you '
             'agree is yours.',
-            style: TextStyle(fontSize: 13.5, height: 1.55),
+            style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
           ),
           if (spots != null) ...[
             const SizedBox(height: AppSpacing.base),
@@ -874,7 +875,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                   child: Text(
                     spots,
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: ThtType.body,
                       fontWeight: FontWeight.w600,
                       color: Tone.warning.foreground(brightness),
                     ),
@@ -954,7 +955,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: tone.foreground(brightness),
                   ),
@@ -966,7 +967,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
           Text(
             body,
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: ThtType.bodyStrong,
               height: 1.55,
               color: isNeutral
                   ? null
@@ -1126,7 +1127,7 @@ class _LeadBuyers extends ConsumerWidget {
                   b.totalCount == 1
                       ? '1 teacher has bought this lead'
                       : '${b.totalCount} teachers have bought this lead',
-                  style: TextStyle(fontSize: 12.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, color: muted),
                 ),
               ),
             ],
@@ -1171,7 +1172,7 @@ class _ApplicantsLocked extends StatelessWidget {
                   'Apply and you will see everyone else in the running here — '
                   'their experience, their ranking, and where you sit against '
                   'them.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                 ),
               ),
             ],
@@ -1220,7 +1221,7 @@ class _ChanceBadge extends StatelessWidget {
         children: [
           Text(
             '🎯',
-            style: TextStyle(fontSize: 20, color: tone.foreground(brightness)),
+            style: TextStyle(fontSize: ThtType.headline, color: tone.foreground(brightness)),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -1230,7 +1231,7 @@ class _ChanceBadge extends StatelessWidget {
                 Text(
                   '${percentage.round()}% chance on this lead',
                   style: TextStyle(
-                    fontSize: 14.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w800,
                     color: tone.foreground(brightness),
                   ),
@@ -1242,7 +1243,7 @@ class _ChanceBadge extends StatelessWidget {
                       : total > 0
                           ? 'You are #$rank of $total applicants · tap for why'
                           : 'You are #$rank · tap for why',
-                  style: TextStyle(fontSize: 12.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, color: muted),
                 ),
               ],
             ),
@@ -1277,7 +1278,7 @@ class _OrDivider extends StatelessWidget {
             child: Text(
               'or',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: ThtType.caption,
                 fontWeight: FontWeight.w700,
                 color: muted,
               ),
@@ -1470,12 +1471,12 @@ class _DetailRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 12, color: muted)),
+                Text(label, style: TextStyle(fontSize: ThtType.caption, color: muted)),
                 const SizedBox(height: 2),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: tone == _RowTint.money
                         ? FontWeight.w800
                         : FontWeight.w600,
@@ -1525,7 +1526,7 @@ class _Students extends StatelessWidget {
                       child: Text(
                         students[i],
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: ThtType.bodyStrong,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1582,7 +1583,7 @@ class _Notice extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: fg,
                   ),
@@ -1591,7 +1592,7 @@ class _Notice extends StatelessWidget {
                 Text(
                   message,
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.5,
                     color: fg.withValues(alpha: 0.95),
                   ),

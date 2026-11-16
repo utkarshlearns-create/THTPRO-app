@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 
@@ -284,7 +285,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               child: const Text(
                 'Forgot password?',
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: ThtType.bodyStrong, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -482,7 +483,7 @@ class _LanguagePicker extends StatelessWidget {
                 Text(
                   'English',
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -535,7 +536,7 @@ class _LanguagePicker extends StatelessWidget {
               Text(
                 'Language',
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: ThtType.title,
                   fontWeight: FontWeight.w800,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
                 ),
@@ -550,7 +551,7 @@ class _LanguagePicker extends StatelessWidget {
                 title: Text(
                   'English',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
                   ),
@@ -561,7 +562,7 @@ class _LanguagePicker extends StatelessWidget {
               Text(
                 'हिन्दी and other Indian languages are on the way.',
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   height: 1.45,
                   color: isDark ? AppColors.slate400 : AppColors.slate500,
                 ),
@@ -591,14 +592,14 @@ class _Brand extends StatelessWidget {
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => const Text(
             'The Home Tuitions',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            style: TextStyle(fontSize: ThtType.headline, fontWeight: FontWeight.w900),
           ),
         ),
         const SizedBox(height: AppSpacing.base),
         Text(
           'Welcome back! 👋',
           style: TextStyle(
-            fontSize: 27,
+            fontSize: ThtType.display,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.6,
             color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -608,7 +609,7 @@ class _Brand extends StatelessWidget {
         Text(
           'Sign in to continue',
           style: TextStyle(
-            fontSize: 14.5,
+            fontSize: ThtType.bodyStrong,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
         ),
@@ -807,7 +808,7 @@ class _ToggleTab extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: fg,
                 ),
@@ -877,7 +878,7 @@ class _SignInButton extends StatelessWidget {
                       const Text(
                         'Sign In',
                         style: TextStyle(
-                          fontSize: 16.5,
+                          fontSize: ThtType.subtitle,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
@@ -938,7 +939,7 @@ class _ErrorNote extends StatelessWidget {
             child: Text(
               message,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 height: 1.45,
                 color: Tone.critical.foreground(brightness),
               ),
@@ -965,7 +966,7 @@ class _SignUpPrompt extends StatelessWidget {
         Text(
           "Don't have an account?",
           style: TextStyle(
-            fontSize: 14,
+            fontSize: ThtType.bodyStrong,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
         ),
@@ -978,7 +979,7 @@ class _SignUpPrompt extends StatelessWidget {
           ),
           child: const Text(
             'Sign Up',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: ThtType.bodyStrong, fontWeight: FontWeight.w800),
           ),
         ),
       ],
@@ -1030,7 +1031,7 @@ class _QuickAccess extends StatelessWidget {
               Text(
                 'Quick Access',
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w800,
                   color: isDark
                       ? AppColors.primaryOrangeOnDark
@@ -1129,7 +1130,7 @@ class _RoleTile extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.35,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -1145,7 +1146,7 @@ class _RoleTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: ThtType.micro,
                         height: 1.35,
                         color: isDark ? AppColors.slate400 : AppColors.slate500,
                       ),
@@ -1196,7 +1197,7 @@ class _TrustNote extends StatelessWidget {
         Text(
           '100% Verified Tutors • Safe & Secure',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: ThtType.caption,
             fontWeight: FontWeight.w600,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),

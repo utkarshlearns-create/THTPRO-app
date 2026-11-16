@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/public_tutor.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/detail_row.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -154,7 +155,7 @@ class _Identity extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: ThtType.title,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -164,7 +165,7 @@ class _Identity extends StatelessWidget {
                 Text(
                   Fmt.phone(user.phone),
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ThtType.body,
                     color: isDark ? AppColors.slate400 : AppColors.slate500,
                   ),
                 ),
@@ -391,7 +392,7 @@ class _TutorList extends StatelessWidget {
               child: Text(
                 '+$hidden more',
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppColors.slate400 : AppColors.slate500,
                 ),
@@ -436,7 +437,7 @@ class _TutorRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -448,7 +449,7 @@ class _TutorRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
                   ),
@@ -591,7 +592,7 @@ class _LinkRow extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w600,
                 ),
               ),

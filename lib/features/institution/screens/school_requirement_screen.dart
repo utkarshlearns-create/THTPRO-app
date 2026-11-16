@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
@@ -102,7 +103,7 @@ class _SchoolRequirementScreenState
                     'For schools, colleges and coaching institutes. No account '
                     'needed — the name and the requirement are enough to '
                     'start, the rest just helps us shortlist faster.',
-                    style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
@@ -347,7 +348,7 @@ class _Received extends StatelessWidget {
               duplicate ? 'Already with us' : 'Requirement received',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 21,
+                fontSize: ThtType.headline,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
                 color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -364,7 +365,7 @@ class _Received extends StatelessWidget {
                       'an account for this.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: ThtType.bodyStrong,
                 height: 1.5,
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
               ),

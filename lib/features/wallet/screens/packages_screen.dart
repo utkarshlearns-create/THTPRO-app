@@ -5,6 +5,7 @@ import 'package:tht_app/core/models/upgrade_quote.dart';
 import 'package:tht_app/core/models/wallet.dart';
 import 'package:tht_app/core/repositories/wallet_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -279,7 +280,7 @@ class _CurrentPlan extends StatelessWidget {
                 Text(
                   'You have',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     color: Theme.of(context).brightness == Brightness.dark
                         ? AppColors.slate400
                         : AppColors.slate500,
@@ -289,7 +290,7 @@ class _CurrentPlan extends StatelessWidget {
                 Text(
                   Fmt.plural(wallet.balance, 'credit'),
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: ThtType.headline,
                     fontWeight: FontWeight.w800,
                     height: 1.2,
                     fontFeatures: [FontFeature.tabularFigures()],
@@ -354,7 +355,7 @@ class _OfferBanner extends StatelessWidget {
                       ? '${discount.label} · $label% off'
                       : '$label% off your renewal',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: fg,
                   ),
@@ -366,7 +367,7 @@ class _OfferBanner extends StatelessWidget {
                       : 'Applied automatically at checkout · ends '
                           '${Fmt.relative(discount.endsOn).toLowerCase()}.',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: fg.withValues(alpha: 0.95),
                   ),
@@ -404,7 +405,7 @@ class _WebNotice extends StatelessWidget {
               'Payments work in the Android and iOS app. You can browse plans '
               'here, but buying one needs the app on your phone.',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 height: 1.5,
                 color: Tone.info.foreground(brightness),
               ),
@@ -538,7 +539,7 @@ class _CouponBoxState extends ConsumerState<_CouponBox> {
                             'at checkout.'
                         : 'Code ${applied.code} applied.',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: ThtType.body,
                       height: 1.45,
                       fontWeight: FontWeight.w600,
                       color: Tone.success.foreground(brightness),
@@ -567,7 +568,7 @@ class _CouponBoxState extends ConsumerState<_CouponBox> {
                       isDense: true,
                     ),
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.6,
                     ),
@@ -594,7 +595,7 @@ class _CouponBoxState extends ConsumerState<_CouponBox> {
               Text(
                 _error!,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: ThtType.caption,
                   height: 1.4,
                   fontWeight: FontWeight.w600,
                   color: AppColors.error,
@@ -605,7 +606,7 @@ class _CouponBoxState extends ConsumerState<_CouponBox> {
             Text(
               'Applies when you buy a plan. If a sale is already running, you '
               'get whichever discount is larger — they do not add up.',
-              style: TextStyle(fontSize: 11.5, height: 1.45, color: muted),
+              style: TextStyle(fontSize: ThtType.caption, height: 1.45, color: muted),
             ),
           ],
         ],
@@ -698,7 +699,7 @@ class _PlanCard extends ConsumerWidget {
                         Text(
                           heroValue,
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: ThtType.figure,
                             fontWeight: FontWeight.w800,
                             height: 1,
                             letterSpacing: -1,
@@ -718,7 +719,7 @@ class _PlanCard extends ConsumerWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: ThtType.body,
                                 fontWeight: FontWeight.w600,
                                 color: muted,
                               ),
@@ -733,7 +734,7 @@ class _PlanCard extends ConsumerWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: ThtType.body,
                         fontWeight: FontWeight.w600,
                         height: 1.35,
                         color: muted,
@@ -750,7 +751,7 @@ class _PlanCard extends ConsumerWidget {
                     Text(
                       Fmt.rupees(package.price),
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: ThtType.body,
                         color: muted,
                         decoration: TextDecoration.lineThrough,
                         decorationColor: muted,
@@ -759,7 +760,7 @@ class _PlanCard extends ConsumerWidget {
                   Text(
                     Fmt.rupees(payable),
                     style: TextStyle(
-                      fontSize: 21,
+                      fontSize: ThtType.headline,
                       fontWeight: FontWeight.w800,
                       height: 1.15,
                       letterSpacing: -0.4,
@@ -771,7 +772,7 @@ class _PlanCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       '₹${perCredit.toStringAsFixed(0)} per credit',
-                      style: TextStyle(fontSize: 11.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.caption, color: muted),
                     ),
                   ],
                 ],
@@ -873,7 +874,7 @@ class _UpgradeNote extends StatelessWidget {
               Text(
                 'Upgrade for ${Fmt.rupees(quote.upgradePrice)}',
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w700,
                   color: fg,
                 ),
@@ -888,7 +889,7 @@ class _UpgradeNote extends StatelessWidget {
             '${quote.upgradeCredits > 0 ? ', and you gain ${Fmt.plural(quote.upgradeCredits, 'credit')}' : ''}'
             '. Ask your counsellor to apply it.',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: ThtType.caption,
               height: 1.45,
               color: fg.withValues(alpha: 0.95),
             ),
@@ -938,7 +939,7 @@ class _FeatureList extends StatelessWidget {
                   child: Text(
                     f.trim(),
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: ThtType.body,
                       height: 1.45,
                       color: isDark ? AppColors.slate300 : AppColors.slate600,
                     ),
@@ -951,7 +952,7 @@ class _FeatureList extends StatelessWidget {
           Text(
             '+$extra more',
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: ThtType.caption,
               fontWeight: FontWeight.w600,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
@@ -986,7 +987,7 @@ class _LockedNote extends StatelessWidget {
           Expanded(
             child: Text(
               reason,
-              style: TextStyle(fontSize: 12.5, height: 1.45, color: fg),
+              style: TextStyle(fontSize: ThtType.body, height: 1.45, color: fg),
             ),
           ),
         ],

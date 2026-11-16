@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/tuition_record.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/states.dart';
@@ -163,7 +164,7 @@ class _TuitionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: ThtType.subtitle,
                         fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -174,7 +175,7 @@ class _TuitionCard extends StatelessWidget {
                         t.summaryLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12.5, color: muted),
+                        style: TextStyle(fontSize: ThtType.body, color: muted),
                       ),
                     ],
                   ],
@@ -216,13 +217,13 @@ class _TuitionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Your share',
-                    style: TextStyle(fontSize: 12.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ),
                 Text(
                   Fmt.rupees(t.earning),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     color: isDark ? AppColors.slate50 : AppColors.slate900,

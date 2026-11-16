@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/states.dart';
 
 /// Pick an area by searching, rather than typing it blind.
@@ -63,7 +64,7 @@ class LocalityPicker extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: ThtType.subtitle,
                 fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
                 color: hasValue ? null : muted,
               ),
@@ -78,7 +79,7 @@ class LocalityPicker extends StatelessWidget {
             Expanded(
               child: Text(
                 "Can't find your exact area? Pick the nearest one.",
-                style: TextStyle(fontSize: 11.5, height: 1.4, color: muted),
+                style: TextStyle(fontSize: ThtType.caption, height: 1.4, color: muted),
               ),
             ),
           ],
@@ -188,7 +189,7 @@ class _LocalitySheetState extends State<_LocalitySheet> {
                         Text(
                           'Your area',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: ThtType.title,
                             fontWeight: FontWeight.w800,
                             color:
                                 isDark ? AppColors.slate50 : AppColors.slate900,
@@ -196,7 +197,7 @@ class _LocalitySheetState extends State<_LocalitySheet> {
                         ),
                         Text(
                           'in ${widget.city}',
-                          style: TextStyle(fontSize: 12.5, color: muted),
+                          style: TextStyle(fontSize: ThtType.body, color: muted),
                         ),
                       ],
                     ),
@@ -282,7 +283,7 @@ class _Highlighted extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = query.trim();
-    const base = TextStyle(fontSize: 14.5);
+    const base = TextStyle(fontSize: ThtType.bodyStrong);
 
     if (q.isEmpty) return Text(text, style: base);
 

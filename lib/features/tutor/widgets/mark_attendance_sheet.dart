@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
@@ -74,7 +75,7 @@ class _MarkAttendanceSheetState extends ConsumerState<MarkAttendanceSheet> {
                             ? "Update today's session"
                             : "Mark today's session",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: ThtType.title,
                           fontWeight: FontWeight.w800,
                           color: isDark ? AppColors.slate50 : AppColors.slate900,
                         ),
@@ -87,7 +88,7 @@ class _MarkAttendanceSheetState extends ConsumerState<MarkAttendanceSheet> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: ThtType.body,
                           height: 1.4,
                           color:
                               isDark ? AppColors.slate400 : AppColors.slate500,
@@ -107,7 +108,7 @@ class _MarkAttendanceSheetState extends ConsumerState<MarkAttendanceSheet> {
             Text(
               'WHAT HAPPENED',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: ThtType.caption,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.7,
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
@@ -282,7 +283,7 @@ class _Option extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: fg,
                 ),

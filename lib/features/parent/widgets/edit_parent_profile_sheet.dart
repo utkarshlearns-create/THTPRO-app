@@ -4,6 +4,7 @@ import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/models/app_user.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 
@@ -78,7 +79,7 @@ class _EditParentProfileSheetState
                     child: Text(
                       'Your details',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -175,7 +176,7 @@ class _EditParentProfileSheetState
         Text(
           'WHERE YOU LIVE',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: ThtType.caption,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.7,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
@@ -185,7 +186,7 @@ class _EditParentProfileSheetState
         Text(
           'Teachers near you are matched on this.',
           style: TextStyle(
-            fontSize: 12.5,
+            fontSize: ThtType.body,
             height: 1.5,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
@@ -314,7 +315,7 @@ class _ReadOnlyPhone extends StatelessWidget {
                 Text(
                   (phone ?? '').trim().isEmpty ? 'No number on file' : phone!,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -322,7 +323,7 @@ class _ReadOnlyPhone extends StatelessWidget {
                 Text(
                   'This is how you sign in. Contact support to change it.',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: ThtType.caption,
                     height: 1.45,
                     color: isDark ? AppColors.slate400 : AppColors.slate500,
                   ),

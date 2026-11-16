@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
@@ -39,7 +40,7 @@ class TwoWaysCard extends StatelessWidget {
           Text(
             'Two ways to get this tuition',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w800,
               color: isDark ? AppColors.slate50 : AppColors.slate900,
             ),
@@ -108,7 +109,7 @@ class TwoWaysCard extends StatelessWidget {
                   'the placement. Buy the lead and close it yourself and '
                   'nothing is deducted. Either way, from month two the whole '
                   'fee is yours.',
-                  style: TextStyle(fontSize: 12, height: 1.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.caption, height: 1.5, color: muted),
                 ),
               ),
             ],
@@ -145,7 +146,7 @@ class _Column extends StatelessWidget {
         Text(
           title,
           style: TextStyle(
-            fontSize: 13.5,
+            fontSize: ThtType.bodyStrong,
             fontWeight: FontWeight.w700,
             height: 1.3,
             color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -155,7 +156,7 @@ class _Column extends StatelessWidget {
         Text(
           cost,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: ThtType.body,
             fontWeight: FontWeight.w800,
             height: 1.3,
             color: fg,
@@ -184,7 +185,7 @@ class _Column extends StatelessWidget {
                   child: Text(
                     p,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       height: 1.45,
                       color: isDark ? AppColors.slate300 : AppColors.slate600,
                     ),

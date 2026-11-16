@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/tutor_score.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -137,7 +138,7 @@ class TutorScoreScreen extends ConsumerWidget {
           child: Text(
             'Last updated ${Fmt.relative(s.lastCalculatedAt).toLowerCase()}',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: ThtType.caption,
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.slate400
                   : AppColors.slate500,
@@ -181,7 +182,7 @@ class _Headline extends StatelessWidget {
                 // mean opposite things.
                 rated ? score.totalScore!.toStringAsFixed(0) : '—',
                 style: TextStyle(
-                  fontSize: 52,
+                  fontSize: ThtType.hero,
                   fontWeight: FontWeight.w800,
                   height: 1,
                   letterSpacing: -2,
@@ -196,7 +197,7 @@ class _Headline extends StatelessWidget {
                   child: Text(
                     '/ 100',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: ThtType.subtitle,
                       fontWeight: FontWeight.w600,
                       color: tone.foreground(brightness).withValues(alpha: 0.7),
                     ),
@@ -215,7 +216,7 @@ class _Headline extends StatelessWidget {
           Text(
             score.standing,
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: ThtType.bodyStrong,
               height: 1.5,
               color: tone.foreground(brightness).withValues(alpha: 0.95),
             ),
@@ -324,7 +325,7 @@ class _Figure extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 22,
+              fontSize: ThtType.headline,
               fontWeight: FontWeight.w800,
               height: 1.1,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -337,7 +338,7 @@ class _Figure extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: ThtType.caption,
               height: 1.3,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
@@ -380,7 +381,7 @@ class _ModuleRow extends StatelessWidget {
                 child: Text(
                   module.label,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -389,7 +390,7 @@ class _ModuleRow extends StatelessWidget {
               Text(
                 value.toStringAsFixed(0),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
                   color: tone.foreground(brightness),
@@ -411,7 +412,7 @@ class _ModuleRow extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             module.hint,
-            style: TextStyle(fontSize: 12, height: 1.4, color: muted),
+            style: TextStyle(fontSize: ThtType.caption, height: 1.4, color: muted),
           ),
         ],
       ),

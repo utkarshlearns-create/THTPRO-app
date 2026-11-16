@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/constants/search_constants.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/features/explore/providers/tutor_search_provider.dart';
 
 /// Filters for the teacher list. Edits a draft and commits on confirm, so the
@@ -61,7 +62,7 @@ class _TutorFilterSheetState extends State<TutorFilterSheet> {
                   child: Text(
                     'Filter teachers',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
                     ),
@@ -168,11 +169,11 @@ class _TutorFilterSheetState extends State<TutorFilterSheet> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text(
                     'ID-verified teachers only',
-                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: ThtType.bodyStrong, fontWeight: FontWeight.w600),
                   ),
                   subtitle: const Text(
                     'Their documents have been checked by our team.',
-                    style: TextStyle(fontSize: 12, height: 1.4),
+                    style: TextStyle(fontSize: ThtType.caption, height: 1.4),
                   ),
                 ),
               ],
@@ -220,7 +221,7 @@ class _Group extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: TextStyle(
-              fontSize: 11,
+              fontSize: ThtType.caption,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.7,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
@@ -261,7 +262,7 @@ class _Choice extends StatelessWidget {
       onSelected: (_) => onTap(),
       showCheckmark: false,
       labelStyle: TextStyle(
-        fontSize: 13,
+        fontSize: ThtType.body,
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
         color: selected ? primary : null,
       ),

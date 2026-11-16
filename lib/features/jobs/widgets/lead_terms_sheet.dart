@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
 /// What a teacher is agreeing to before paying for a lead.
@@ -50,7 +51,7 @@ class _LeadTermsSheetState extends State<LeadTermsSheet> {
                   child: Text(
                     'Buy this lead for ₹${widget.price}?',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       height: 1.3,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -119,7 +120,7 @@ class _LeadTermsSheetState extends State<LeadTermsSheet> {
                           'that buying this lead does not guarantee the '
                           'tuition, and that this payment is non-refundable.',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: ThtType.body,
                             height: 1.5,
                             color: isDark
                                 ? AppColors.slate200
@@ -146,7 +147,7 @@ class _LeadTermsSheetState extends State<LeadTermsSheet> {
             Center(
               child: Text(
                 'Secure payment via Razorpay',
-                style: TextStyle(fontSize: 11.5, color: muted),
+                style: TextStyle(fontSize: ThtType.caption, color: muted),
               ),
             ),
           ],
@@ -196,7 +197,7 @@ class _Point extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate100 : AppColors.slate900,
                   ),
@@ -204,7 +205,7 @@ class _Point extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   body,
-                  style: TextStyle(fontSize: 12.5, height: 1.45, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.45, color: muted),
                 ),
               ],
             ),

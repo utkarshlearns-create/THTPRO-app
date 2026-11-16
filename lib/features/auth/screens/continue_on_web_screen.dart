@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,7 +52,7 @@ class ContinueOnWebScreen extends ConsumerWidget {
                     Text(
                       '${role?.label ?? 'This'} tools live on the web',
                       style: TextStyle(
-                        fontSize: 21,
+                        fontSize: ThtType.headline,
                         fontWeight: FontWeight.w800,
                         height: 1.25,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -64,7 +65,7 @@ class ContinueOnWebScreen extends ConsumerWidget {
                       'so they stay on thehometuitions.com — sign in there with '
                       'these same details.',
                       style: TextStyle(
-                        fontSize: 14.5,
+                        fontSize: ThtType.bodyStrong,
                         height: 1.6,
                         color: isDark ? AppColors.slate300 : AppColors.slate600,
                       ),

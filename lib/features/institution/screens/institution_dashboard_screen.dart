@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/institution_profile.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -106,7 +107,7 @@ class _Header extends ConsumerWidget {
               errorBuilder: (_, __, ___) => Text(
                 'The Home Tuitions',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w900,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
                 ),
@@ -140,7 +141,7 @@ class _Header extends ConsumerWidget {
         Text(
           'Your institute',
           style: TextStyle(
-            fontSize: 13.5,
+            fontSize: ThtType.bodyStrong,
             fontWeight: FontWeight.w500,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
@@ -151,7 +152,7 @@ class _Header extends ConsumerWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 23,
+            fontSize: ThtType.headline,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
             height: 1.2,
@@ -264,7 +265,7 @@ class _Hero extends ConsumerWidget {
             eyebrow,
             style: const TextStyle(
               color: Colors.white70,
-              fontSize: 10.5,
+              fontSize: ThtType.micro,
               fontWeight: FontWeight.w800,
               letterSpacing: 1,
             ),
@@ -276,7 +277,7 @@ class _Hero extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: Colors.white,
-              fontSize: titleIsNumeral ? 40 : 22,
+              fontSize: titleIsNumeral ? ThtType.figure : ThtType.headline,
               fontWeight: FontWeight.w800,
               height: titleIsNumeral ? 1 : 1.25,
               letterSpacing: titleIsNumeral ? -1.4 : -0.4,
@@ -287,7 +288,7 @@ class _Hero extends ConsumerWidget {
             body,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 13.5,
+              fontSize: ThtType.bodyStrong,
               height: 1.55,
             ),
           ),
@@ -408,7 +409,7 @@ class _ShortlistForMe extends StatelessWidget {
                 Text(
                   'Want us to shortlist for you?',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
                   ),
@@ -418,7 +419,7 @@ class _ShortlistForMe extends StatelessWidget {
                   'Tell us what you need. Our institutional team calls you '
                   'and shares matching teacher profiles.',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: isDark ? AppColors.slate400 : AppColors.slate500,
                   ),
@@ -486,7 +487,7 @@ class _QuickAction extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: ThtType.micro,
                 fontWeight: FontWeight.w600,
                 height: 1.25,
                 color: isDark ? AppColors.slate300 : AppColors.slate700,
@@ -527,7 +528,7 @@ class _ProfilePrompt extends StatelessWidget {
                 Text(
                   'Finish your profile',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: Tone.warning.foreground(brightness),
                   ),
@@ -536,7 +537,7 @@ class _ProfilePrompt extends StatelessWidget {
                 Text(
                   profile.weakestSpot!,
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: Tone.warning
                         .foreground(brightness)
@@ -718,7 +719,7 @@ class _VacancyRow extends StatelessWidget {
                 color: isDark ? AppColors.slate800 : AppColors.slate100,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: Text(glyph, style: const TextStyle(fontSize: 18)),
+              child: Text(glyph, style: const TextStyle(fontSize: ThtType.title)),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -732,7 +733,7 @@ class _VacancyRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13.5,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -742,7 +743,7 @@ class _VacancyRow extends StatelessWidget {
                         ? 'No teachers yet'
                         : '${Fmt.plural(job.applicationCount, 'teacher')} interested',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w600,
                       color: job.applicationCount == 0
                           ? muted

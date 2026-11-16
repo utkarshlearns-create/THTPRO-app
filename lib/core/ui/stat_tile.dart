@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
@@ -57,7 +58,7 @@ class StatTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: ThtType.headline,
               fontWeight: FontWeight.w800,
               height: 1.1,
               letterSpacing: -0.5,
@@ -75,7 +76,7 @@ class StatTile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
@@ -89,7 +90,7 @@ class StatTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: ThtType.caption,
                 fontWeight: FontWeight.w600,
                 color: accent,
               ),

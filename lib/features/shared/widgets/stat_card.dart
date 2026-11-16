@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 
 /// Stat card widget used across dashboards — matches the web's card style
 /// with icon, value, label, and optional subtitle.
@@ -52,7 +53,7 @@ class StatCard extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                fontSize: 28,
+                fontSize: ThtType.display,
                 fontWeight: FontWeight.w900,
                 color: tintColor,
                 height: 1,
@@ -62,7 +63,7 @@ class StatCard extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: ThtType.body,
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.slate200 : AppColors.slate700,
               ),
@@ -72,7 +73,7 @@ class StatCard extends StatelessWidget {
               Text(
                 subtitle!,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: ThtType.caption,
                   color: AppColors.slate400,
                 ),
               ),

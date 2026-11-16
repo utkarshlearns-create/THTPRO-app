@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/application.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -69,7 +70,7 @@ class ApplicationTimelineSheet extends ConsumerWidget {
                   child: Text(
                     'Your progress on this job',
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
                     ),
@@ -97,7 +98,7 @@ class ApplicationTimelineSheet extends ConsumerWidget {
                         'We could not find your application for this job. '
                         'Pull the job screen down to refresh.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, height: 1.55),
+                        style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
                       ),
                     ),
                   );
@@ -387,7 +388,7 @@ class _Step extends StatelessWidget {
                   Text(
                     step.title,
                     style: TextStyle(
-                      fontSize: 14.5,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                       height: 1.35,
                       color: faded
@@ -400,7 +401,7 @@ class _Step extends StatelessWidget {
                     Text(
                       Fmt.dateTime(step.when!),
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: ThtType.body,
                         fontWeight: FontWeight.w600,
                         color: tint,
                       ),
@@ -411,7 +412,7 @@ class _Step extends StatelessWidget {
                     Text(
                       step.detail!,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: ThtType.body,
                         height: 1.5,
                         color: muted,
                       ),
@@ -470,7 +471,7 @@ class _Standing extends ConsumerWidget {
           Expanded(
             child: Text(
               lines.join(' '),
-              style: TextStyle(fontSize: 12.5, height: 1.5, color: muted),
+              style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
             ),
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/unlocked_lead.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -124,7 +125,7 @@ class _LeadCard extends StatelessWidget {
                   lead.subjects.isEmpty
                       ? SubjectGlyph.fallback
                       : SubjectGlyph.of(lead.subjects.first),
-                  style: const TextStyle(fontSize: 17),
+                  style: const TextStyle(fontSize: ThtType.title),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -139,7 +140,7 @@ class _LeadCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: ThtType.subtitle,
                         fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -150,7 +151,7 @@ class _LeadCard extends StatelessWidget {
                         lead.summaryLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12.5, color: muted),
+                        style: TextStyle(fontSize: ThtType.body, color: muted),
                       ),
                     ],
                   ],
@@ -178,14 +179,14 @@ class _LeadCard extends StatelessWidget {
                     lead.locality,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ),
                 if (lead.budgetRange.trim().isNotEmpty)
                   Text(
                     lead.budgetRange.trim(),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w600,
                       color: Tone.success.foreground(brightness),
                     ),

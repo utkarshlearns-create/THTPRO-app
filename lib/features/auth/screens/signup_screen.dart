@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:tht_app/core/network/api_client.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/features/shared/widgets/tht_text_field.dart';
 import 'package:tht_app/features/shared/widgets/tht_button.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -209,7 +210,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         Text(
           'Choose your role to get started',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: ThtType.subtitle,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
         ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
@@ -275,7 +276,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               'Already have an account? ',
               style: TextStyle(
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
-                fontSize: 14,
+                fontSize: ThtType.bodyStrong,
               ),
             ),
             GestureDetector(
@@ -284,7 +285,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 'Log In',
                 style: TextStyle(
                   color: AppColors.primaryOrange,
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -384,7 +385,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         Text(
           'We\'ve sent a 6-digit code to ${_phoneController.text}',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: ThtType.subtitle,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
         ),
@@ -443,7 +444,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         Text(
           'Choose a strong password for your account',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: ThtType.subtitle,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
         ),
@@ -655,7 +656,7 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: ThtType.title,
                       fontWeight: FontWeight.w800,
                       color: isSelected
                           ? AppColors.primaryOrangeDark
@@ -666,7 +667,7 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       color: isSelected
                           ? (isDark ? AppColors.primaryOrange : AppColors.primaryOrangeDark.withValues(alpha: 0.8))
                           : AppColors.slate500,

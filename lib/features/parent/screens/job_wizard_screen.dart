@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/board_logo.dart';
 import 'package:tht_app/features/parent/widgets/contact_choice.dart';
 import 'package:tht_app/features/shared/widgets/tht_button.dart';
@@ -529,7 +530,7 @@ class _BoardTile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: ThtType.caption,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                     height: 1.2,
                     color: isSelected

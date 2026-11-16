@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/star_rating.dart';
 
@@ -68,7 +69,7 @@ class _RateTutorSheetState extends State<RateTutorSheet> {
                     child: Text(
                       'Rate ${widget.tutorName}',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -86,7 +87,7 @@ class _RateTutorSheetState extends State<RateTutorSheet> {
                 'Your rating appears on their profile and helps other parents '
                 'choose.',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: ThtType.body,
                   height: 1.45,
                   color: isDark ? AppColors.slate400 : AppColors.slate500,
                 ),

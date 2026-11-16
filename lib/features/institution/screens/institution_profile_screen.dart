@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/institution_profile.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/detail_row.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -131,7 +132,7 @@ class InstitutionProfileScreen extends ConsumerWidget {
                           'for will get better applicants.'
                       : p.about.trim(),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     height: 1.6,
                     fontStyle: p.about.trim().isEmpty
                         ? FontStyle.italic
@@ -209,7 +210,7 @@ class _Identity extends StatelessWidget {
                       ? 'Unnamed institute'
                       : profile.name,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: ThtType.title,
                     fontWeight: FontWeight.w800,
                     height: 1.25,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -230,7 +231,7 @@ class _Identity extends StatelessWidget {
                     'Our team verifies institutes before their vacancies go '
                     'out widely.',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       height: 1.45,
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
@@ -270,7 +271,7 @@ class _Completeness extends StatelessWidget {
           Expanded(
             child: Text(
               profile.weakestSpot!,
-              style: TextStyle(fontSize: 12.5, height: 1.45, color: fg),
+              style: TextStyle(fontSize: ThtType.body, height: 1.45, color: fg),
             ),
           ),
           Icon(Icons.chevron_right_rounded, color: fg),
@@ -389,7 +390,7 @@ class _LinkRow extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -476,7 +477,7 @@ class _EditInstitutionSheetState extends ConsumerState<EditInstitutionSheet> {
                     child: Text(
                       'Institute details',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),

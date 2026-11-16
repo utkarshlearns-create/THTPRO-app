@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/states.dart';
@@ -172,7 +173,7 @@ class _JobCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15.5,
+                        fontSize: ThtType.subtitle,
                         fontWeight: FontWeight.w700,
                         height: 1.3,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -187,7 +188,7 @@ class _JobCard extends StatelessWidget {
                       ].join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.body, color: muted),
                     ),
                   ],
                 ),
@@ -207,7 +208,7 @@ class _JobCard extends StatelessWidget {
                       ? 'No teachers yet'
                       : '${Fmt.plural(job.applicationCount, 'teacher')} interested',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ThtType.body,
                     fontWeight: job.applicationCount > 0
                         ? FontWeight.w700
                         : FontWeight.w400,
@@ -220,7 +221,7 @@ class _JobCard extends StatelessWidget {
               if (job.postedAt != null)
                 Text(
                   Fmt.relative(job.postedAt),
-                  style: TextStyle(fontSize: 11.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.caption, color: muted),
                 ),
             ],
           ),

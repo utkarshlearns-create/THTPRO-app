@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -46,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       'What brings you here?',
                       style: TextStyle(
-                        fontSize: 19,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -85,7 +86,7 @@ class _TopBar extends StatelessWidget {
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => const Text(
             'The Home Tuitions',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: ThtType.subtitle, fontWeight: FontWeight.w800),
           ),
         ),
         const Spacer(),
@@ -113,7 +114,7 @@ class _Hero extends StatelessWidget {
         RichText(
           text: TextSpan(
             style: TextStyle(
-              fontSize: 32,
+              fontSize: ThtType.figure,
               fontWeight: FontWeight.w800,
               height: 1.18,
               letterSpacing: -1,
@@ -133,7 +134,7 @@ class _Hero extends StatelessWidget {
           'Home tuitions across Lucknow and beyond — ID-checked teachers, '
           'matched to your child’s class and board.',
           style: TextStyle(
-            fontSize: 14.5,
+            fontSize: ThtType.bodyStrong,
             height: 1.55,
             color: isDark ? AppColors.slate300 : AppColors.slate600,
           ),
@@ -240,7 +241,7 @@ class _NoAccountRequirement extends StatelessWidget {
         icon: const Icon(Icons.apartment_rounded, size: 17),
         label: const Text(
           'Or just tell us your teacher requirement — no account needed',
-          style: TextStyle(fontSize: 12.5, height: 1.35),
+          style: TextStyle(fontSize: ThtType.body, height: 1.35),
         ),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(
@@ -298,7 +299,7 @@ class _RoleCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15.5,
+                    fontSize: ThtType.subtitle,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
                   ),
@@ -307,7 +308,7 @@ class _RoleCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: isDark ? AppColors.slate400 : AppColors.slate500,
                   ),
@@ -354,7 +355,7 @@ class _TrustLine extends StatelessWidget {
           child: Text(
             'Teachers are ID-checked by our team',
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ThtType.body,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
           ),
@@ -371,7 +372,7 @@ class _Legal extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final style = TextStyle(
-      fontSize: 11.5,
+      fontSize: ThtType.caption,
       color: isDark ? AppColors.slate400 : AppColors.slate500,
     );
 

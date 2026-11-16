@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tht_app/core/models/affiliate.dart';
 import 'package:tht_app/core/repositories/affiliate_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -244,7 +245,7 @@ class _CodeCard extends StatelessWidget {
             'Your referral code',
             style: TextStyle(
               color: Colors.white70,
-              fontSize: 13,
+              fontSize: ThtType.body,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
             ),
@@ -259,7 +260,7 @@ class _CodeCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 30,
+                    fontSize: ThtType.display,
                     fontWeight: FontWeight.w800,
                     height: 1.1,
                     letterSpacing: 1.5,
@@ -387,7 +388,7 @@ class _Figure extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 19,
+              fontSize: ThtType.title,
               fontWeight: FontWeight.w800,
               height: 1.15,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -400,7 +401,7 @@ class _Figure extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: ThtType.caption,
               height: 1.3,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
@@ -437,7 +438,7 @@ class _EarningRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -445,7 +446,7 @@ class _EarningRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   Fmt.date(earning.createdAt),
-                  style: TextStyle(fontSize: 11.5, color: muted),
+                  style: TextStyle(fontSize: ThtType.caption, color: muted),
                 ),
               ],
             ),
@@ -454,7 +455,7 @@ class _EarningRow extends StatelessWidget {
           Text(
             '+${Fmt.rupees(earning.amount)}',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: ThtType.bodyStrong,
               fontWeight: FontWeight.w700,
               fontFeatures: const [FontFeature.tabularFigures()],
               color: Tone.success.foreground(brightness),
@@ -489,7 +490,7 @@ class _ReferredRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -498,7 +499,7 @@ class _ReferredRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Joined ${Fmt.relative(user.joinedAt).toLowerCase()}',
-                    style: TextStyle(fontSize: 11.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.caption, color: muted),
                   ),
                 ],
               ],

@@ -5,6 +5,7 @@ import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/models/payment_record.dart';
 import 'package:tht_app/core/models/wallet.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -150,7 +151,7 @@ class _BalanceCard extends StatelessWidget {
                 'Available credits',
                 style: TextStyle(
                   color: Colors.white70,
-                  fontSize: 13,
+                  fontSize: ThtType.body,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                 ),
@@ -162,7 +163,7 @@ class _BalanceCard extends StatelessWidget {
             Fmt.number(wallet.balance),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 42,
+              fontSize: ThtType.hero,
               fontWeight: FontWeight.w800,
               height: 1,
               letterSpacing: -1.2,
@@ -181,7 +182,7 @@ class _BalanceCard extends StatelessWidget {
                   _validity(days),
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     fontWeight: FontWeight.w500,
                     height: 1.4,
                   ),
@@ -334,7 +335,7 @@ class _GlanceCell extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 19,
+            fontSize: ThtType.title,
             fontWeight: FontWeight.w800,
             height: 1.1,
             letterSpacing: -0.4,
@@ -348,7 +349,7 @@ class _GlanceCell extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: ThtType.caption,
             fontWeight: FontWeight.w500,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
@@ -541,7 +542,7 @@ class _Step extends StatelessWidget {
             color: isDark ? AppColors.slate800 : AppColors.slate100,
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: Text(emoji, style: const TextStyle(fontSize: 18)),
+          child: Text(emoji, style: const TextStyle(fontSize: ThtType.title)),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
@@ -551,7 +552,7 @@ class _Step extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w700,
                   height: 1.3,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -561,7 +562,7 @@ class _Step extends StatelessWidget {
               Text(
                 body,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   height: 1.5,
                   color: isDark ? AppColors.slate400 : AppColors.slate500,
                 ),
@@ -683,7 +684,7 @@ class _Note extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(fontSize: 12.5, height: 1.5, color: fg),
+            style: TextStyle(fontSize: ThtType.body, height: 1.5, color: fg),
           ),
         ),
       ],
@@ -725,7 +726,7 @@ class _RenewalNotice extends StatelessWidget {
                       ? 'Your plan has expired'
                       : 'Expiring in ${Fmt.plural(days, 'day')}',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: tone.foreground(brightness),
                   ),
@@ -736,7 +737,7 @@ class _RenewalNotice extends StatelessWidget {
                       ? 'Renew to start unlocking leads again.'
                       : 'Renew now and your remaining credits carry over.',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: tone.foreground(brightness).withValues(alpha: 0.95),
                   ),
@@ -785,7 +786,7 @@ class _PausedClockNotice extends StatelessWidget {
                 Text(
                   '${Fmt.plural(wallet.pendingValidityDays, 'day')} on hold',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: tone.foreground(brightness),
                   ),
@@ -795,7 +796,7 @@ class _PausedClockNotice extends StatelessWidget {
                   'Nothing is ticking yet. Your validity starts the first time '
                   'you unlock a lead, so there is no rush to use it.',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: tone.foreground(brightness).withValues(alpha: 0.95),
                   ),
@@ -962,7 +963,7 @@ class _PaymentRow extends StatelessWidget {
                 Text(
                   Fmt.date(payment.createdAt),
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -976,7 +977,7 @@ class _PaymentRow extends StatelessWidget {
                     payment.reference,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11.5, color: muted),
+                    style: TextStyle(fontSize: ThtType.caption, color: muted),
                   ),
                 ],
               ],
@@ -989,7 +990,7 @@ class _PaymentRow extends StatelessWidget {
               Text(
                 Fmt.rupees(payment.amount),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w700,
                   fontFeatures: const [FontFeature.tabularFigures()],
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -1068,7 +1069,7 @@ class _TransactionRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
@@ -1078,7 +1079,7 @@ class _TransactionRow extends StatelessWidget {
                   Text(
                     Fmt.dateTime(transaction.createdAt),
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: ThtType.caption,
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
                   ),
@@ -1090,7 +1091,7 @@ class _TransactionRow extends StatelessWidget {
           Text(
             transaction.signedAmount,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: FontWeight.w800,
               fontFeatures: const [FontFeature.tabularFigures()],
               color: credit

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/pill.dart';
 
 /// One label-and-value line inside a `THTCard(padding: EdgeInsets.zero)`.
@@ -41,7 +42,7 @@ class DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(fontSize: 13, color: muted),
+              style: TextStyle(fontSize: ThtType.body, color: muted),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -52,7 +53,7 @@ class DetailRow extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: ThtType.bodyStrong,
                 fontWeight: FontWeight.w600,
                 height: 1.4,
                 color: onTap == null
@@ -101,7 +102,7 @@ class DetailChips extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: ThtType.body,
               color: isDark ? AppColors.slate400 : AppColors.slate500,
             ),
           ),
@@ -110,7 +111,7 @@ class DetailChips extends StatelessWidget {
             Text(
               emptyHint,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 fontStyle: FontStyle.italic,
                 color: isDark ? AppColors.slate500 : AppColors.slate400,
               ),

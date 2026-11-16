@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 
@@ -62,7 +63,7 @@ class Pill extends StatelessWidget {
               maxLines: 1,
               style: TextStyle(
                 color: fg,
-                fontSize: dense ? 11 : 12,
+                fontSize: ThtType.caption,
                 fontWeight: FontWeight.w600,
                 height: 1.2,
               ),

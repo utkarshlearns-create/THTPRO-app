@@ -7,6 +7,7 @@ import 'package:tht_app/core/constants/platform_stats.dart';
 import 'package:tht_app/core/models/job.dart';
 import 'package:tht_app/core/models/parent_stats.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -136,7 +137,7 @@ class _Header extends ConsumerWidget {
               errorBuilder: (_, __, ___) => Text(
                 'The Home Tuitions',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w900,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
                 ),
@@ -171,7 +172,7 @@ class _Header extends ConsumerWidget {
         Text(
           greeting,
           style: TextStyle(
-            fontSize: 13.5,
+            fontSize: ThtType.bodyStrong,
             fontWeight: FontWeight.w500,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
@@ -182,7 +183,7 @@ class _Header extends ConsumerWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 25,
+            fontSize: ThtType.headline,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.6,
             height: 1.15,
@@ -226,7 +227,7 @@ class _CreditsChip extends StatelessWidget {
               Text(
                 Fmt.number(balance),
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
                   color: isDark ? AppColors.slate100 : fg,
@@ -379,7 +380,7 @@ class _HeroLayout extends StatelessWidget {
           eyebrow,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 10.5,
+            fontSize: ThtType.micro,
             fontWeight: FontWeight.w800,
             letterSpacing: 1,
           ),
@@ -399,7 +400,7 @@ class _HeroLayout extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: titleIsNumeral ? 40 : 22,
+                  fontSize: titleIsNumeral ? ThtType.figure : ThtType.headline,
                   fontWeight: FontWeight.w800,
                   height: titleIsNumeral ? 1 : 1.25,
                   letterSpacing: titleIsNumeral ? -1.4 : -0.4,
@@ -413,7 +414,7 @@ class _HeroLayout extends StatelessWidget {
           body,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 13.5,
+            fontSize: ThtType.bodyStrong,
             height: 1.55,
           ),
         ),
@@ -623,7 +624,7 @@ class _RequirementRow extends StatelessWidget {
                 color: isDark ? AppColors.slate800 : AppColors.slate100,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: Text(glyph, style: const TextStyle(fontSize: 18)),
+              child: Text(glyph, style: const TextStyle(fontSize: ThtType.title)),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -637,7 +638,7 @@ class _RequirementRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13.5,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -647,7 +648,7 @@ class _RequirementRow extends StatelessWidget {
                         ? 'No applicants yet'
                         : Fmt.plural(job.applicationCount, 'applicant'),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w600,
                       color: job.applicationCount == 0
                           ? muted
@@ -732,7 +733,7 @@ class _RecommendedCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: ThtType.bodyStrong,
                 fontWeight: FontWeight.w700,
                 color: isDark ? AppColors.slate50 : AppColors.slate900,
               ),
@@ -744,7 +745,7 @@ class _RecommendedCard extends StatelessWidget {
                   : Fmt.list(tutor.subjects, max: 2),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, height: 1.35, color: muted),
+              style: TextStyle(fontSize: ThtType.caption, height: 1.35, color: muted),
             ),
             if (tutor.locality.trim().isNotEmpty) ...[
               const SizedBox(height: 5),
@@ -757,7 +758,7 @@ class _RecommendedCard extends StatelessWidget {
                       tutor.locality,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11.5, color: muted),
+                      style: TextStyle(fontSize: ThtType.caption, color: muted),
                     ),
                   ),
                 ],
@@ -795,7 +796,7 @@ class _PlatformStrip extends StatelessWidget {
         Text(
           'ON THE HOME TUITIONS',
           style: TextStyle(
-            fontSize: 10.5,
+            fontSize: ThtType.micro,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.9,
             color: isDark ? AppColors.slate500 : AppColors.slate400,
@@ -863,7 +864,7 @@ class _PlatformCell extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 17,
+            fontSize: ThtType.title,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.3,
             color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -876,7 +877,7 @@ class _PlatformCell extends StatelessWidget {
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: ThtType.caption,
             height: 1.3,
             color: isDark ? AppColors.slate400 : AppColors.slate500,
           ),
@@ -948,7 +949,7 @@ class _Activity extends StatelessWidget {
                             Text(
                               items[i].title,
                               style: const TextStyle(
-                                fontSize: 13.5,
+                                fontSize: ThtType.bodyStrong,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -956,7 +957,7 @@ class _Activity extends StatelessWidget {
                             Text(
                               items[i].description,
                               style: TextStyle(
-                                fontSize: 12.5,
+                                fontSize: ThtType.body,
                                 height: 1.5,
                                 color: isDark
                                     ? AppColors.slate400
@@ -970,7 +971,7 @@ class _Activity extends StatelessWidget {
                       Text(
                         Fmt.relative(items[i].at),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: ThtType.caption,
                           color:
                               isDark ? AppColors.slate500 : AppColors.slate400,
                         ),

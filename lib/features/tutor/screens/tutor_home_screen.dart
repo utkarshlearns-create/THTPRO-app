@@ -7,6 +7,7 @@ import 'package:tht_app/core/models/tuition.dart';
 import 'package:tht_app/core/models/tutor_stats.dart';
 import 'package:tht_app/core/models/wallet.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -94,7 +95,7 @@ class _Header extends ConsumerWidget {
               Text(
                 '${_greeting()} 👋',
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w500,
                   color: isDark ? AppColors.slate400 : AppColors.slate500,
                 ),
@@ -105,7 +106,7 @@ class _Header extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 25,
+                  fontSize: ThtType.headline,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.6,
                   height: 1.15,
@@ -239,7 +240,7 @@ class _NotificationBell extends StatelessWidget {
                       unread > 9 ? '9+' : '$unread',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 9,
+                        fontSize: ThtType.micro,
                         fontWeight: FontWeight.w800,
                         height: 1,
                       ),
@@ -308,7 +309,7 @@ class _CreditsBody extends StatelessWidget {
                       'Lead credits',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: ThtType.body,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
                       ),
@@ -318,7 +319,7 @@ class _CreditsBody extends StatelessWidget {
                       Fmt.number(wallet.balance),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 38,
+                        fontSize: ThtType.figure,
                         fontWeight: FontWeight.w800,
                         height: 1,
                         letterSpacing: -1,
@@ -353,7 +354,7 @@ class _CreditsBody extends StatelessWidget {
                   _validityLine(wallet, days),
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     fontWeight: FontWeight.w500,
                     height: 1.4,
                   ),
@@ -426,7 +427,7 @@ class _VerificationPrompt extends ConsumerWidget {
                   Text(
                     kyc.shortLabel,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                       color: tone.foreground(brightness),
                     ),
@@ -435,7 +436,7 @@ class _VerificationPrompt extends ConsumerWidget {
                   Text(
                     step,
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: ThtType.body,
                       height: 1.45,
                       color: tone.foreground(brightness).withValues(alpha: 0.9),
                     ),
@@ -563,7 +564,7 @@ class _TuitionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: ThtType.body,
                         fontWeight: FontWeight.w800,
                         height: 1.1,
                         color: slotTone.foreground(brightness),
@@ -586,7 +587,7 @@ class _TuitionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15.5,
+                        fontSize: ThtType.subtitle,
                         fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.slate100 : AppColors.slate900,
                       ),
@@ -597,7 +598,7 @@ class _TuitionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: ThtType.body,
                         color: isDark ? AppColors.slate400 : AppColors.slate500,
                       ),
                     ),
@@ -627,7 +628,7 @@ class _TuitionCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: ThtType.body,
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
                   ),
@@ -636,7 +637,7 @@ class _TuitionCard extends StatelessWidget {
                   Text(
                     '${tuition.sessionsPresent}/${tuition.sessionsTotal} sessions',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       fontWeight: FontWeight.w600,
                       fontFeatures: const [FontFeature.tabularFigures()],
                       color: isDark ? AppColors.slate300 : AppColors.slate600,
@@ -798,7 +799,7 @@ class _EarningsSection extends ConsumerWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: ThtType.bodyStrong,
                                 fontWeight: FontWeight.w600,
                                 color: isDark
                                     ? AppColors.slate100
@@ -814,7 +815,7 @@ class _EarningsSection extends ConsumerWidget {
                                   recent[i].completedOn,
                               ].join(' · '),
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: ThtType.caption,
                                 color: isDark
                                     ? AppColors.slate400
                                     : AppColors.slate500,
@@ -830,7 +831,7 @@ class _EarningsSection extends ConsumerWidget {
                           Text(
                             Fmt.rupees(recent[i].yourShare),
                             style: TextStyle(
-                              fontSize: 14.5,
+                              fontSize: ThtType.bodyStrong,
                               fontWeight: FontWeight.w700,
                               fontFeatures: const [
                                 FontFeature.tabularFigures()

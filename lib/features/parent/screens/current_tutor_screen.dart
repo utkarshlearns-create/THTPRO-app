@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/repositories/messages_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/detail_row.dart';
 import 'package:tht_app/core/ui/pill.dart';
@@ -133,7 +134,7 @@ class _TutorBlockState extends ConsumerState<_TutorBlock> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: ThtType.title,
                             fontWeight: FontWeight.w800,
                             color:
                                 isDark ? AppColors.slate50 : AppColors.slate900,
@@ -147,7 +148,7 @@ class _TutorBlockState extends ConsumerState<_TutorBlock> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: ThtType.body,
                               height: 1.4,
                               color: muted,
                             ),

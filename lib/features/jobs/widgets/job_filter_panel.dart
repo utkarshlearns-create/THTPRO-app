@@ -4,6 +4,7 @@ import 'package:tht_app/core/constants/search_constants.dart';
 import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/providers/master_data_provider.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
@@ -200,7 +201,7 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
                         title: const Text(
                           'Hide jobs I have applied to',
                           style: TextStyle(
-                            fontSize: 14.5,
+                            fontSize: ThtType.bodyStrong,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -214,7 +215,7 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
                         title: const Text(
                           'Only leads I can buy',
                           style: TextStyle(
-                            fontSize: 14.5,
+                            fontSize: ThtType.bodyStrong,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -223,7 +224,7 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
                         // than a list that looks empty for no visible reason.
                         subtitle: const Text(
                           'Filters the jobs already loaded — scroll for more',
-                          style: TextStyle(fontSize: 12, height: 1.35),
+                          style: TextStyle(fontSize: ThtType.caption, height: 1.35),
                         ),
                       ),
                     ],
@@ -251,7 +252,7 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
               child: Text(
                 'Filters',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: ThtType.title,
                   fontWeight: FontWeight.w800,
                   color: isDark ? AppColors.slate50 : AppColors.slate900,
                 ),
@@ -322,7 +323,7 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
                   Text(
                     'Show as per my preference',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: ThtType.bodyStrong,
                       fontWeight: FontWeight.w700,
                       color: isDark ? AppColors.slate50 : AppColors.slate900,
                     ),
@@ -332,7 +333,7 @@ class _JobFilterPanelState extends ConsumerState<JobFilterPanel> {
                     'Fills these from your profile — your subjects, classes, '
                     'boards and areas.',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: ThtType.caption,
                       height: 1.4,
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
@@ -438,7 +439,7 @@ class _Dropdown extends StatelessWidget {
           child: Text(
             value == null ? 'Any' : (labelFor?.call(value!) ?? value!),
             style: TextStyle(
-              fontSize: 15,
+              fontSize: ThtType.subtitle,
               fontWeight: value == null ? FontWeight.w400 : FontWeight.w600,
             ),
           ),
@@ -525,7 +526,7 @@ class _OptionPickerState extends State<_OptionPicker> {
                     child: Text(
                       widget.title,
                       style: const TextStyle(
-                        fontSize: 17,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -561,7 +562,7 @@ class _OptionPickerState extends State<_OptionPicker> {
                   ? Center(
                       child: Text(
                         'Nothing matches "$_query"',
-                        style: const TextStyle(fontSize: 13.5),
+                        style: const TextStyle(fontSize: ThtType.bodyStrong),
                       ),
                     )
                   : ListView.builder(

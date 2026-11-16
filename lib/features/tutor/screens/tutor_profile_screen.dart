@@ -8,6 +8,7 @@ import 'package:tht_app/core/models/upload_file.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/pill.dart';
 import 'package:tht_app/core/ui/section_header.dart';
@@ -198,7 +199,7 @@ class _IdentityState extends ConsumerState<_Identity> {
                 Text(
                   Fmt.titleCase(name),
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: ThtType.title,
                     fontWeight: FontWeight.w800,
                     height: 1.25,
                     color: isDark ? AppColors.slate50 : AppColors.slate900,
@@ -209,7 +210,7 @@ class _IdentityState extends ConsumerState<_Identity> {
                   Text(
                     Fmt.phone(user!.phone),
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: ThtType.body,
                       fontFeatures: const [FontFeature.tabularFigures()],
                       color: isDark ? AppColors.slate400 : AppColors.slate500,
                     ),
@@ -222,7 +223,7 @@ class _IdentityState extends ConsumerState<_Identity> {
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: ThtType.body,
                       height: 1.5,
                       color: isDark ? AppColors.slate300 : AppColors.slate600,
                     ),
@@ -318,7 +319,7 @@ class _Completeness extends StatelessWidget {
                 child: Text(
                   'Profile strength',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -327,7 +328,7 @@ class _Completeness extends StatelessWidget {
               Text(
                 '$pct%',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: ThtType.subtitle,
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
                   color: tone.foreground(brightness),
@@ -350,7 +351,7 @@ class _Completeness extends StatelessWidget {
             Text(
               weak,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 height: 1.5,
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
               ),
@@ -458,7 +459,7 @@ class _ClassSubjects extends StatelessWidget {
                 child: Text(
                   'Classes and subjects',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: map.isEmpty
                         ? Tone.warning.foreground(brightness)
@@ -475,7 +476,7 @@ class _ClassSubjects extends StatelessWidget {
               'Not set yet — no job can match you until you add at least one '
               'class and its subjects.',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: ThtType.body,
                 height: 1.5,
                 color: Tone.warning.foreground(brightness),
               ),
@@ -487,7 +488,7 @@ class _ClassSubjects extends StatelessWidget {
                 child: RichText(
                   text: TextSpan(
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: ThtType.body,
                       height: 1.45,
                       fontFamily: DefaultTextStyle.of(context).style.fontFamily,
                       color: isDark ? AppColors.slate200 : AppColors.slate700,
@@ -563,7 +564,7 @@ class _IntroVideoState extends ConsumerState<_IntroVideo> {
                 Text(
                   'Intro video',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.slate100 : AppColors.slate800,
                   ),
@@ -574,7 +575,7 @@ class _IntroVideoState extends ConsumerState<_IntroVideo> {
                       ? 'Families can watch this on your profile.'
                       : 'A short clip introducing yourself helps families '
                           'choose you.',
-                  style: TextStyle(fontSize: 12.5, height: 1.4, color: muted),
+                  style: TextStyle(fontSize: ThtType.body, height: 1.4, color: muted),
                 ),
               ],
             ),
@@ -838,7 +839,7 @@ class _Qualifications extends StatelessWidget {
                     ? 'No qualification recorded'
                     : profile.highestQualification,
                 style: TextStyle(
-                  fontSize: 14.5,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.slate100 : AppColors.slate800,
                 ),
@@ -1020,7 +1021,7 @@ class _AccountRow extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ThtType.bodyStrong,
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppColors.slate100 : AppColors.slate800,
                 ),
@@ -1074,7 +1075,7 @@ class _Verification extends ConsumerWidget {
                 Text(
                   kyc.shortLabel,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: ThtType.bodyStrong,
                     fontWeight: FontWeight.w700,
                     color: tone.foreground(brightness),
                   ),
@@ -1085,7 +1086,7 @@ class _Verification extends ConsumerWidget {
                       ? 'Families see an ID-verified badge on your profile.'
                       : 'Tap to manage your documents.',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: ThtType.body,
                     height: 1.45,
                     color: Theme.of(context).brightness == Brightness.dark
                         ? AppColors.slate400
@@ -1122,7 +1123,7 @@ class _Row extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: ThtType.body,
                 color: isDark ? AppColors.slate400 : AppColors.slate500,
               ),
             ),
@@ -1133,7 +1134,7 @@ class _Row extends StatelessWidget {
               value,
               textAlign: TextAlign.end,
               style: const TextStyle(
-                fontSize: 13.5,
+                fontSize: ThtType.bodyStrong,
                 fontWeight: FontWeight.w600,
                 height: 1.4,
               ),
@@ -1177,7 +1178,7 @@ class _Chips extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 13, color: muted),
+                    style: TextStyle(fontSize: ThtType.body, color: muted),
                   ),
                 ),
                 if (onTap != null)
@@ -1189,7 +1190,7 @@ class _Chips extends StatelessWidget {
               Text(
                 emptyHint,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: ThtType.body,
                   fontStyle: FontStyle.italic,
                   color: isDark ? AppColors.slate500 : AppColors.slate400,
                 ),
@@ -1233,14 +1234,14 @@ class _Toggle extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        style: const TextStyle(fontSize: ThtType.bodyStrong, fontWeight: FontWeight.w600),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: ThtType.caption,
             height: 1.45,
             color: Theme.of(context).brightness == Brightness.dark
                 ? AppColors.slate400

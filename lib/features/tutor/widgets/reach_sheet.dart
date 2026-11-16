@@ -6,6 +6,7 @@ import 'package:tht_app/core/models/tutor_profile.dart';
 import 'package:tht_app/core/providers/master_data_provider.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/note_box.dart';
 import 'package:tht_app/core/ui/tone.dart';
@@ -100,7 +101,7 @@ class _ReachSheetState extends ConsumerState<ReachSheet> {
                     child: Text(
                       _title,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ThtType.title,
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.slate50 : AppColors.slate900,
                       ),
@@ -188,7 +189,7 @@ class _ReachSheetState extends ConsumerState<ReachSheet> {
       children: [
         Text(
           _blurb,
-          style: TextStyle(fontSize: 13, height: 1.5, color: muted),
+          style: TextStyle(fontSize: ThtType.body, height: 1.5, color: muted),
         ),
         const SizedBox(height: AppSpacing.lg),
         if (widget.field == ReachField.locations && _selected.isEmpty)

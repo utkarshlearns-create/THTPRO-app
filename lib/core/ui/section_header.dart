@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
+import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/tone.dart';
 
 /// The title above a block of content, with an optional action on the right.
@@ -65,7 +66,7 @@ class SectionHeader extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: ThtType.title,
                   fontWeight: FontWeight.w700,
                   height: 1.25,
                   color: isDark ? AppColors.slate100 : AppColors.slate900,
@@ -76,7 +77,7 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ThtType.body,
                     height: 1.4,
                     color: isDark ? AppColors.slate400 : AppColors.slate500,
                   ),
