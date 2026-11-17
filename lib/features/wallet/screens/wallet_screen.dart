@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/core/models/payment_record.dart';
 import 'package:tht_app/core/models/wallet.dart';
@@ -14,6 +13,7 @@ import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/wallet/providers/wallet_providers.dart';
+import 'package:tht_app/features/wallet/widgets/credits_help_sheet.dart';
 
 /// Credits, validity and where they went.
 ///
@@ -190,21 +190,21 @@ class _BalanceCard extends StatelessWidget {
               ),
             ],
           ),
-          // No purchase flow exists for institutes — there are no institute
-          // credit packages to sell — so the wallet is informational for them
-          // rather than offering a checkout that would open an empty list.
+          // Institutes are left out: there are no institute credits for our
+          // team to arrange, so their wallet is purely informational rather
+          // than offering help with something that does not exist.
           if (canBuy) ...[
             const SizedBox(height: AppSpacing.base),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () => context.push('/packages'),
+                onPressed: () => CreditsHelpSheet.show(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: primary,
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(wallet.hasCredits ? 'Add credits' : 'Buy credits'),
+                icon: const Icon(Icons.support_agent_rounded, size: 18),
+                label: const Text('Ask us for credits'),
               ),
             ),
           ],
@@ -225,8 +225,8 @@ class _BalanceCard extends StatelessWidget {
         : isParent
             // A parent unlocks teachers, not leads. "Leads" is the teacher's
             // word for a family, and reads as jargon on this side.
-            ? 'Buy a plan to unlock a teacher\u2019s number.'
-            : 'Buy a plan to start unlocking leads.';
+            ? 'Ask us for credits to unlock a teacher\u2019s number.'
+            : 'Ask us for credits to start unlocking leads.';
   }
 }
 
@@ -427,9 +427,9 @@ class _HowCreditsWorkParent extends StatelessWidget {
             children: [
               _Step(
                 emoji: '💳',
-                title: 'Buy a plan',
-                body: 'Credits land in your wallet as soon as the payment '
-                    'clears. Nothing is held back.',
+                title: 'Ask us for credits',
+                body: 'Message or call our team and they will set your '
+                    'account up. The credits then show up right here.',
               ),
               _StepGap(),
               _Step(
@@ -443,8 +443,8 @@ class _HowCreditsWorkParent extends StatelessWidget {
               _Step(
                 emoji: '♾️',
                 title: 'Your credits never expire',
-                body: 'There is no clock on them. Buy now, use one months '
-                    'later, and nothing is lost in between.',
+                body: 'There is no clock on them. Take them today, use one '
+                    'months later, and nothing is lost in between.',
               ),
             ],
           ),
@@ -485,9 +485,9 @@ class _HowCreditsWorkTutor extends StatelessWidget {
             children: [
               _Step(
                 emoji: '💳',
-                title: 'Buy a plan',
-                body: 'Credits land in your wallet as soon as the payment '
-                    'clears. Nothing is held back.',
+                title: 'Ask us for credits',
+                body: 'Message or call our team and they will set your '
+                    'account up. The credits then show up right here.',
               ),
               _StepGap(),
               _Step(
@@ -508,7 +508,7 @@ class _HowCreditsWorkTutor extends StatelessWidget {
               _Step(
                 emoji: '⏳',
                 title: 'Your clock starts on the first unlock',
-                body: 'Validity days sit paused from the day you buy them. '
+                body: 'Validity days sit paused from the day they are added. '
                     'They begin counting the first time you unlock a lead, not '
                     'a moment earlier.',
               ),
@@ -706,7 +706,7 @@ class _RenewalNotice extends StatelessWidget {
     final days = wallet.daysRemaining ?? 0;
 
     return THTCard(
-      onTap: () => context.push('/packages'),
+      onTap: () => CreditsHelpSheet.show(context),
       background: tone.background(brightness),
       borderColor: tone.border(brightness),
       child: Row(

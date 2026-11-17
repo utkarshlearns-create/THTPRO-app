@@ -36,7 +36,6 @@ import 'package:tht_app/features/explore/screens/tutor_detail_screen.dart';
 import 'package:tht_app/features/jobs/screens/find_jobs_screen.dart';
 import 'package:tht_app/features/jobs/screens/job_detail_screen.dart';
 import 'package:tht_app/features/wallet/screens/wallet_screen.dart';
-import 'package:tht_app/features/wallet/screens/packages_screen.dart';
 import 'package:tht_app/features/notifications/screens/notifications_screen.dart';
 import 'package:tht_app/features/messages/screens/blocked_accounts_screen.dart';
 import 'package:tht_app/features/messages/screens/conversations_screen.dart';
@@ -377,10 +376,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Shared authenticated routes (push on top of shell) ──
-      GoRoute(
-        path: '/packages',
-        builder: (_, __) => const PackagesScreen(),
-      ),
       // Top-level, not inside the parent shell. The shell picks its tab by
       // prefix with a fall-through to Home, so once Profile took the fifth slot
       // a parent reading their notifications would have seen Home highlighted —

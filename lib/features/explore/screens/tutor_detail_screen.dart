@@ -18,6 +18,7 @@ import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/explore/providers/tutor_search_provider.dart';
 import 'package:tht_app/features/wallet/providers/wallet_providers.dart';
+import 'package:tht_app/features/wallet/widgets/credits_help_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// A teacher's full profile, and the decision to contact them.
@@ -654,9 +655,12 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
                         ),
                       )
                     : FilledButton.icon(
-                        onPressed: () => context.push('/packages'),
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Add credits to unlock'),
+                        onPressed: () => CreditsHelpSheet.show(context),
+                        icon: const Icon(
+                          Icons.support_agent_rounded,
+                          size: 18,
+                        ),
+                        label: const Text('Ask us for credits'),
                       ),
           ),
 

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/models/co_applicants.dart';
 import 'package:tht_app/core/models/job.dart';
-import 'package:tht_app/core/models/lead_purchase.dart';
 import 'package:tht_app/core/models/unlock_status.dart';
 import 'package:tht_app/core/repositories/jobs_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
@@ -18,17 +16,14 @@ import 'package:tht_app/core/ui/tht_card.dart';
 import 'package:tht_app/core/ui/tone.dart';
 import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/utils/formatters.dart';
-import 'package:tht_app/core/auth/auth_provider.dart';
 import 'package:tht_app/features/jobs/providers/job_search_provider.dart';
 import 'package:tht_app/features/tutor/providers/tutor_dashboard_provider.dart';
 import 'package:tht_app/features/jobs/widgets/chance_sheet.dart';
 import 'package:tht_app/features/jobs/widgets/application_timeline_sheet.dart';
 import 'package:tht_app/features/jobs/widgets/counsellor_strip.dart';
-import 'package:tht_app/features/jobs/widgets/two_ways_card.dart';
 import 'package:tht_app/features/jobs/widgets/ineligible_notice.dart';
 import 'package:tht_app/features/jobs/widgets/job_share.dart';
-import 'package:tht_app/features/jobs/widgets/lead_terms_sheet.dart';
-import 'package:tht_app/features/wallet/services/checkout_service.dart';
+import 'package:tht_app/features/wallet/widgets/credits_help_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// One tuition requirement in full, and the decision a teacher makes about it.
@@ -76,19 +71,9 @@ class JobDetailScreen extends ConsumerWidget {
             children: [
               _Summary(job: j),
               const SizedBox(height: AppSpacing.lg),
-              // The trade-off, stated once before either card asks for a
-              // decision. Renders nothing unless both routes are really open.
-              if (j.isBuyable) ...[
-                TwoWaysCard(job: j),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-              // The paid route leads, because on a buyable lead it is the one
-              // that gets a teacher the family today. Applying stays below it
-              // as the free alternative, never removed.
+              // How this teacher reaches the family, whatever the answer is.
+              // Applying stays below it as the free route, never removed.
               _ContactCard(jobId: jobId, job: j),
-              // Who already holds this contact. Only on a lead that is sold —
-              // on any other kind there is nothing to have bought.
-              if (j.isBuyable) _LeadBuyers(jobId: jobId),
               const _OrDivider(),
               _ApplyCard(jobId: jobId, job: j),
               const SizedBox(height: AppSpacing.xl),
@@ -631,7 +616,7 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
         title: const Text('You have no credits'),
         content: const Text(
           'Your application is in. But a tuition can only be assigned to you '
-          'once you hold at least one credit, so it is worth topping up '
+          'once you hold at least one credit, so it is worth sorting that out '
           'before the family decides.',
         ),
         actions: [
@@ -641,12 +626,12 @@ class _ApplyCardState extends ConsumerState<_ApplyCard> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('See plans'),
+            child: const Text('Talk to us'),
           ),
         ],
       ),
     );
-    if (go == true && mounted) context.push('/packages');
+    if (go == true && mounted) await CreditsHelpSheet.show(context);
   }
 }
 
@@ -664,25 +649,15 @@ class _ContactCard extends ConsumerStatefulWidget {
 
 /// How a teacher gets the family behind this lead.
 ///
-/// Six states, in priority order. Which one shows is decided by the lead's own
-/// flags plus this teacher's status — the lead says whether it is for sale, the
-/// status says whether this teacher may buy it.
+/// Three states, in priority order, decided by the lead's own flags and this
+/// teacher's unlock status.
 ///
 ///   held        → the number, and a WhatsApp button
-///   sold out    → every place taken
-///   unapproved  → profile not approved, so the server would refuse
-///   buyable     → the price, and a way to pay it
 ///   THT-managed → contact shared by us if selected
 ///   private     → no contact, apply only
 ///
 /// Applying is free and always available underneath, whatever this card says.
 class _ContactCardState extends ConsumerState<_ContactCard> {
-  bool _working = false;
-
-  /// Revealed by a verified purchase in this session, before the status
-  /// provider has refetched.
-  String? _justBought;
-
   @override
   Widget build(BuildContext context) {
     final status = ref.watch(unlockStatusProvider(widget.jobId));
@@ -699,12 +674,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
   Widget _card(UnlockStatus s) {
     final job = widget.job;
 
-    if (s.isUnlocked || job.isContactUnlocked || _justBought != null) {
-      return _held(s);
-    }
-    if (job.isBuyable && s.isSoldOut) return _soldOut();
-    if (job.isBuyable && !s.isApproved) return _notApproved();
-    if (s.canBuy(leadIsBuyable: job.isBuyable)) return _buyable(s);
+    if (s.isUnlocked || job.isContactUnlocked) return _held(s);
     if (job.isThtManaged) return _thtManaged();
     return _private();
   }
@@ -714,9 +684,9 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
   Widget _held(UnlockStatus status) {
     final job = widget.job;
     final whatsapp =
-        _justBought ?? status.whatsapp ?? job.parentWhatsapp ?? job.parentPhone;
+        status.whatsapp ?? job.parentWhatsapp ?? job.parentPhone;
     final brightness = Theme.of(context).brightness;
-    final bought = status.isPaid || _justBought != null;
+    final bought = status.isPaid;
 
     return THTCard(
       borderColor: Tone.success.border(brightness),
@@ -801,115 +771,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
     );
   }
 
-  // ── 2. Sold out ────────────────────────────────────────────────────────────
-
-  Widget _soldOut() => _lockedCard(
-        icon: Icons.do_not_disturb_on_outlined,
-        tone: Tone.neutral,
-        title: 'Sold out',
-        body: 'The most teachers this family wanted have already bought this '
-            'lead. You can still apply below and be considered.',
-      );
-
-  // ── 3. Not approved ────────────────────────────────────────────────────────
-
-  Widget _notApproved() => _lockedCard(
-        icon: Icons.gpp_maybe_outlined,
-        tone: Tone.warning,
-        title: 'Approval needed to buy leads',
-        body: 'Only approved teachers can buy a lead. Finish your profile and '
-            'verification and this opens up. You can still apply below.',
-        action: ('Finish verification', () => context.go('/tutor-kyc')),
-      );
-
-  // ── 4. Buyable ─────────────────────────────────────────────────────────────
-
-  Widget _buyable(UnlockStatus status) {
-    final brightness = Theme.of(context).brightness;
-    final price = widget.job.leadPrice!;
-    final spots = status.spotsLine;
-
-    return THTCard(
-      borderColor: Tone.accent.border(brightness),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.workspace_premium_outlined,
-                size: 18,
-                color: Tone.accent.foreground(brightness),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Buy this lead',
-                  style: TextStyle(
-                    fontSize: ThtType.subtitle,
-                    fontWeight: FontWeight.w700,
-                    color: Tone.accent.foreground(brightness),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            "Get the family's WhatsApp number straight away and arrange the "
-            'tuition with them yourself. THT takes no commission — the fee you '
-            'agree is yours.',
-            style: TextStyle(fontSize: ThtType.bodyStrong, height: 1.55),
-          ),
-          if (spots != null) ...[
-            const SizedBox(height: AppSpacing.base),
-            Row(
-              children: [
-                Icon(
-                  Icons.people_outline_rounded,
-                  size: 15,
-                  color: Tone.warning.foreground(brightness),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    spots,
-                    style: TextStyle(
-                      fontSize: ThtType.body,
-                      fontWeight: FontWeight.w600,
-                      color: Tone.warning.foreground(brightness),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: AppSpacing.base),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _working ? null : _buy,
-              icon: _working
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.lock_open_rounded, size: 18),
-              label: Text(
-                _working ? 'Opening payment…' : 'Buy this lead — ₹$price',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── 5. THT-managed ─────────────────────────────────────────────────────────
+  // ── 2. THT-managed ─────────────────────────────────────────────────────────
 
   Widget _thtManaged() => _lockedCard(
         icon: Icons.shield_outlined,
@@ -920,7 +782,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
             'are selected.',
       );
 
-  // ── 6. Private ─────────────────────────────────────────────────────────────
+  // ── 3. Private ─────────────────────────────────────────────────────────────
 
   Widget _private() => _lockedCard(
         icon: Icons.lock_outline_rounded,
@@ -930,7 +792,7 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
             'and our team will take it from there.',
       );
 
-  /// The shared shape of every state that is not a purchase.
+  /// The shared shape of every state that is not the number itself.
   Widget _lockedCard({
     required IconData icon,
     required Tone tone,
@@ -987,68 +849,6 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
     );
   }
 
-  // ── Buying ─────────────────────────────────────────────────────────────────
-
-  Future<void> _buy() async {
-    final price = widget.job.leadPrice;
-    if (price == null) return;
-
-    // Terms first, and not as a formality: this is money, it is
-    // non-refundable, and buying does not win the tuition.
-    final agreed = await LeadTermsSheet.show(context, price: price);
-    if (agreed != true || !mounted) return;
-
-    setState(() => _working = true);
-    try {
-      final order =
-          await ref.read(jobsRepositoryProvider).createLeadOrder(widget.jobId);
-      if (!mounted) return;
-
-      final result = await CheckoutService().openForLead(
-        order: order,
-        user: ref.read(currentUserProvider).valueOrNull,
-      );
-      if (!mounted) return;
-
-      switch (result) {
-        case CheckoutCancelled():
-          setState(() => _working = false);
-        case CheckoutFailed(:final message):
-          setState(() => _working = false);
-          context.showMessage(message);
-        case CheckoutPaid(:final paymentId, :final orderId, :final signature):
-          // The device saying "paid" is not proof. Nothing is revealed until
-          // the server has checked the signature.
-          final purchase =
-              await ref.read(jobsRepositoryProvider).verifyLeadPurchase(
-                    widget.jobId,
-                    orderId: orderId,
-                    paymentId: paymentId,
-                    signature: signature,
-                  );
-          if (!mounted) return;
-          setState(() {
-            _justBought = purchase.whatsapp;
-            _working = false;
-          });
-          ref
-            ..invalidate(unlockStatusProvider(widget.jobId))
-            ..invalidate(jobProvider(widget.jobId))
-            ..invalidate(leadBuyersProvider(widget.jobId));
-          context.showMessage(
-            'Lead purchased. Message the family and set up your demo.',
-          );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _working = false);
-      // The server writes these refusals itself and they are specific — not
-      // approved, lead full, already owned. Its words beat a paraphrase.
-      context.showMessage(ApiFailure.from(e).message);
-      ref.invalidate(unlockStatusProvider(widget.jobId));
-    }
-  }
-
   /// wa.me needs a country code; numbers are stored as 10 local digits.
   String _intl(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
@@ -1063,78 +863,6 @@ class _ContactCardState extends ConsumerState<_ContactCard> {
     if (!ok && mounted) {
       context.showMessage("Couldn't open your $what.");
     }
-  }
-}
-
-/// The teachers who have already bought this lead.
-///
-/// Renders nothing at all when nobody has — an empty "0 buyers" line would
-/// discourage the first buyer for no reason.
-class _LeadBuyers extends ConsumerWidget {
-  const _LeadBuyers({required this.jobId});
-
-  final int jobId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(leadBuyersProvider(jobId));
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
-
-    return AsyncView<LeadBuyers>(
-      value: data,
-      compactError: true,
-      loading: const SizedBox.shrink(),
-      onRetry: () => ref.invalidate(leadBuyersProvider(jobId)),
-      data: (b) {
-        if (b.isEmpty) return const SizedBox.shrink();
-
-        return Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.md),
-          child: Row(
-            children: [
-              // Overlapping avatars, so a crowded lead reads as crowded at a
-              // glance rather than as a list to count.
-              SizedBox(
-                height: 28,
-                width: 28.0 + (b.buyers.take(4).length - 1).clamp(0, 3) * 18,
-                child: Stack(
-                  children: [
-                    for (var i = 0; i < b.buyers.take(4).length; i++)
-                      Positioned(
-                        left: i * 18.0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? AppColors.darkCard : Colors.white,
-                              width: 2,
-                            ),
-                          ),
-                          child: THTAvatar(
-                            name: b.buyers[i].name,
-                            imageUrl: b.buyers[i].photo,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  b.totalCount == 1
-                      ? '1 teacher has bought this lead'
-                      : '${b.totalCount} teachers have bought this lead',
-                  style: TextStyle(fontSize: ThtType.body, color: muted),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }
 
@@ -1255,7 +983,7 @@ class _ChanceBadge extends StatelessWidget {
   }
 }
 
-/// The seam between paying for the contact and applying for free.
+/// The seam between the contact card and applying for free.
 ///
 /// Both routes stay open on every lead, so the divider says "or" rather than
 /// implying the one above is required.

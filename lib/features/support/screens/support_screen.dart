@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tht_app/core/auth/auth_provider.dart';
+import 'package:tht_app/core/constants/contact.dart';
 import 'package:tht_app/core/network/api_config.dart';
 import 'package:tht_app/core/repositories/users_repository.dart';
 import 'package:tht_app/core/theme/app_colors.dart';
@@ -26,9 +27,6 @@ import 'package:url_launcher/url_launcher.dart';
 class SupportScreen extends ConsumerWidget {
   const SupportScreen({super.key});
 
-  /// Our WhatsApp support number, as used on the website's footer.
-  static const _supportPhone = '916387488141';
-  static const _supportEmail = 'support@thehometuitions.in';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -65,7 +63,7 @@ class SupportScreen extends ConsumerWidget {
             subtitle: 'Usually the fastest way to reach a person',
             tone: Tone.success,
             onTap: () => launchUrl(
-              Uri.parse('https://wa.me/$_supportPhone'),
+              ThtContact.whatsapp,
               mode: LaunchMode.externalApplication,
             ),
           ),
@@ -73,10 +71,10 @@ class SupportScreen extends ConsumerWidget {
           _Option(
             icon: Icons.call_rounded,
             title: 'Call us',
-            subtitle: '+91 63874 88141',
+            subtitle: ThtContact.phoneLabel,
             tone: Tone.info,
             onTap: () => launchUrl(
-              Uri.parse('tel:+$_supportPhone'),
+              ThtContact.call,
               mode: LaunchMode.externalApplication,
             ),
           ),
@@ -99,10 +97,10 @@ class SupportScreen extends ConsumerWidget {
           _Option(
             icon: Icons.alternate_email_rounded,
             title: 'Email',
-            subtitle: _supportEmail,
+            subtitle: ThtContact.email,
             tone: Tone.neutral,
             onTap: () => launchUrl(
-              Uri.parse('mailto:$_supportEmail'),
+              ThtContact.mail,
               mode: LaunchMode.externalApplication,
             ),
           ),
