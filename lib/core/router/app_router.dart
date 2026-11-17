@@ -38,6 +38,7 @@ import 'package:tht_app/features/jobs/screens/job_detail_screen.dart';
 import 'package:tht_app/features/wallet/screens/wallet_screen.dart';
 import 'package:tht_app/features/wallet/screens/packages_screen.dart';
 import 'package:tht_app/features/notifications/screens/notifications_screen.dart';
+import 'package:tht_app/features/messages/screens/blocked_accounts_screen.dart';
 import 'package:tht_app/features/messages/screens/conversations_screen.dart';
 import 'package:tht_app/features/messages/screens/thread_screen.dart';
 import 'package:tht_app/features/shared/screens/splash_screen.dart';
@@ -401,6 +402,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/messages',
         builder: (_, __) => const ConversationsScreen(),
+      ),
+      // Deliberately not '/messages/blocked': the sibling '/messages/:id'
+      // route above parses its id with int.parse, so that word would crash on
+      // the way in.
+      GoRoute(
+        path: '/blocked-accounts',
+        builder: (_, __) => const BlockedAccountsScreen(),
       ),
       // Help is reached from every role's profile, so it sits at the top level
       // rather than inside one shell.

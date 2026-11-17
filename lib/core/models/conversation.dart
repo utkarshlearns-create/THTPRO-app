@@ -53,12 +53,18 @@ class ConversationThread {
   const ConversationThread({
     required this.id,
     this.otherName = '',
+    this.otherId,
     this.jobTitle,
     this.messages = const [],
   });
 
   final int id;
   final String otherName;
+
+  /// The account on the far end. Needed to name who a report or block is
+  /// about — the thread id alone does not say.
+  final int? otherId;
+
   final String? jobTitle;
 
   /// Oldest first, as the server sends them.
@@ -68,8 +74,38 @@ class ConversationThread {
       ConversationThread(
         id: asInt(json, 'conversation_id'),
         otherName: asString(json, 'other_name'),
+        otherId: asIntOrNull(json, 'other_id'),
         jobTitle: asStringOrNull(json, 'job_title'),
         messages: asMapList(json, 'messages').map(Message.fromJson).toList(),
+      );
+}
+
+/// Somebody this user has blocked, for the list that undoes it.
+class BlockedAccount {
+  const BlockedAccount({
+    required this.userId,
+    this.name = '',
+    this.role,
+    this.reason = '',
+    this.blockedAt,
+  });
+
+  final int userId;
+
+  /// Never a phone number — the server picks a real name or falls back to a
+  /// role word, because `username` on this platform IS the phone number.
+  final String name;
+
+  final String? role;
+  final String reason;
+  final DateTime? blockedAt;
+
+  factory BlockedAccount.fromJson(Map<String, dynamic> json) => BlockedAccount(
+        userId: asInt(json, 'user_id'),
+        name: asString(json, 'name'),
+        role: asStringOrNull(json, 'role'),
+        reason: asString(json, 'reason'),
+        blockedAt: asDateOrNull(json, 'created_at'),
       );
 }
 

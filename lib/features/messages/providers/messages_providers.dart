@@ -25,6 +25,12 @@ final threadProvider =
   (ref, id) => ref.watch(messagesRepositoryProvider).thread(id),
 );
 
+/// Everyone this user has blocked.
+final blockedAccountsProvider =
+    FutureProvider.autoDispose<List<BlockedAccount>>(
+  (ref) => ref.watch(messagesRepositoryProvider).blockedAccounts(),
+);
+
 /// Total unread across every thread, for the inbox badge.
 final unreadMessagesProvider = FutureProvider.autoDispose<int>((ref) async {
   final list = await ref.watch(conversationsProvider.future);

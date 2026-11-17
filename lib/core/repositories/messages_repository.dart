@@ -49,6 +49,53 @@ class MessagesRepository extends Repository {
     });
     return Conversation.fromJson(data);
   }
+
+  /// Blocks the other party in a thread.
+  ///
+  /// Honoured in both directions server-side: after this the thread is gone
+  /// from both inboxes and neither side can write into it. Google Play's User
+  /// Generated Content policy requires this to exist in-app.
+  Future<void> block(int conversationId, {String? reason}) async {
+    await postMap('/api/jobs/messages/$conversationId/block/', body: {
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+  }
+
+  /// Lifts a block I placed. A block the *other* side placed does not budge.
+  Future<void> unblock(int conversationId) async {
+    await deleteMap('/api/jobs/messages/$conversationId/block/');
+  }
+
+  /// Reports the other party. Files a support ticket for a human to read —
+  /// nothing is auto-actioned, so [alsoBlock] is what actually stops the
+  /// messages arriving.
+  ///
+  /// [reason] is one of the server's keys: SPAM, ABUSE, FRAUD, FAKE, OTHER.
+  Future<void> report(
+    int conversationId, {
+    required String reason,
+    String? details,
+    bool alsoBlock = false,
+  }) async {
+    await postMap('/api/jobs/messages/$conversationId/report/', body: {
+      'reason': reason,
+      if (details != null && details.trim().isNotEmpty)
+        'details': details.trim(),
+      'also_block': alsoBlock,
+    });
+  }
+
+  /// Everyone I have blocked, newest first.
+  Future<List<BlockedAccount>> blockedAccounts() async =>
+      (await getList('/api/jobs/messages/blocks/'))
+          .map(BlockedAccount.fromJson)
+          .toList();
+
+  /// Unblocks by account, for the blocked list — where there is no thread id
+  /// to hand (the thread may even be gone).
+  Future<void> unblockUser(int userId) async {
+    await deleteMap('/api/jobs/messages/blocks/$userId/');
+  }
 }
 
 final messagesRepositoryProvider =

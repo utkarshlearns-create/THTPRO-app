@@ -117,4 +117,16 @@ abstract class Repository {
         if (data is Map) return data.cast<String, dynamic>();
         return <String, dynamic>{};
       });
+
+  /// DELETE returning a JSON object.
+  ///
+  /// An empty body is normal here — a 204 is a perfectly good answer to a
+  /// delete — so this hands back an empty map rather than failing.
+  Future<Map<String, dynamic>> deleteMap(String path, {Object? body}) =>
+      guard(() async {
+        final res = await dio.delete(path, data: body);
+        final data = res.data;
+        if (data is Map) return data.cast<String, dynamic>();
+        return <String, dynamic>{};
+      });
 }

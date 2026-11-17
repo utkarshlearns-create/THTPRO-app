@@ -6,8 +6,10 @@ import 'package:tht_app/core/theme/app_colors.dart';
 import 'package:tht_app/core/theme/app_type.dart';
 import 'package:tht_app/core/ui/async_view.dart';
 import 'package:tht_app/core/ui/states.dart';
+import 'package:tht_app/core/utils/api_error.dart';
 import 'package:tht_app/core/utils/formatters.dart';
 import 'package:tht_app/features/messages/providers/messages_providers.dart';
+import 'package:tht_app/features/messages/widgets/report_sheet.dart';
 
 /// One conversation, and the box to reply in.
 ///
@@ -40,6 +42,9 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final thread = ref.watch(threadProvider(widget.conversationId));
     final title = thread.valueOrNull?.otherName;
     final about = thread.valueOrNull?.jobTitle;
+    // A block closes the thread for both sides, so the server refuses it with
+    // a `blocked` flag. That is a state to explain, not an error to retry.
+    final blocked = _isBlocked(thread);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,49 +70,130 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
               ),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: AsyncView<ConversationThread>(
-              value: thread,
-              onRetry: () =>
-                  ref.invalidate(threadProvider(widget.conversationId)),
-              // In a ListView, not a Padding: `SkeletonList` is a plain Column
-              // and this slot is height-bounded by the composer below it, so a
-              // placeholder taller than the gap overflows rather than scrolls.
-              loading: const SingleChildScrollView(
-                padding: EdgeInsets.all(AppSpacing.lg),
-                child: SkeletonList(count: 5, itemHeight: 54),
-              ),
-              data: (t) => t.messages.isEmpty
-                  ? ListView(
-                      children: const [
-                        EmptyState(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          title: 'Nothing said yet',
-                          message: 'Send the first message below.',
-                          compact: true,
-                        ),
-                      ],
-                    )
-                  : ListView.builder(
-                      controller: _scroll,
-                      // Newest at the bottom, which is where a chat is read
-                      // from — so the list is reversed and the data with it.
-                      reverse: true,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      itemCount: t.messages.length,
-                      itemBuilder: (_, i) => _Bubble(
-                        message: t.messages[t.messages.length - 1 - i],
-                      ),
-                    ),
+        actions: [
+          // Report and block sit on the thread itself, one tap from any
+          // message. Google Play's User Generated Content policy wants them
+          // where the content is, not buried in a settings page. Once the
+          // chat is already closed there is nothing left to do here — the
+          // undo lives in Messages → Blocked accounts.
+          if (!blocked)
+            PopupMenuButton<String>(
+              tooltip: 'More',
+              onSelected: (value) {
+                if (value == 'report') {
+                  _report(title);
+                } else if (value == 'block') {
+                  _block(title);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'report',
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.flag_outlined),
+                    title: Text('Report this person'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'block',
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.block_rounded),
+                    title: Text('Block this person'),
+                  ),
+                ),
+              ],
             ),
-          ),
-          _composer(),
         ],
       ),
+      body: blocked
+          ? ListView(
+              children: const [
+                EmptyState(
+                  icon: Icons.block_rounded,
+                  title: 'This chat is closed',
+                  message: 'One of you blocked the other, so this conversation '
+                      'can no longer be opened. If you placed the block, undo '
+                      'it from Messages → Blocked accounts.',
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                Expanded(
+                  child: AsyncView<ConversationThread>(
+                    value: thread,
+                    onRetry: () =>
+                        ref.invalidate(threadProvider(widget.conversationId)),
+                    // In a ListView, not a Padding: `SkeletonList` is a plain Column
+                    // and this slot is height-bounded by the composer below it, so a
+                    // placeholder taller than the gap overflows rather than scrolls.
+                    loading: const SingleChildScrollView(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      child: SkeletonList(count: 5, itemHeight: 54),
+                    ),
+                    data: (t) => t.messages.isEmpty
+                        ? ListView(
+                            children: const [
+                              EmptyState(
+                                icon: Icons.chat_bubble_outline_rounded,
+                                title: 'Nothing said yet',
+                                message: 'Send the first message below.',
+                                compact: true,
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            controller: _scroll,
+                            // Newest at the bottom, which is where a chat is read
+                            // from — so the list is reversed and the data with it.
+                            reverse: true,
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            itemCount: t.messages.length,
+                            itemBuilder: (_, i) => _Bubble(
+                              message: t.messages[t.messages.length - 1 - i],
+                            ),
+                          ),
+                  ),
+                ),
+                _composer(),
+              ],
+            ),
     );
+  }
+
+  /// True once the server has refused the thread because of a block.
+  bool _isBlocked(AsyncValue<ConversationThread> thread) {
+    final error = thread.error;
+    return error != null && ApiFailure.from(error).flag('blocked');
+  }
+
+  Future<void> _report(String? name) async {
+    final reported = await ReportSheet.show(
+      context,
+      conversationId: widget.conversationId,
+      otherName: name ?? '',
+    );
+    // The report may have blocked them too, in which case the thread is now
+    // closed — let the screen hear that from the server rather than guess.
+    if (reported == true && mounted) {
+      ref.invalidate(threadProvider(widget.conversationId));
+    }
+  }
+
+  Future<void> _block(String? name) async {
+    final blocked = await confirmAndBlock(
+      context,
+      ref,
+      conversationId: widget.conversationId,
+      otherName: name ?? '',
+    );
+    if (blocked && mounted) {
+      ref.invalidate(threadProvider(widget.conversationId));
+    }
   }
 
   Widget _composer() {

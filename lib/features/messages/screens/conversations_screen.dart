@@ -21,7 +21,29 @@ class ConversationsScreen extends ConsumerWidget {
     final conversations = ref.watch(conversationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
+      appBar: AppBar(
+        title: const Text('Messages'),
+        actions: [
+          // The only way back from a block, so it lives on the inbox itself —
+          // the blocked thread is gone from the list and cannot carry its own
+          // undo.
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (_) => context.push('/blocked-accounts'),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'blocked',
+                child: ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.block_rounded),
+                  title: Text('Blocked accounts'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: AsyncView<List<Conversation>>(
         value: conversations,
         onRetry: () => ref.invalidate(conversationsProvider),
